@@ -1,5 +1,32 @@
 begin;
 
+-- Bootstrap a private/public visibility flag when legacy projects do not expose one yet.
+do $$
+begin
+  if to_regclass('public.site_content') is not null
+    and not exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'site_content'
+        and column_name in ('published', 'is_published')
+    ) then
+    alter table public.site_content
+      add column published boolean;
+
+    update public.site_content
+    set published = false
+    where published is null;
+
+    alter table public.site_content
+      alter column published set default false;
+
+    alter table public.site_content
+      alter column published set not null;
+  end if;
+end
+$$;
+
 -- Fail fast if the expected baseline objects are not present in the project DB.
 do $$
 begin
@@ -25,15 +52,6 @@ begin
     raise exception 'Missing column public.site_content.key';
   end if;
 
-  if not exists (
-    select 1
-    from information_schema.columns
-    where table_schema = 'public'
-      and table_name = 'site_content'
-      and column_name in ('published', 'is_published')
-  ) then
-    raise exception 'public.site_content must expose a boolean published flag named published or is_published';
-  end if;
 end
 $$;
 

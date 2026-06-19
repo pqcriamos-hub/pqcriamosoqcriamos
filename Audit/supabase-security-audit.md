@@ -125,5 +125,6 @@ rollback;
 ## Observacao operacional
 
 - A migration assume que `public.app_role`, `public.user_roles` e `public.site_content` ja existem no banco remoto do projeto.
-- A leitura publica exige uma flag booleana chamada `published` ou `is_published`.
+- Se `public.site_content` ainda nao expuser `published` ou `is_published`, a migration cria `published boolean not null default false` de forma conservadora.
+- Em bases legadas sem essa flag, linhas existentes ficam privadas por padrao ate serem publicadas explicitamente.
 - Nenhum usuario foi criado e nenhum papel foi atribuido nesta etapa.
