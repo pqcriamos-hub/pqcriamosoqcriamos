@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PQOQ Criamos - Artistas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Work+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="pqoq_multipage.css">
+</head>
+<body data-page="artistas">
+  <div class="page">
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="Ir para a home">
+        <img src="../assets/brand/pqoq-logo-bonecos-nome-limpa.png" alt="PQOQ Criamos">
+      </a>
+      <nav class="nav" aria-label="Navegação principal">
+        <a href="pqoq_episodios.html" data-page="episodios">Episódios</a>
+        <a href="pqoq_artistas.html" data-page="artistas">Artistas</a>
+        <a href="pqoq_galeria.html" data-page="galeria">Galeria</a>
+        <a href="pqoq_sobre.html" data-page="sobre">Sobre</a>
+        <a href="pqoq_apoio.html" data-page="apoio">Apoio</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="section">
+        <div class="section-head">
+          <h1 class="page-title" data-editable="artists.page.title">Artistas</h1>
+          <p data-rich data-editable="artists.page.intro">Um catálogo editável de artistas locais e regionais de diferentes linguagens, trajetórias e formas de criar. Clique em um artista para abrir o acervo em abas.</p>
+        </div>
+        <div class="admin-only" style="margin-bottom:18px">
+          <button class="button primary" id="artist-add" type="button">Adicionar artista</button>
+        </div>
+        <div class="grid four" data-render-artists></div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p data-editable="footer.text">PQOQ - acervo vivo de artistas e processos criativos.</p>
+      <details class="editor-access">
+        <summary aria-label="Acesso editorial">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4v6c0 5-3.4 7.7-8 8-4.6-.3-8-3-8-8V7l8-4z"/><path d="M9.5 12.5l1.8 1.8 3.7-4.1"/></svg>
+        </summary>
+        <div class="editor-panel">
+          <h3>Acesso editorial</h3>
+          <p>No modo administrador, adicione, remova, edite artistas e envie foto pelo círculo de cada card.</p>
+          <label>Login <input class="admin-field" id="admin-email" type="email" autocomplete="username"></label>
+          <label>Senha <input class="admin-field" id="admin-password" type="password" autocomplete="current-password"></label>
+          <p class="admin-message" id="admin-message" aria-live="polite"></p>
+          <div class="admin-toolbar">
+            <button class="button primary small" id="admin-login" type="button">Entrar</button>
+            <button class="button small" id="admin-logout" type="button">Sair</button>
+            <button class="button small" id="admin-reset" type="button">Resetar</button>
+          </div>
+          <div class="format-toolbar">
+            <button class="button small" type="button" data-format-command="bold">Negrito</button>
+            <button class="button small" type="button" data-format-command="italic">Itálico</button>
+            <button class="button small" type="button" data-format-command="justifyLeft">Esquerda</button>
+            <button class="button small" type="button" data-format-command="justifyCenter">Centro</button>
+            <button class="button small" type="button" data-format-command="justifyFull">Justificar</button>
+          </div>
+        </div>
+      </details>
+    </footer>
+  </div>
+  <script src="pqoq_multipage.js"></script>
+</body>
+</html>

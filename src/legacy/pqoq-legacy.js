@@ -34,7 +34,9 @@
     ".gallery-card h3",
     ".gallery-card p",
     ".artist-card h3",
-    ".artist-card p"
+    ".artist-card p",
+    ".platform-chip",
+    ".episode-back-link"
   ].join(", ");
   const STYLE_SKIP_SELECTOR = [
     ".style-popover",
@@ -1062,16 +1064,22 @@
     const box = document.querySelector(`[data-video-box="${episodeId}"]`);
     if (!box) return;
     const id = youtubeId(data.youtube);
+    box.classList.remove("has-video", "has-thumbnail", "is-empty");
+    box.style.backgroundImage = "";
+    box.style.backgroundSize = "";
+    box.style.backgroundPosition = "";
     if (id) {
+      box.classList.add("has-video");
       box.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}" title="Vídeo do episódio" allowfullscreen></iframe>`;
     } else if (data.thumbnail) {
+      box.classList.add("has-thumbnail");
       box.innerHTML = "";
       box.style.backgroundImage = `url('${data.thumbnail}')`;
       box.style.backgroundSize = "cover";
       box.style.backgroundPosition = "center";
     } else {
+      box.classList.add("is-empty");
       box.innerHTML = `<p>${isOwnerEditing() ? "Adicione um link do YouTube ou uma thumbnail no modo administrador." : "Vídeo em preparação para publicação."}</p>`;
-      box.style.backgroundImage = "";
     }
   }
 
@@ -1080,11 +1088,15 @@
     const box = document.querySelector(`[data-audio-box="${episodeId}"]`);
     if (!box) return;
     const spotify = spotifyEmbed(data.spotify);
+    box.classList.remove("has-spotify", "has-audio-file", "is-empty");
     if (spotify) {
+      box.classList.add("has-spotify");
       box.innerHTML = `<iframe src="${spotify}" title="Player Spotify" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
     } else if (data.mp3) {
+      box.classList.add("has-audio-file");
       box.innerHTML = `<audio controls src="${data.mp3}"></audio>`;
     } else {
+      box.classList.add("is-empty");
       box.innerHTML = `<p>${isOwnerEditing() ? "Adicione um link do Spotify ou envie um MP3 no modo administrador." : "Player em preparação para publicação."}</p>`;
     }
   }
@@ -1110,12 +1122,11 @@
   function platformLinks(episode) {
     const embeds = episodeEmbeds()[episode.id] || {};
     const links = [
-      { label: "RSS", href: episode.sourceUrl || "/episodios" },
-      { label: "Spotify", href: embeds.spotify || episode.sourceUrl || "/episodios" },
-      { label: "YouTube", href: embeds.youtube || episode.sourceUrl || "/episodios" },
-      { label: "Site antigo", href: episode.sourceUrl || "/episodios" }
+      { key: "rss", label: "RSS", href: episode.sourceUrl || "/episodios" },
+      { key: "spotify", label: "Spotify", href: embeds.spotify || episode.sourceUrl || "/episodios" },
+      { key: "youtube", label: "YouTube", href: embeds.youtube || episode.sourceUrl || "/episodios" }
     ];
-    return links.map((link) => `<a class="platform-chip" href="${escapeHtml(link.href)}" target="_blank" rel="noopener noreferrer">${link.label}</a>`).join("");
+    return links.map((link) => `<a class="platform-chip" data-editable="episode.${episode.id}.platform.${link.key}" href="${escapeHtml(link.href)}" target="_blank" rel="noopener noreferrer">${link.label}</a>`).join("");
   }
 
   function renderEpisodePage() {
@@ -1132,21 +1143,25 @@
     document.title = `PQOQ Criamos - ${episode.code} - ${episode.title}`;
     container.innerHTML = `
       <div class="episode-page-hero">
-        <div>
+        <div class="episode-page-cover-column">
+          <a class="button small episode-back-link" href="/episodios">← Voltar aos episódios</a>
           <div class="episode-cover" data-episode-cover="${episode.id}"${episodeCoverStyle(episode)}></div>
+          <div class="meta episode-cover-meta" data-editable="episode.${episode.id}.meta">${episode.code} · ${episode.date} · ${episode.duration}</div>
           <div class="admin-only admin-row">
             <label>Capa / thumbnail do episódio
               <input type="file" accept="image/*" data-episode-file="${episode.id}" data-file-field="thumbnail">
             </label>
           </div>
         </div>
-        <div class="episode-page-intro">
-          <a class="button small" href="/episodios">← Voltar aos episódios</a>
-          <div class="meta">${episode.code} · ${episode.date} · ${episode.duration}</div>
-          <h1 class="page-title" data-editable="episode.${episode.id}.title">${episode.code} - ${episode.title}, ${episode.artist}</h1>
-          <p data-editable="episode.${episode.id}.subtitle">Por que criamos o que criamos?</p>
-          <div class="platform-row">${platformLinks(episode)}</div>
-          <div class="admin-only admin-row">
+        <div class="episode-page-media-column">
+          <div class="episode-title-pill">
+            <h1 class="page-title" data-editable="episode.${episode.id}.title">${episode.code} - ${episode.title}</h1>
+          </div>
+          <div class="embed-box episode-video-box" data-video-box="${episode.id}"></div>
+          <div class="admin-only admin-row episode-video-admin">
+            <label>Link do YouTube
+              <input type="url" value="${escapeHtml(embeds.youtube || "")}" data-episode-embed="${episode.id}" data-embed-field="youtube" placeholder="https://www.youtube.com/watch?v=...">
+            </label>
             <label>Link original / página anterior
               <input type="url" value="${escapeHtml(episode.sourceUrl || "")}" data-episode-source="${episode.id}" placeholder="https://...">
             </label>
@@ -1166,22 +1181,16 @@
         </div>
       </div>
 
-      <div class="episode-content-grid">
-        <article class="episode-text-panel">
-          <div class="meta">Almi Jr & Don Monti · ${episode.date}</div>
-          <p data-rich data-episode-description="${episode.id}">${episode.description}</p>
-          ${episode.sourceUrl ? `<p class="source-link">Página original: <a href="${escapeHtml(episode.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(episode.sourceUrl)}</a></p>` : ""}
+      <div class="episode-summary-grid">
+        <article class="episode-summary-card">
+          <p data-editable="episode.${episode.id}.subtitle">Por que criamos o que criamos?</p>
         </article>
-
-        <aside class="episode-side-panel">
-          <h2 class="lettered">Vídeo / Videocast</h2>
-          <div class="embed-box" data-video-box="${episode.id}"></div>
-          <div class="admin-only admin-row">
-            <label>Link do YouTube
-              <input type="url" value="${escapeHtml(embeds.youtube || "")}" data-episode-embed="${episode.id}" data-embed-field="youtube" placeholder="https://www.youtube.com/watch?v=...">
-            </label>
-          </div>
-        </aside>
+        <article class="episode-summary-card episode-summary-description">
+          <p data-rich data-episode-description="${episode.id}">${episode.description}</p>
+        </article>
+        <article class="episode-summary-card">
+          <p data-editable="episode.${episode.id}.artistline">${episode.artist} · ${episode.date} · ${episode.duration}</p>
+        </article>
       </div>
 
       <div class="episode-artist-panel">
@@ -1191,6 +1200,7 @@
           <button class="button primary small" type="button" data-open-artist="${artist?.id || episode.artistId}">Abrir acervo do artista</button>
           <a class="button small" href="/artistas">Página Artistas</a>
         </div>
+        <div class="platform-row episode-platform-row">${platformLinks(episode)}</div>
       </div>
     `;
     renderEpisodeCover(episode.id);
@@ -1292,7 +1302,7 @@
 
   function editableTextNodes() {
     return Array.from(document.querySelectorAll(
-      "[data-rich], h1[data-editable], h2[data-editable], h3[data-editable], p[data-editable], div[data-editable].pill, .home-latest-title[data-editable], [data-artist-field], [data-portfolio-field], [data-link-item-field]"
+      "[data-rich], h1[data-editable], h2[data-editable], h3[data-editable], p[data-editable], a[data-editable], div[data-editable].pill, .home-latest-title[data-editable], [data-artist-field], [data-portfolio-field], [data-link-item-field]"
     ));
   }
 

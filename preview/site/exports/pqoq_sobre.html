@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PQOQ Criamos - Sobre</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Work+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="pqoq_multipage.css">
+</head>
+<body data-page="sobre">
+  <div class="page">
+    <header class="site-header">
+      <a class="brand" href="index.html"><img src="../assets/brand/pqoq-logo-bonecos-nome-limpa.png" alt="PQOQ Criamos"></a>
+      <nav class="nav" aria-label="Navegação principal">
+        <a href="pqoq_episodios.html" data-page="episodios">Episódios</a>
+        <a href="pqoq_artistas.html" data-page="artistas">Artistas</a>
+        <a href="pqoq_galeria.html" data-page="galeria">Galeria</a>
+        <a href="pqoq_sobre.html" data-page="sobre">Sobre</a>
+        <a href="pqoq_apoio.html" data-page="apoio">Apoio</a>
+      </nav>
+    </header>
+    <main>
+      <section class="section">
+        <div class="section-head">
+          <h1 class="page-title" data-editable="about.page.title">Sobre</h1>
+        </div>
+        <div class="about-layout">
+          <article class="card" data-editable="about.project">
+            <h3>O projeto</h3>
+            <p data-rich>O <strong>Por que criamos o que criamos</strong> é um projeto de extensão, escuta e produção audiovisual dedicado a registrar processos criativos de artistas do extremo sul da Bahia.</p>
+            <p data-rich>Criado em 2021 no formato podcast, o PQOQ chega a uma nova etapa ampliando sua linguagem para o videocast, com gravações presenciais no Campus Paulo Freire da UFSB.</p>
+            <p data-rich>A proposta reúne entrevistas, imagens, trajetórias e materiais de arquivo para fortalecer a memória cultural da região e aproximar universidade, artistas e comunidade.</p>
+            <p data-rich>A cada quinze dias, artistas de diferentes linguagens são convidados a conversar sobre influências, vivências, território, escolhas estéticas e modos de criação, sempre atravessados pela pergunta: por que criamos o que criamos?</p>
+            <div class="tag-list"><span>Podcast</span><span>Videocast</span><span>Acervo</span><span>Extensão</span></div>
+          </article>
+          <article class="card bio-card" data-editable="about.almi">
+            <div class="bio-photo">Foto</div>
+            <h3>Almi Junior</h3>
+            <p data-rich>Almi Junior é poeta, professor e pesquisador. Possui mestrado em Letras e desenvolve doutorado na mesma área, investigando relações entre poesia e artes visuais na obra de Manoel de Barros.</p>
+            <p data-rich>Natural de Teixeira de Freitas - BA, ajudou a organizar saraus e encontros de artistas, como o Sarau MamÁfrica e o Sarau dos Mal Amados, em parceria com o coletivo Éramos 7.</p>
+            <p data-rich>Integra o Mapa da Palavra da Bahia, possui poemas publicados em revistas e coletâneas, atua como ilustrador e compõe o Fluxo Artístico.</p>
+            <div class="tag-list"><span>Poesia</span><span>Pesquisa</span><span>Ilustração</span></div>
+          </article>
+          <article class="card bio-card" data-editable="about.joao">
+            <div class="bio-photo">Foto</div>
+            <h3>João Lucas Monti</h3>
+            <p data-rich>João Lucas de Oliveira Monti, também conhecido como Don, é natural de Teixeira de Freitas - BA. Cursou Licenciatura em História pela UNEB X e atualmente cursa Design de Interiores pela UNIP.</p>
+            <p data-rich>É artista visual nas áreas de ilustração tradicional, ilustração digital, design gráfico e tatuagem. Fundou o Coletivo Fluxo Artístico e o projeto Fluxo nas Escolas.</p>
+            <p data-rich>Também atua no Coletivo das Artes Motirô, é cofundador e host do PQOQ e desenvolve obras em arte tradicional, arte digital, fotocolagem e aquarela.</p>
+            <div class="tag-list"><span>Ilustração</span><span>Tatuagem</span><span>Design</span></div>
+          </article>
+        </div>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <p data-editable="footer.text">PQOQ - sobre o projeto e sua equipe.</p>
+      <details class="editor-access">
+        <summary aria-label="Acesso editorial"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4v6c0 5-3.4 7.7-8 8-4.6-.3-8-3-8-8V7l8-4z"/><path d="M9.5 12.5l1.8 1.8 3.7-4.1"/></svg></summary>
+        <div class="editor-panel">
+          <h3>Acesso editorial</h3><p>Entre para editar e formatar textos da página.</p>
+          <label>Login <input class="admin-field" id="admin-email" type="email" autocomplete="username"></label>
+          <label>Senha <input class="admin-field" id="admin-password" type="password" autocomplete="current-password"></label>
+          <p class="admin-message" id="admin-message" aria-live="polite"></p>
+          <div class="admin-toolbar"><button class="button primary small" id="admin-login" type="button">Entrar</button><button class="button small" id="admin-logout" type="button">Sair</button><button class="button small" id="admin-reset" type="button">Resetar</button></div>
+          <div class="format-toolbar"><button class="button small" type="button" data-format-command="bold">Negrito</button><button class="button small" type="button" data-format-command="italic">Itálico</button><button class="button small" type="button" data-format-command="justifyFull">Justificar</button></div>
+        </div>
+      </details>
+    </footer>
+  </div>
+  <script src="pqoq_multipage.js"></script>
+</body>
+</html>

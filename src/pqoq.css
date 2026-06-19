@@ -328,9 +328,16 @@ p { margin-top: 0; }
 
 .episode-page-hero {
   display: grid;
-  grid-template-columns: minmax(240px, 330px) minmax(0, 1fr);
-  gap: 48px;
+  grid-template-columns: minmax(220px, 286px) minmax(0, 1fr);
+  gap: 18px;
   align-items: start;
+}
+
+.episode-page-cover-column,
+.episode-page-media-column {
+  display: grid;
+  gap: 14px;
+  align-content: start;
 }
 
 .episode-cover {
@@ -370,17 +377,35 @@ p { margin-top: 0; }
 .episode-cover-code { font-size: 30px; }
 .episode-cover-name { font-size: 22px; }
 
-.episode-page-intro {
-  display: grid;
-  gap: 16px;
-  align-content: start;
+.episode-back-link {
+  justify-self: start;
+  min-height: 0;
+  padding: 5px 14px;
+  font-size: 10px;
 }
 
-.episode-page-intro .page-title {
-  max-width: 760px;
-  color: var(--terracotta-dark);
-  font-size: clamp(42px, 6vw, 74px);
-  line-height: .96;
+.episode-cover-meta {
+  margin: 2px 0 0 4px;
+}
+
+.episode-title-pill .page-title {
+  width: 100%;
+  justify-content: center;
+  padding: 8px 18px;
+  background: var(--cream);
+  color: var(--ink);
+  font-size: clamp(18px, 2.2vw, 30px);
+  line-height: 1.02;
+  letter-spacing: .02em;
+}
+
+.episode-video-box {
+  min-height: clamp(260px, 34vw, 388px);
+  background: rgba(194,102,39,.18);
+}
+
+.episode-video-box iframe {
+  min-height: clamp(260px, 34vw, 388px);
 }
 
 .platform-row {
@@ -393,48 +418,103 @@ p { margin-top: 0; }
   display: inline-flex;
   align-items: center;
   min-height: 34px;
-  padding: 6px 12px;
+  justify-content: center;
+  padding: 6px 13px;
   border: var(--line);
   border-radius: 999px;
   background: var(--cream);
   box-shadow: 3px 3px 0 var(--shadow);
   color: var(--terracotta-dark);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 900;
   text-decoration: none;
   text-transform: uppercase;
 }
 
 .episode-player-block {
-  padding: 18px;
-  border: var(--line);
-  background: rgba(255,244,191,.58);
+  display: grid;
+  gap: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .episode-audio {
-  min-height: 180px;
+  min-height: 0;
+  display: block;
+  border: 0;
+  background: transparent;
+}
+
+.episode-audio.has-spotify iframe {
+  min-height: 152px;
+}
+
+.episode-audio.has-audio-file,
+.episode-audio.is-empty {
+  min-height: 92px;
+  padding: 10px 0;
+}
+
+.episode-audio.is-empty {
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  border: var(--line);
+  background: rgba(255,244,191,.62);
 }
 
 .episode-admin-grid {
   grid-template-columns: minmax(0, 1fr) minmax(220px, .45fr);
 }
 
-.episode-content-grid {
+.episode-video-admin,
+.episode-summary-grid {
   display: grid;
-  grid-template-columns: minmax(0, .95fr) minmax(320px, .75fr);
-  gap: 24px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
   align-items: start;
 }
 
-.episode-text-panel,
-.episode-side-panel,
+.episode-video-admin {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.episode-summary-grid {
+  border: var(--line);
+  background: rgba(255,244,191,.72);
+}
+
+.episode-summary-card {
+  min-height: 118px;
+  padding: 18px 22px;
+  display: grid;
+  align-content: center;
+}
+
+.episode-summary-card + .episode-summary-card {
+  border-left: var(--line);
+}
+
+.episode-summary-card p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.62;
+  text-align: center;
+}
+
+.episode-summary-description p {
+  text-align: justify;
+}
+
 .episode-artist-panel {
   border: var(--line);
   background: rgba(255,244,191,.72);
   padding: 22px;
 }
 
-.episode-text-panel p,
 .episode-artist-panel p {
   color: var(--ink);
   font-size: 17px;
@@ -442,16 +522,15 @@ p { margin-top: 0; }
   text-align: justify;
 }
 
-.episode-side-panel h2,
 .episode-artist-panel h2 {
   margin-bottom: 16px;
   color: var(--ink);
   font-size: clamp(30px, 4vw, 48px);
 }
 
-.source-link {
-  margin-top: 24px;
-  overflow-wrap: anywhere;
+.episode-platform-row {
+  justify-content: center;
+  margin-top: 10px;
 }
 
 .artist-card {
@@ -1181,7 +1260,8 @@ body.admin-mode .format-toolbar { display: flex; }
   .about-layout,
   .grid.four,
   .episode-page-hero,
-  .episode-content-grid,
+  .episode-video-admin,
+  .episode-summary-grid,
   .episode-admin-grid {
     grid-template-columns: 1fr;
   }

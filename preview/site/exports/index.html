@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PQOQ Criamos - Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Work+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="pqoq_multipage.css">
+</head>
+<body data-page="home">
+  <div class="page">
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="Ir para a home">
+        <img src="../assets/brand/pqoq-logo-bonecos-nome-limpa.png" alt="PQOQ Criamos">
+      </a>
+      <nav class="nav" aria-label="Navegação principal">
+        <a href="pqoq_episodios.html" data-page="episodios">Episódios</a>
+        <a href="pqoq_artistas.html" data-page="artistas">Artistas</a>
+        <a href="pqoq_galeria.html" data-page="galeria">Galeria</a>
+        <a href="pqoq_sobre.html" data-page="sobre">Sobre</a>
+        <a href="pqoq_apoio.html" data-page="apoio">Apoio</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <div class="pill" data-editable="home.eyebrow">Nova temporada - podcast + videocast</div>
+          <div class="intro-text" data-rich data-editable="home.description">
+            <p>O PQOQ é um acervo vivo de artistas, processos criativos e memória cultural. O projeto nasce no extremo sul da Bahia, entre conversas, escutas, imagens e trajetórias. A cada quinze dias, convidamos um artista para se sentar conosco e dialogar sobre processos criativos, influências, vivências e escolhas de caminho. O projeto registra vozes de diferentes linguagens, como música, literatura e artes visuais, além de abrir espaço para o audiovisual, a tatuagem, a cerâmica, a performance e a palavra. A nova temporada amplia o podcast para o formato de videocast, com gravações presenciais. Os encontros acontecem com o apoio da UFSB, no Campus Paulo Freire. Cada episódio transforma-se em arquivo, conversa, memória e ponto de encontro com a comunidade. E, no centro de tudo, permanece a pergunta: afinal, por que criamos o que criamos?</p>
+          </div>
+          <div class="intro-actions">
+            <a class="button primary" href="pqoq_episodios.html">Assistir agora</a>
+            <a class="button" href="pqoq_episodios.html">Ouvir episódios</a>
+            <a class="button" href="pqoq_artistas.html">Conhecer artistas</a>
+          </div>
+        </div>
+
+        <aside class="home-latest" aria-labelledby="home-episodes-title">
+          <h2 class="home-latest-title" id="home-episodes-title" data-editable="home.latest.title">Últimos episódios:</h2>
+          <div class="home-latest-list" data-render-home-episodes></div>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p data-editable="footer.text">PQOQ - Por que criamos o que criamos. Acervo, processo criativo e memória cultural do extremo sul da Bahia.</p>
+      <details class="editor-access">
+        <summary aria-label="Acesso editorial">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3l8 4v6c0 5-3.4 7.7-8 8-4.6-.3-8-3-8-8V7l8-4z"/>
+            <path d="M9.5 12.5l1.8 1.8 3.7-4.1"/>
+          </svg>
+        </summary>
+        <div class="editor-panel">
+          <h3>Acesso editorial</h3>
+          <p>Entre para ativar o modo administrador. É possível editar textos, formatar conteúdo, adicionar/remover artistas e anexar mídias nos episódios.</p>
+          <label>Login <input class="admin-field" id="admin-email" type="email" autocomplete="username"></label>
+          <label>Senha <input class="admin-field" id="admin-password" type="password" autocomplete="current-password"></label>
+          <p class="admin-message" id="admin-message" aria-live="polite"></p>
+          <div class="admin-toolbar">
+            <button class="button primary small" id="admin-login" type="button">Entrar</button>
+            <button class="button small" id="admin-logout" type="button">Sair</button>
+            <button class="button small" id="admin-reset" type="button">Resetar</button>
+          </div>
+          <div class="format-toolbar">
+            <button class="button small" type="button" data-format-command="bold">Negrito</button>
+            <button class="button small" type="button" data-format-command="italic">Itálico</button>
+            <button class="button small" type="button" data-format-command="justifyLeft">Esquerda</button>
+            <button class="button small" type="button" data-format-command="justifyCenter">Centro</button>
+            <button class="button small" type="button" data-format-command="justifyFull">Justificar</button>
+          </div>
+        </div>
+      </details>
+    </footer>
+  </div>
+  <script src="pqoq_multipage.js"></script>
+</body>
+</html>
