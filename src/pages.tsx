@@ -14,7 +14,7 @@ export function HomePage() {
               <p>O PQOQ é um acervo vivo de artistas, processos criativos e memória cultural. O projeto nasce no extremo sul da Bahia, entre conversas, escutas, imagens e trajetórias. A cada quinze dias, convidamos um artista para se sentar conosco e dialogar sobre processos criativos, influências, vivências e escolhas de caminho. O projeto registra vozes de diferentes linguagens, como música, literatura e artes visuais, além de abrir espaço para o audiovisual, a tatuagem, a cerâmica, a performance e a palavra. A nova temporada amplia o podcast para o formato de videocast, com gravações presenciais. Os encontros acontecem com o apoio da UFSB, no Campus Paulo Freire. Cada episódio transforma-se em arquivo, conversa, memória e ponto de encontro com a comunidade. E, no centro de tudo, permanece a pergunta: afinal, por que criamos o que criamos?</p>
             </div>
             <div className="intro-actions">
-              <a className="button primary" href="/episodios">Assistir agora</a>
+              <a className="button primary" href="/episodios" data-link-editable="home.watch-now">Assistir agora</a>
               <a className="button" href="/episodios">Ouvir episódios</a>
               <a className="button" href="/artistas">Conhecer artistas</a>
             </div>
@@ -102,24 +102,15 @@ export function GalleryPage() {
             <h1 className="page-title" data-editable="gallery.page.title">Galeria</h1>
             <p data-rich data-editable="gallery.page.intro">A galeria organiza imagens, bastidores, capas, registros de gravação e materiais enviados pelos artistas.</p>
           </div>
-          <div className="grid three">
-            <article className="card" data-editable="gallery.backstage">
+          <div className="admin-only" style={{ marginBottom: 18 }}>
+            <button className="button primary" id="gallery-add" type="button">Adicionar galeria</button>
+          </div>
+          <div className="grid three" data-render-gallery-list>
+            <article className="card gallery-card">
               <div className="gallery-thumb" />
-              <div className="meta">Bastidores</div>
-              <h3>Gravações</h3>
-              <p data-rich>Registros do set, do Espaço Colaborar e da equipe em processo.</p>
-            </article>
-            <article className="card" data-editable="gallery.covers">
-              <div className="gallery-thumb" />
-              <div className="meta">Identidade visual</div>
-              <h3>Capas</h3>
-              <p data-rich>Artes dos episódios, thumbnails e peças gráficas do projeto.</p>
-            </article>
-            <article className="card" data-editable="gallery.works">
-              <div className="gallery-thumb" />
-              <div className="meta">Acervo de artistas</div>
-              <h3>Obras</h3>
-              <p data-rich>Imagens, processos e fragmentos visuais ligados a cada convidado.</p>
+              <div className="meta">Carregando</div>
+              <h3>Galeria</h3>
+              <p>Preparando cards da galeria...</p>
             </article>
           </div>
         </section>
@@ -150,7 +141,10 @@ export function AboutPage() {
               <div className="tag-list"><span>Podcast</span><span>Videocast</span><span>Acervo</span><span>Extensão</span></div>
             </article>
             <article className="card bio-card" data-editable="about.almi">
-              <div className="bio-photo">Foto</div>
+              <label className="bio-photo bio-photo-upload" data-page-photo-box="about.almi">
+                <span>Foto</span>
+                <input className="admin-only" type="file" accept="image/*" data-page-photo="about.almi" aria-label="Enviar foto de Almi Junior" />
+              </label>
               <h3>Almi Junior</h3>
               <p data-rich>Almi Junior é poeta, professor e pesquisador. Possui mestrado em Letras e desenvolve doutorado na mesma área, investigando relações entre poesia e artes visuais na obra de Manoel de Barros.</p>
               <p data-rich>Natural de Teixeira de Freitas - BA, ajudou a organizar saraus e encontros de artistas, como o Sarau MamÁfrica e o Sarau dos Mal Amados, em parceria com o coletivo Éramos 7.</p>
@@ -158,7 +152,10 @@ export function AboutPage() {
               <div className="tag-list"><span>Poesia</span><span>Pesquisa</span><span>Ilustração</span></div>
             </article>
             <article className="card bio-card" data-editable="about.joao">
-              <div className="bio-photo">Foto</div>
+              <label className="bio-photo bio-photo-upload" data-page-photo-box="about.joao">
+                <span>Foto</span>
+                <input className="admin-only" type="file" accept="image/*" data-page-photo="about.joao" aria-label="Enviar foto de João Lucas Monti" />
+              </label>
               <h3>João Lucas Monti</h3>
               <p data-rich>João Lucas de Oliveira Monti, também conhecido como Don, é natural de Teixeira de Freitas - BA. Cursou Licenciatura em História pela UNEB X e atualmente cursa Design de Interiores pela UNIP.</p>
               <p data-rich>É artista visual nas áreas de ilustração tradicional, ilustração digital, design gráfico e tatuagem. Fundou o Coletivo Fluxo Artístico e o projeto Fluxo nas Escolas.</p>
@@ -192,14 +189,20 @@ export function SupportPage() {
           </div>
           <div className="support-bios">
             <article className="card bio-card" data-editable="support.apoiador1">
-              <div className="bio-photo">Foto</div>
+              <label className="bio-photo bio-photo-upload" data-page-photo-box="support.apoiador1">
+                <span>Foto</span>
+                <input className="admin-only" type="file" accept="image/*" data-page-photo="support.apoiador1" aria-label="Enviar foto do apoiador 1" />
+              </label>
               <h3>Apoiador 1</h3>
               <p data-rich>Espaço editável para apresentar um apoiador, instituição, pessoa parceira ou frente de colaboração do projeto.</p>
               <p data-rich>Use este campo para explicar como esse apoio participa da realização, circulação, infraestrutura, pesquisa, memória ou divulgação do PQOQ.</p>
               <div className="tag-list"><span>Pesquisa</span><span>Podcast</span><span>Curadoria</span></div>
             </article>
             <article className="card bio-card" data-editable="support.apoiador2">
-              <div className="bio-photo">Foto</div>
+              <label className="bio-photo bio-photo-upload" data-page-photo-box="support.apoiador2">
+                <span>Foto</span>
+                <input className="admin-only" type="file" accept="image/*" data-page-photo="support.apoiador2" aria-label="Enviar foto do apoiador 2" />
+              </label>
               <h3>Apoiador 2</h3>
               <p data-rich>Espaço editável para apresentar outro apoiador, parceiro, coletivo, laboratório, grupo, instituição ou colaborador do projeto.</p>
               <p data-rich>Este card pode receber informações de contato, histórico, descrição da parceria e links relacionados.</p>

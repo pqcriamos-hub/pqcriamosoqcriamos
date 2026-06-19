@@ -1305,7 +1305,7 @@ body.public-preview .style-popover {
 body.admin-mode .format-toolbar { display: flex; }
 
 body.has-local-preview-shortcut {
-  padding-bottom: 92px;
+  padding-bottom: 156px;
 }
 
 .local-preview-shortcut {
@@ -1346,6 +1346,270 @@ body.has-local-preview-shortcut {
   min-height: 36px;
 }
 
+.bio-photo-upload,
+.gallery-cover-upload,
+.gallery-asset-image,
+.episode-thumb-upload,
+.gallery-card-open {
+  position: relative;
+  overflow: hidden;
+}
+
+.bio-photo-upload input[type="file"],
+.gallery-cover-upload input[type="file"],
+.gallery-asset-image input[type="file"],
+.episode-thumb-upload input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+body.admin-mode .bio-photo-upload::after,
+body.admin-mode .gallery-cover-upload::after,
+body.admin-mode .gallery-asset-image::after,
+body.admin-mode .episode-thumb-upload::after {
+  content: "Upload";
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  padding: 3px 8px;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: rgba(255, 249, 212, 0.96);
+  color: var(--terracotta-dark);
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+}
+
+body.admin-mode .episode-thumb-upload::after {
+  content: "Trocar thumb";
+}
+
+.episode-thumb-dim {
+  margin-top: 8px;
+  color: var(--terracotta-dark);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.gallery-card-open {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+}
+
+.gallery-card-actions {
+  margin-top: 12px;
+}
+
+.gallery-modal-panel {
+  width: min(1160px, calc(100vw - 32px));
+}
+
+.gallery-modal-hero {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.gallery-modal-cover,
+.gallery-asset-image {
+  display: grid;
+  place-items: center;
+  min-height: 240px;
+  border: var(--line);
+  background:
+    radial-gradient(circle at 74% 28%, rgba(239,232,142,.72) 0 22px, transparent 23px),
+    linear-gradient(135deg, rgba(255,255,255,.12), transparent 46%),
+    var(--terracotta);
+  background-size: cover;
+  background-position: center;
+  color: var(--cream);
+  text-align: center;
+}
+
+.gallery-modal-copy {
+  display: grid;
+  gap: 12px;
+}
+
+.gallery-modal-copy h3,
+.gallery-modal-section h3 {
+  font-size: clamp(30px, 4vw, 42px);
+  line-height: .96;
+}
+
+.gallery-modal-intro,
+.gallery-modal-copy p {
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.55;
+  text-align: justify;
+}
+
+.gallery-modal-section {
+  display: grid;
+  gap: 14px;
+  margin-top: 26px;
+}
+
+.gallery-modal-section-head {
+  display: grid;
+  gap: 6px;
+}
+
+.gallery-modal-hint {
+  color: var(--terracotta-dark);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.gallery-modal-tools {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.gallery-asset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.gallery-asset {
+  border: var(--line);
+  background: rgba(255,244,191,.78);
+  box-shadow: 5px 5px 0 rgba(31,26,8,.82);
+  overflow: hidden;
+}
+
+.gallery-asset-copy {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.gallery-asset-copy .meta {
+  margin-bottom: 0;
+}
+
+.gallery-asset-copy p {
+  margin: 0;
+}
+
+.youtube-preview-fallback {
+  min-height: clamp(260px, 34vw, 388px);
+  display: grid;
+  align-items: end;
+  padding: 22px;
+  background-size: cover;
+  background-position: center;
+}
+
+.youtube-preview-copy {
+  max-width: 360px;
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: var(--line);
+  background: rgba(255, 249, 212, 0.96);
+  box-shadow: 6px 6px 0 var(--shadow);
+}
+
+.youtube-preview-copy strong {
+  font-size: 16px;
+  text-transform: uppercase;
+}
+
+.style-popover-head {
+  cursor: move;
+}
+
+.style-popover.is-dragging {
+  user-select: none;
+}
+
+.layout-dock {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  z-index: 125;
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: var(--line);
+  border-radius: 999px;
+  background: rgba(255, 249, 212, 0.96);
+  box-shadow: 6px 6px 0 var(--shadow);
+  transform: translateX(-50%);
+}
+
+body.admin-mode .layout-dock {
+  display: inline-flex;
+}
+
+body.has-local-preview-shortcut .layout-dock {
+  bottom: 94px;
+}
+
+.layout-dock-label {
+  color: var(--terracotta-dark);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.layout-grid-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 118;
+  display: none;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(124,51,22,.28) 1px, transparent 1.4px);
+  background-size: 1cm 1cm;
+}
+
+body.layout-grid-mode .layout-grid-overlay {
+  display: block;
+}
+
+body.layout-grid-mode [data-drag-key] {
+  cursor: grab !important;
+}
+
+body.layout-grid-mode [data-editable],
+body.layout-grid-mode [data-rich],
+body.layout-grid-mode [data-gallery-field],
+body.layout-grid-mode [data-gallery-modal-field],
+body.layout-grid-mode [data-gallery-item-field] {
+  outline-style: solid;
+  outline-color: rgba(29,140,255,.58);
+}
+
+body.admin-mode [data-gallery-field],
+body.admin-mode [data-gallery-modal-field],
+body.admin-mode [data-gallery-item-field] {
+  outline: 2px dashed rgba(124,51,22,.55);
+  outline-offset: 3px;
+}
+
+body.public-preview [data-gallery-field],
+body.public-preview [data-gallery-modal-field],
+body.public-preview [data-gallery-item-field] {
+  outline: 0 !important;
+}
+
 @media (max-width: 1120px) {
   .hero,
   .about-layout,
@@ -1377,7 +1641,7 @@ body.has-local-preview-shortcut {
 
 @media (max-width: 780px) {
   body.has-local-preview-shortcut {
-    padding-bottom: 132px;
+    padding-bottom: 188px;
   }
 
   .page {
@@ -1427,5 +1691,9 @@ body.has-local-preview-shortcut {
   .local-preview-actions {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  body.has-local-preview-shortcut .layout-dock {
+    bottom: 142px;
   }
 }

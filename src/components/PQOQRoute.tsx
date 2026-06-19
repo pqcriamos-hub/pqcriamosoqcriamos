@@ -3,6 +3,7 @@ import { useEffect, type ReactNode } from "react";
 declare global {
   interface Window {
     PQOQLegacyInit?: () => void;
+    PQOQEditorPlusInit?: () => void;
   }
 }
 
@@ -18,8 +19,14 @@ export function PQOQRoute({ children, page, title }: PQOQRouteProps) {
     document.title = title;
 
     let active = true;
-    import("../legacy/pqoq-legacy.js").then(() => {
-      if (active) window.PQOQLegacyInit?.();
+    Promise.all([
+      import("../legacy/pqoq-legacy.js"),
+      import("../legacy/pqoq-editor-plus.js"),
+    ]).then(() => {
+      if (active) {
+        window.PQOQLegacyInit?.();
+        window.PQOQEditorPlusInit?.();
+      }
     });
 
     return () => {

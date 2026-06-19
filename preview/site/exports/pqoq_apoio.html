@@ -34,14 +34,20 @@
         </div>
         <div class="support-bios">
           <article class="card bio-card" data-editable="support.apoiador1">
-            <div class="bio-photo">Foto</div>
+            <label class="bio-photo bio-photo-upload" data-page-photo-box="support.apoiador1">
+              <span>Foto</span>
+              <input class="admin-only" type="file" accept="image/*" data-page-photo="support.apoiador1" aria-label="Enviar foto do apoiador 1">
+            </label>
             <h3>Apoiador 1</h3>
             <p data-rich>Espaço editável para apresentar um apoiador, instituição, pessoa parceira ou frente de colaboração do projeto.</p>
             <p data-rich>Use este campo para explicar como esse apoio participa da realização, circulação, infraestrutura, pesquisa, memória ou divulgação do PQOQ.</p>
             <div class="tag-list"><span>Pesquisa</span><span>Podcast</span><span>Curadoria</span></div>
           </article>
           <article class="card bio-card" data-editable="support.apoiador2">
-            <div class="bio-photo">Foto</div>
+            <label class="bio-photo bio-photo-upload" data-page-photo-box="support.apoiador2">
+              <span>Foto</span>
+              <input class="admin-only" type="file" accept="image/*" data-page-photo="support.apoiador2" aria-label="Enviar foto do apoiador 2">
+            </label>
             <h3>Apoiador 2</h3>
             <p data-rich>Espaço editável para apresentar outro apoiador, parceiro, coletivo, laboratório, grupo, instituição ou colaborador do projeto.</p>
             <p data-rich>Este card pode receber informações de contato, histórico, descrição da parceria e links relacionados.</p>
@@ -66,5 +72,6 @@
     </footer>
   </div>
   <script src="pqoq_multipage.js"></script>
+  <script src="pqoq_editor_plus.js"></script>
 </body>
 </html>

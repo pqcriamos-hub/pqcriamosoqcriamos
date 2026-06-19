@@ -1,12 +1,19 @@
 (() => {
   const STORAGE_PREFIX = "pqoq-site:";
-  const ADMIN_EMAIL = "pqcriamos@gmail.com";
-  const ADMIN_PASSWORD = "!Nnn2917022";
+  const localConfig = typeof window !== "undefined" ? window.PQOQ_CONFIG || {} : {};
+  const ADMIN_EMAIL = localConfig.adminEmail || "";
+  const ADMIN_PASSWORD = localConfig.adminPassword || "";
   const STYLE_STATE_KEY = "style-state";
+  const LINK_STATE_KEY = "link-state";
+  const PAGE_PHOTOS_KEY = "page-photos";
+  const LAYOUT_STATE_KEY = "layout-state";
+  const STYLE_POPOVER_POSITION_KEY = "style-popover-position";
   const STYLE_TARGET_SELECTOR = [
     "[data-editable]",
     "[data-rich]",
     "[data-gallery-field]",
+    "[data-gallery-modal-field]",
+    "[data-gallery-item-field]",
     "[data-artist-field]",
     "[data-artist-modal-field]",
     "[data-portfolio-field]",
@@ -36,22 +43,28 @@
     ".artist-card h3",
     ".artist-card p",
     ".platform-chip",
-    ".episode-back-link"
+    ".episode-back-link",
+    "[data-link-editable]"
   ].join(", ");
   const STYLE_SKIP_SELECTOR = [
     ".style-popover",
     ".editor-panel",
     ".local-preview-shortcut",
+    ".layout-grid-overlay",
+    ".layout-dock",
     "input",
     "textarea",
     "select",
     "[data-close-modal]",
     "[data-tab]",
+    "[data-open-gallery]",
     "[data-open-episode]",
     "[data-open-artist]",
     "[data-remove-artist]",
     "[data-remove-episode]",
     "[data-remove-gallery]",
+    "[data-remove-gallery-item]",
+    "[data-add-gallery-item]",
     "[data-add-portfolio-item]",
     "[data-remove-portfolio-item]",
     "[data-add-link-item]",
@@ -60,6 +73,7 @@
     "#artist-add",
     "#episode-add",
     "#gallery-add",
+    "[data-grid-toggle]",
     "[data-local-preview-action]",
     "#admin-login",
     "#admin-logout",
@@ -80,6 +94,10 @@
     "backgroundColor"
   ];
   let activeStyleTarget = null;
+  let stylePopoverDragged = false;
+  let gridMode = false;
+  let activeDragTarget = null;
+  let dragStart = null;
 
   const artistsDefault = [
     {
@@ -731,7 +749,13 @@
   }
 
   function isLocalPreview() {
-    return window.location.protocol === "file:" && window.location.href.includes("/preview/site/exports/");
+    const isFilePreview =
+      window.location.protocol === "file:" &&
+      window.location.href.includes("/preview/site/exports/");
+    const isLocalhostPreview =
+      ["127.0.0.1", "localhost"].includes(window.location.hostname) &&
+      /\/(index|pqoq_[^/]+)\.html$/i.test(window.location.pathname);
+    return isFilePreview || isLocalhostPreview;
   }
 
   function ensureLocalPreviewShortcut() {
