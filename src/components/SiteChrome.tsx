@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { EditorAuthBridge } from "./EditorAuthBridge";
 
 type ToolbarMode = "full" | "compact";
 
@@ -66,11 +67,13 @@ export function SiteFooter({ footerText, editorDescription, toolbar = "full" }: 
           <div className="admin-toolbar">
             <button className="button primary small" id="admin-login" type="button">Entrar</button>
             <button className="button small" id="admin-logout" type="button">Sair</button>
+            <button className="button small" id="admin-create" type="button">Criar conta de editor</button>
             <button className="button small" id="admin-reset" type="button">Resetar</button>
           </div>
           <FormatToolbar mode={toolbar} />
         </div>
       </details>
+      <EditorAuthBridge />
     </footer>
   );
 }
