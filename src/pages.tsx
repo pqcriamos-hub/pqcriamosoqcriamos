@@ -8,6 +8,21 @@ export function HomePage() {
     >
       <main>
         <section className="hero">
+          <h1
+            style={{
+              position: "absolute",
+              width: 1,
+              height: 1,
+              padding: 0,
+              margin: -1,
+              overflow: "hidden",
+              clip: "rect(0 0 0 0)",
+              whiteSpace: "nowrap",
+              border: 0,
+            }}
+          >
+            PQOQ: acervo e memória cultural do extremo sul da Bahia
+          </h1>
           <div>
             <div className="pill" data-editable="home.eyebrow">Nova temporada - podcast + videocast</div>
             <div className="intro-text" data-rich data-editable="home.description">
