@@ -16,7 +16,6 @@ interface PQOQRouteProps {
 export function PQOQRoute({ children, page, title }: PQOQRouteProps) {
   useEffect(() => {
     document.body.dataset.page = page;
-    document.title = title;
 
     let active = true;
     Promise.all([
