@@ -1602,6 +1602,12 @@
     const reset = document.getElementById("admin-reset");
     const message = document.getElementById("admin-message");
 
+    // Expose the edit-mode toggle so the real Supabase auth bridge can drive it.
+    window.PQOQLegacySetEditing = setAdminEditing;
+
+    // When the real authentication bridge is present, it owns Entrar/Sair.
+    // Skip the placeholder handlers to avoid double-binding clicks.
+    if (!window.PQOQ_AUTH) {
     login?.addEventListener("click", () => {
       const email = document.getElementById("admin-email")?.value.trim();
       const password = document.getElementById("admin-password")?.value;
@@ -1621,6 +1627,7 @@
       setAdminEditing(false);
       if (message) message.textContent = "Modo administrador desativado.";
     });
+    }
 
     reset?.addEventListener("click", () => {
       Object.keys(localStorage)
