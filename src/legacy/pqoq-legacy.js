@@ -284,6 +284,13 @@
 
   function setState(key, value) {
     localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
+    try {
+      if (typeof window !== "undefined" && window.PQOQ_REMOTE && typeof window.PQOQ_REMOTE.save === "function") {
+        window.PQOQ_REMOTE.save(key, value);
+      }
+    } catch (err) {
+      /* remote sync is best-effort */
+    }
   }
 
   function escapeHtml(value) {
@@ -1179,18 +1186,6 @@
             <input type="file" accept="audio/*" data-episode-file="${episode.id}" data-file-field="mp3">
           </label>
         </div>
-      </div>
-
-      <div class="episode-summary-grid">
-        <article class="episode-summary-card">
-          <p data-editable="episode.${episode.id}.subtitle">Por que criamos o que criamos?</p>
-        </article>
-        <article class="episode-summary-card episode-summary-description">
-          <p data-rich data-episode-description="${episode.id}">${episode.description}</p>
-        </article>
-        <article class="episode-summary-card">
-          <p data-editable="episode.${episode.id}.artistline">${episode.artist} · ${episode.date} · ${episode.duration}</p>
-        </article>
       </div>
 
       <div class="episode-artist-panel">
