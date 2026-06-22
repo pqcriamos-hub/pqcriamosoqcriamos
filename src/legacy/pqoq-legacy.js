@@ -284,6 +284,13 @@
 
   function setState(key, value) {
     localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
+    try {
+      if (typeof window !== "undefined" && window.PQOQ_REMOTE && typeof window.PQOQ_REMOTE.save === "function") {
+        window.PQOQ_REMOTE.save(key, value);
+      }
+    } catch (err) {
+      /* remote sync is best-effort */
+    }
   }
 
   function escapeHtml(value) {
