@@ -1181,18 +1181,6 @@
         </div>
       </div>
 
-      <div class="episode-summary-grid">
-        <article class="episode-summary-card">
-          <p data-editable="episode.${episode.id}.subtitle">Por que criamos o que criamos?</p>
-        </article>
-        <article class="episode-summary-card episode-summary-description">
-          <p data-rich data-episode-description="${episode.id}">${episode.description}</p>
-        </article>
-        <article class="episode-summary-card">
-          <p data-editable="episode.${episode.id}.artistline">${episode.artist} · ${episode.date} · ${episode.duration}</p>
-        </article>
-      </div>
-
       <div class="episode-artist-panel">
         <h2 class="lettered">Sobre ${escapeHtml(artist?.name || episode.artist)}</h2>
         <p data-rich data-episode-artist-bio="${artist?.id || episode.artistId}">${artist?.bio || "Biografia editável do artista."}</p>
