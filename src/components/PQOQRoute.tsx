@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from "react";
+import { hydrateFromRemote, installRemoteSync } from "@/lib/site-content-sync";
 
 declare global {
   interface Window {
@@ -18,7 +19,9 @@ export function PQOQRoute({ children, page, title }: PQOQRouteProps) {
     document.body.dataset.page = page;
 
     let active = true;
+    installRemoteSync();
     Promise.all([
+      hydrateFromRemote(),
       import("../legacy/pqoq-legacy.js"),
       import("../legacy/pqoq-editor-plus.js"),
     ]).then(() => {
