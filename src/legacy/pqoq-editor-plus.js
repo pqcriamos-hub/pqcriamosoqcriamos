@@ -1042,6 +1042,7 @@
     enhanceEpisodeThumbs();
     fixYouTubePreview();
     ensureGalleryModal();
+    ensureLightbox();
     ensureLayoutDock();
     attachPopoverDragging();
     restorePopoverPosition();
