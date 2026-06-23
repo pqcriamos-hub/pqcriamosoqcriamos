@@ -506,23 +506,30 @@
     const itemId = input.dataset.galleryItem;
     const file = input.files?.[0];
     if (!cardId || !file) return;
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      const list = galleryCards();
-      const card = list.find((entry) => entry.id === cardId);
-      if (!card) return;
-      if (input.dataset.galleryCover) {
-        card.coverImage = String(reader.result || "");
-      } else {
-        const item = card.items.find((entry) => entry.id === itemId);
-        if (item) item.image = String(reader.result || "");
-      }
-      saveGalleryCards(list);
-      renderGalleryCards();
-      renderGalleryModal(cardId);
-      queueEnhance();
-    });
-    reader.readAsDataURL(file);
+    const prefix = input.dataset.galleryCover
+      ? `gallery/${cardId}/covers`
+      : `gallery/${cardId}/items`;
+    input.disabled = true;
+    uploadEditorMedia(file, prefix)
+      .then(({ url }) => {
+        const list = galleryCards();
+        const card = list.find((entry) => entry.id === cardId);
+        if (!card) return;
+        if (input.dataset.galleryCover) {
+          card.coverImage = url;
+        } else {
+          const item = card.items.find((entry) => entry.id === itemId);
+          if (item) item.image = url;
+        }
+        saveGalleryCards(list);
+        renderGalleryCards();
+        renderGalleryModal(cardId);
+        queueEnhance();
+      })
+      .catch(() => {})
+      .finally(() => {
+        input.disabled = false;
+      });
   }
 
   function syncGalleryModalEditability() {
