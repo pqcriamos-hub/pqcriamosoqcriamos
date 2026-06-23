@@ -43,38 +43,47 @@
   const galleryDefaults = [
     {
       id: "gallery-recordings",
+      slug: "gravacoes",
       meta: "Bastidores",
       title: "Gravacoes",
       description: "Registros do set, do Espaco Colaborar e da equipe em processo.",
       intro: "Use esta galeria para reunir making of, disposicao do set, montagem de luz, registros de ensaio, capturas da conversa e memoria de producao.",
       coverImage: "",
+      published: true,
+      sortOrder: 0,
       items: [
-        { id: "recording-set", title: "Set de gravacao", caption: "Mesa, enquadramento, luz e atmosfera do episodio.", credit: "Bastidores", link: "", image: "" },
-        { id: "recording-process", title: "Processo de conversa", caption: "Trechos do encontro, anotacoes, roteiro e material de apoio.", credit: "Processo", link: "", image: "" }
+        { id: "recording-set", title: "Set de gravacao", caption: "Mesa, enquadramento, luz e atmosfera do episodio.", description: "", credit: "Bastidores", link: "", image: "", episode: "", date: "", location: "", tags: [], published: true, sortOrder: 0 },
+        { id: "recording-process", title: "Processo de conversa", caption: "Trechos do encontro, anotacoes, roteiro e material de apoio.", description: "", credit: "Processo", link: "", image: "", episode: "", date: "", location: "", tags: [], published: true, sortOrder: 1 }
       ]
     },
     {
       id: "gallery-covers",
+      slug: "capas",
       meta: "Identidade visual",
       title: "Capas",
       description: "Artes dos episodios, thumbnails e pecas graficas do projeto.",
       intro: "Aqui entram capas principais, thumbnails, pecas para redes, cartazes de circulacao e variacoes visuais de cada temporada.",
       coverImage: "",
+      published: true,
+      sortOrder: 1,
       items: [
-        { id: "cover-main", title: "Capa do episodio", caption: "Arte principal usada no streaming, no feed e no arquivo do projeto.", credit: "Design", link: "", image: "" },
-        { id: "cover-social", title: "Peca para divulgacao", caption: "Recortes visuais para stories, cartazes, reels e posts de circulacao.", credit: "Rede", link: "", image: "" }
+        { id: "cover-main", title: "Capa do episodio", caption: "Arte principal usada no streaming, no feed e no arquivo do projeto.", description: "", credit: "Design", link: "", image: "", episode: "", date: "", location: "", tags: [], published: true, sortOrder: 0 },
+        { id: "cover-social", title: "Peca para divulgacao", caption: "Recortes visuais para stories, cartazes, reels e posts de circulacao.", description: "", credit: "Rede", link: "", image: "", episode: "", date: "", location: "", tags: [], published: true, sortOrder: 1 }
       ]
     },
     {
       id: "gallery-works",
+      slug: "obras",
       meta: "Acervo de artistas",
       title: "Obras",
       description: "Imagens, processos e fragmentos visuais ligados a cada convidado.",
       intro: "Organize obras, fragmentos, documentos, estudos, fotografias de processo e materiais enviados pelos artistas convidados.",
       coverImage: "",
+      published: true,
+      sortOrder: 2,
       items: [
-        { id: "works-piece", title: "Obra principal", caption: "Imagem de destaque do artista ou do episodio relacionado.", credit: "Acervo", link: "", image: "" },
-        { id: "works-process", title: "Processo criativo", caption: "Rascunho, detalhe, textura, fragmento ou documento de processo.", credit: "Memoria", link: "", image: "" }
+        { id: "works-piece", title: "Obra principal", caption: "Imagem de destaque do artista ou do episodio relacionado.", description: "", credit: "Acervo", link: "", image: "", episode: "", date: "", location: "", tags: [], published: true, sortOrder: 0 },
+        { id: "works-process", title: "Processo criativo", caption: "Rascunho, detalhe, textura, fragmento ou documento de processo.", description: "", credit: "Memoria", link: "", image: "", episode: "", date: "", location: "", tags: [], published: true, sortOrder: 1 }
       ]
     }
   ];
@@ -85,6 +94,8 @@
   let gridMode = false;
   let activeDrag = null;
   let popoverDrag = null;
+  let activeGalleryId = null;
+  let lightboxState = null;
 
   function getState(key, fallback) {
     try {
@@ -131,31 +142,74 @@
   }
 
   function normalizeGalleryItem(item, index) {
+    const tags = Array.isArray(item.tags)
+      ? item.tags.map((t) => String(t).trim()).filter(Boolean)
+      : item.tags
+        ? String(item.tags).split(",").map((t) => t.trim()).filter(Boolean)
+        : [];
     return {
       id: item.id || assetId(`gallery-item-${index + 1}`),
       title: item.title || `Item ${index + 1}`,
       caption: item.caption || "Legenda editavel do item da galeria.",
+      description: item.description || "",
       credit: item.credit || "Acervo",
       link: item.link || "",
-      image: item.image || ""
+      image: item.image || "",
+      episode: item.episode || "",
+      date: item.date || "",
+      location: item.location || "",
+      tags,
+      published: item.published !== false,
+      sortOrder: typeof item.sortOrder === "number" ? item.sortOrder : index
     };
+  }
+
+  function slugify(value) {
+    return (
+      String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 48) || "galeria"
+    );
   }
 
   function galleryCards() {
     const list = getState(GALLERY_KEY, galleryDefaults);
-    return list.map((card, index) => ({
-      id: card.id || `gallery-card-${index + 1}`,
-      meta: card.meta || "Nova categoria",
-      title: card.title || `Nova galeria ${index + 1}`,
-      description: card.description || "Descricao editavel da galeria.",
-      intro: card.intro || "Apresentacao editavel da galeria.",
-      coverImage: card.coverImage || "",
-      items: Array.isArray(card.items) ? card.items.map(normalizeGalleryItem) : []
-    }));
+    return list
+      .map((card, index) => {
+        const items = (Array.isArray(card.items) ? card.items.map(normalizeGalleryItem) : [])
+          .sort((a, b) => a.sortOrder - b.sortOrder);
+        return {
+          id: card.id || `gallery-card-${index + 1}`,
+          slug: card.slug || slugify(card.title || card.id || `galeria-${index + 1}`),
+          meta: card.meta || "Nova categoria",
+          title: card.title || `Nova galeria ${index + 1}`,
+          description: card.description || "Descricao editavel da galeria.",
+          intro: card.intro || "Apresentacao editavel da galeria.",
+          coverImage: card.coverImage || "",
+          published: card.published !== false,
+          sortOrder: typeof card.sortOrder === "number" ? card.sortOrder : index,
+          items
+        };
+      })
+      .sort((a, b) => a.sortOrder - b.sortOrder);
   }
 
   function saveGalleryCards(list) {
     setState(GALLERY_KEY, list);
+  }
+
+  // Public visitors only see published galleries/items; editors see everything.
+  function visibleCards() {
+    const cards = galleryCards();
+    return isAdmin() ? cards : cards.filter((card) => card.published);
+  }
+
+  function visibleItems(card) {
+    return isAdmin() ? card.items : card.items.filter((item) => item.published);
   }
 
   function pagePhotos() {
@@ -314,15 +368,24 @@
 
   function galleryCardTemplate(card) {
     const coverStyle = card.coverImage ? ` style="background-image:url('${escapeHtml(card.coverImage)}')"` : "";
+    const unpub = card.published ? "" : " is-unpublished";
     return `
-      <article class="card gallery-card gallery-card-plus" data-gallery-id="${card.id}">
+      <article class="card gallery-card gallery-card-plus${unpub}" data-gallery-id="${card.id}">
         <button class="gallery-thumb gallery-card-open" type="button" data-open-gallery="${card.id}"${coverStyle}></button>
+        <span class="gallery-status admin-only">${card.published ? "Publicada" : "Rascunho"}</span>
         <div class="meta" data-gallery-field="meta">${escapeHtml(card.meta)}</div>
         <h3 data-gallery-field="title">${escapeHtml(card.title)}</h3>
         <p data-gallery-field="description">${escapeHtml(card.description)}</p>
         <div class="artist-actions gallery-card-actions">
           <button class="button primary small" type="button" data-open-gallery="${card.id}">Abrir galeria</button>
-          <button class="button small admin-only" type="button" data-remove-gallery="${card.id}">Remover</button>
+        </div>
+        <div class="admin-only admin-row compact gallery-card-admin">
+          <div class="gallery-admin-controls">
+            <button class="button small" type="button" data-gallery-move="up" data-gallery-id="${card.id}" aria-label="Subir galeria">&uarr;</button>
+            <button class="button small" type="button" data-gallery-move="down" data-gallery-id="${card.id}" aria-label="Descer galeria">&darr;</button>
+            <button class="button small" type="button" data-toggle-gallery-publish="${card.id}">${card.published ? "Despublicar" : "Publicar"}</button>
+            <button class="button small" type="button" data-remove-gallery="${card.id}">Remover</button>
+          </div>
         </div>
       </article>
     `;
@@ -331,7 +394,10 @@
   function renderGalleryCards() {
     const container = document.querySelector("[data-render-gallery-list]");
     if (!container) return;
-    container.innerHTML = galleryCards().map(galleryCardTemplate).join("");
+    const cards = visibleCards();
+    container.innerHTML = cards.length
+      ? cards.map(galleryCardTemplate).join("")
+      : '<div class="empty-state">Nenhuma galeria publicada ainda.</div>';
   }
 
   function ensureGalleryModal() {
@@ -352,22 +418,60 @@
   function galleryItemTemplate(cardId, item) {
     const imageStyle = item.image ? ` style="background-image:url('${escapeHtml(item.image)}')"` : "";
     const linkButton = item.link ? `<a class="button small" href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">Abrir referencia</a>` : "";
+    const hasMore = !!(item.description && item.description.trim());
+    const metaLine = [item.date, item.location].filter(Boolean).map(escapeHtml).join(" &middot; ");
+    const tagsHtml = item.tags && item.tags.length
+      ? `<div class="gallery-item-tags">${item.tags.map((t) => `<span class="gallery-tag">${escapeHtml(t)}</span>`).join("")}</div>`
+      : "";
+    const unpub = item.published ? "" : " is-unpublished";
+    const moreBlock = hasMore
+      ? `<div class="gallery-asset-more" data-gallery-more hidden>${escapeHtml(item.description)}</div>
+         <button class="gallery-more-toggle" type="button" data-more-toggle aria-expanded="false">Ler mais</button>`
+      : "";
     return `
-      <article class="gallery-asset" data-gallery-id="${cardId}" data-gallery-item-id="${item.id}">
+      <article class="gallery-asset${unpub}" data-gallery-id="${cardId}" data-gallery-item-id="${item.id}">
         <label class="gallery-asset-image"${imageStyle}>
           <span>${item.image ? "" : "Imagem"}</span>
           <input class="admin-only" type="file" accept="image/*" data-gallery-item-image="${cardId}" data-gallery-item="${item.id}" aria-label="Enviar imagem do item ${escapeHtml(item.title)}">
+          <button class="gallery-asset-zoom" type="button" data-open-lightbox="${item.id}" data-gallery-id="${cardId}" aria-label="Ampliar ${escapeHtml(item.title)}"></button>
+          <span class="gallery-status admin-only">${item.published ? "Publicado" : "Rascunho"}</span>
         </label>
         <div class="gallery-asset-copy">
           <div class="meta" data-gallery-item-field="credit">${escapeHtml(item.credit)}</div>
           <h3 data-gallery-item-field="title">${escapeHtml(item.title)}</h3>
           <p data-gallery-item-field="caption">${escapeHtml(item.caption)}</p>
-          ${linkButton}
-          <div class="admin-only admin-row compact">
-            <label>Link de referencia
-              <input type="url" value="${escapeHtml(item.link)}" data-gallery-item-link="${cardId}" data-gallery-item="${item.id}" placeholder="https://...">
+          ${moreBlock}
+          ${metaLine ? `<div class="gallery-item-metaline">${metaLine}</div>` : ""}
+          ${tagsHtml}
+          <div class="gallery-asset-foot">
+            ${linkButton}
+            <button class="button small gallery-share" type="button" data-share-item="${item.id}" data-gallery-id="${cardId}">Compartilhar</button>
+          </div>
+          <div class="admin-only admin-row compact gallery-item-admin">
+            <label>Descricao expandida
+              <textarea rows="3" data-gallery-item-input="description" data-gallery-id="${cardId}" data-gallery-item="${item.id}" placeholder="Descricao completa da imagem">${escapeHtml(item.description)}</textarea>
             </label>
-            <button class="button small" type="button" data-remove-gallery-item="${cardId}" data-gallery-item="${item.id}">Remover item</button>
+            <label>Episodio relacionado
+              <input type="text" value="${escapeHtml(item.episode)}" data-gallery-item-input="episode" data-gallery-id="${cardId}" data-gallery-item="${item.id}" placeholder="EP01">
+            </label>
+            <label>Data
+              <input type="text" value="${escapeHtml(item.date)}" data-gallery-item-input="date" data-gallery-id="${cardId}" data-gallery-item="${item.id}" placeholder="2026">
+            </label>
+            <label>Local
+              <input type="text" value="${escapeHtml(item.location)}" data-gallery-item-input="location" data-gallery-id="${cardId}" data-gallery-item="${item.id}" placeholder="Espaco Colaborar">
+            </label>
+            <label>Tags (separadas por virgula)
+              <input type="text" value="${escapeHtml(item.tags.join(", "))}" data-gallery-item-input="tags" data-gallery-id="${cardId}" data-gallery-item="${item.id}" placeholder="bastidor, luz">
+            </label>
+            <label>Link de referencia
+              <input type="url" value="${escapeHtml(item.link)}" data-gallery-item-input="link" data-gallery-id="${cardId}" data-gallery-item="${item.id}" placeholder="https://...">
+            </label>
+            <div class="gallery-admin-controls">
+              <button class="button small" type="button" data-gallery-item-move="up" data-gallery-id="${cardId}" data-gallery-item="${item.id}" aria-label="Subir item">&uarr;</button>
+              <button class="button small" type="button" data-gallery-item-move="down" data-gallery-id="${cardId}" data-gallery-item="${item.id}" aria-label="Descer item">&darr;</button>
+              <button class="button small" type="button" data-toggle-item-publish="${item.id}" data-gallery-id="${cardId}">${item.published ? "Despublicar" : "Publicar"}</button>
+              <button class="button small" type="button" data-remove-gallery-item="${cardId}" data-gallery-item="${item.id}">Remover item</button>
+            </div>
           </div>
         </div>
       </article>
@@ -380,7 +484,9 @@
     const body = document.getElementById("gallery-modal-body");
     const title = document.getElementById("gallery-modal-title");
     if (!card || !body || !title) return;
+    activeGalleryId = cardId;
     title.textContent = card.title;
+    const items = visibleItems(card);
     body.innerHTML = `
       <section class="gallery-modal-hero">
         <label class="gallery-modal-cover gallery-cover-upload"${card.coverImage ? ` style="background-image:url('${escapeHtml(card.coverImage)}')"` : ""}>
@@ -392,18 +498,21 @@
           <h3 data-gallery-modal-field="title" data-gallery-id="${card.id}">${escapeHtml(card.title)}</h3>
           <p data-gallery-modal-field="description" data-gallery-id="${card.id}">${escapeHtml(card.description)}</p>
           <div class="gallery-modal-intro" data-gallery-modal-field="intro" data-gallery-id="${card.id}">${escapeHtml(card.intro)}</div>
+          <div class="gallery-modal-actions">
+            <button class="button small gallery-share" type="button" data-share-gallery="${card.id}">Compartilhar</button>
+          </div>
         </div>
       </section>
       <section class="gallery-modal-section">
         <div class="gallery-modal-section-head">
           <h3>Acervo interno</h3>
-          <div class="gallery-modal-hint">Sugestao de uso: obras, capas, bastidores, processo, documentos, links e memoria visual do episodio.</div>
+          <div class="gallery-modal-hint">Clique em uma imagem para ampliar. Use "Ler mais" para abrir a descricao completa.</div>
         </div>
         <div class="admin-only gallery-modal-tools">
           <button class="button primary small" type="button" data-add-gallery-item="${card.id}">Adicionar item</button>
         </div>
-        <div class="gallery-asset-grid">
-          ${card.items.map((item) => galleryItemTemplate(card.id, item)).join("") || '<div class="empty-state">Nenhum item ainda.</div>'}
+        <div class="gallery-asset-grid gallery-mosaic">
+          ${items.map((item) => galleryItemTemplate(card.id, item)).join("") || '<div class="empty-state">Nenhum item ainda.</div>'}
         </div>
       </section>
     `;
@@ -449,15 +558,83 @@
     saveGalleryCards(list);
   }
 
+  function updateGalleryItemInput(cardId, itemId, field, value) {
+    const list = galleryCards();
+    const card = list.find((entry) => entry.id === cardId);
+    const item = card?.items.find((entry) => entry.id === itemId);
+    if (!item) return;
+    if (field === "tags") {
+      item.tags = value.split(",").map((t) => t.trim()).filter(Boolean);
+    } else {
+      item[field] = value;
+    }
+    saveGalleryCards(list);
+  }
+
+  function moveGalleryCard(cardId, dir) {
+    const list = galleryCards();
+    const idx = list.findIndex((c) => c.id === cardId);
+    const target = dir === "up" ? idx - 1 : idx + 1;
+    if (idx < 0 || target < 0 || target >= list.length) return;
+    const tmp = list[idx];
+    list[idx] = list[target];
+    list[target] = tmp;
+    list.forEach((c, i) => { c.sortOrder = i; });
+    saveGalleryCards(list);
+    renderGalleryCards();
+    queueEnhance();
+  }
+
+  function toggleGalleryPublish(cardId) {
+    const list = galleryCards();
+    const card = list.find((c) => c.id === cardId);
+    if (!card) return;
+    card.published = !card.published;
+    saveGalleryCards(list);
+    renderGalleryCards();
+    queueEnhance();
+  }
+
+  function moveGalleryItem(cardId, itemId, dir) {
+    const list = galleryCards();
+    const card = list.find((c) => c.id === cardId);
+    if (!card) return;
+    const idx = card.items.findIndex((i) => i.id === itemId);
+    const target = dir === "up" ? idx - 1 : idx + 1;
+    if (idx < 0 || target < 0 || target >= card.items.length) return;
+    const tmp = card.items[idx];
+    card.items[idx] = card.items[target];
+    card.items[target] = tmp;
+    card.items.forEach((i, n) => { i.sortOrder = n; });
+    saveGalleryCards(list);
+    renderGalleryModal(cardId);
+    queueEnhance();
+  }
+
+  function toggleItemPublish(cardId, itemId) {
+    const list = galleryCards();
+    const card = list.find((c) => c.id === cardId);
+    const item = card?.items.find((i) => i.id === itemId);
+    if (!item) return;
+    item.published = !item.published;
+    saveGalleryCards(list);
+    renderGalleryModal(cardId);
+    queueEnhance();
+  }
+
   function addGalleryCard() {
     const list = galleryCards();
+    const title = `Nova galeria ${list.length + 1}`;
     list.push({
       id: assetId("gallery"),
+      slug: slugify(title) + "-" + Math.random().toString(16).slice(2, 6),
       meta: "Nova categoria",
-      title: `Nova galeria ${list.length + 1}`,
+      title,
       description: "Descricao editavel da galeria.",
       intro: "Apresentacao editavel da galeria.",
       coverImage: "",
+      published: false,
+      sortOrder: list.length,
       items: []
     });
     saveGalleryCards(list);
@@ -482,10 +659,18 @@
       id: assetId("gallery-item"),
       title: "Novo item",
       caption: "Legenda editavel do item da galeria.",
+      description: "",
       credit: "Acervo",
       link: "",
-      image: ""
+      image: "",
+      episode: "",
+      date: "",
+      location: "",
+      tags: [],
+      published: false,
+      sortOrder: -1
     });
+    card.items.forEach((i, n) => { i.sortOrder = n; });
     saveGalleryCards(list);
     renderGalleryModal(cardId);
     queueEnhance();
@@ -495,6 +680,7 @@
     const list = galleryCards();
     const card = list.find((entry) => entry.id === cardId);
     if (!card) return;
+    if (!window.confirm("Remover este item?")) return;
     card.items = card.items.filter((entry) => entry.id !== itemId);
     saveGalleryCards(list);
     renderGalleryModal(cardId);
@@ -537,6 +723,143 @@
       element.contentEditable = isAdmin() ? "true" : "false";
       element.spellcheck = true;
     });
+  }
+
+  // ---- Lightbox -----------------------------------------------------------
+  function ensureLightbox() {
+    if (document.getElementById("gallery-lightbox")) return;
+    document.body.insertAdjacentHTML("beforeend", `
+      <div class="modal gallery-lightbox" id="gallery-lightbox" aria-hidden="true">
+        <div class="lightbox-panel">
+          <button class="close-modal lightbox-close" type="button" data-close-lightbox aria-label="Fechar">&times;</button>
+          <button class="lightbox-nav lightbox-prev" type="button" data-lightbox-prev aria-label="Anterior">&#8249;</button>
+          <figure class="lightbox-figure">
+            <div class="lightbox-image" data-lightbox-image></div>
+            <figcaption class="lightbox-copy">
+              <div class="meta" data-lightbox-credit></div>
+              <h3 data-lightbox-title></h3>
+              <p class="lightbox-caption" data-lightbox-caption></p>
+              <p class="lightbox-desc" data-lightbox-desc></p>
+              <div class="lightbox-meta" data-lightbox-meta></div>
+              <div class="gallery-item-tags" data-lightbox-tags></div>
+              <button class="button small gallery-share" type="button" data-lightbox-share>Compartilhar</button>
+            </figcaption>
+          </figure>
+          <button class="lightbox-nav lightbox-next" type="button" data-lightbox-next aria-label="Proximo">&#8250;</button>
+        </div>
+      </div>
+    `);
+  }
+
+  function renderLightbox() {
+    if (!lightboxState) return;
+    const lb = document.getElementById("gallery-lightbox");
+    if (!lb) return;
+    const item = lightboxState.items[lightboxState.index];
+    if (!item) return;
+    const img = lb.querySelector("[data-lightbox-image]");
+    img.style.backgroundImage = item.image ? `url('${String(item.image).replace(/'/g, "%27")}')` : "";
+    img.classList.toggle("is-empty", !item.image);
+    lb.querySelector("[data-lightbox-credit]").textContent = item.credit || "";
+    lb.querySelector("[data-lightbox-title]").textContent = item.title || "";
+    lb.querySelector("[data-lightbox-caption]").textContent = item.caption || "";
+    const desc = lb.querySelector("[data-lightbox-desc]");
+    desc.textContent = item.description || "";
+    desc.style.display = item.description ? "" : "none";
+    const metaParts = [];
+    if (item.date) metaParts.push(item.date);
+    if (item.location) metaParts.push(item.location);
+    if (item.episode) metaParts.push("Episodio " + item.episode);
+    lb.querySelector("[data-lightbox-meta]").textContent = metaParts.join(" \u00b7 ");
+    lb.querySelector("[data-lightbox-tags]").innerHTML = (item.tags || [])
+      .map((t) => `<span class="gallery-tag">${escapeHtml(t)}</span>`)
+      .join("");
+    const single = lightboxState.items.length <= 1;
+    lb.querySelector("[data-lightbox-prev]").style.display = single ? "none" : "";
+    lb.querySelector("[data-lightbox-next]").style.display = single ? "none" : "";
+  }
+
+  function openLightbox(cardId, itemId) {
+    ensureLightbox();
+    const card = galleryCards().find((c) => c.id === cardId);
+    if (!card) return;
+    const items = visibleItems(card);
+    const index = items.findIndex((i) => i.id === itemId);
+    if (index < 0) return;
+    lightboxState = { cardId, items, index };
+    renderLightbox();
+    const lb = document.getElementById("gallery-lightbox");
+    lb?.classList.add("is-open");
+    lb?.setAttribute("aria-hidden", "false");
+  }
+
+  function moveLightbox(delta) {
+    if (!lightboxState || lightboxState.items.length <= 1) return;
+    const n = lightboxState.items.length;
+    lightboxState.index = (lightboxState.index + delta + n) % n;
+    renderLightbox();
+  }
+
+  function closeLightbox() {
+    const lb = document.getElementById("gallery-lightbox");
+    lb?.classList.remove("is-open");
+    lb?.setAttribute("aria-hidden", "true");
+    lightboxState = null;
+  }
+
+  // ---- Sharing ------------------------------------------------------------
+  function galleryToast(message) {
+    let el = document.getElementById("gallery-toast");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "gallery-toast";
+      el.className = "gallery-toast";
+      document.body.appendChild(el);
+    }
+    el.textContent = message;
+    el.classList.add("is-visible");
+    clearTimeout(el._timer);
+    el._timer = setTimeout(() => el.classList.remove("is-visible"), 2200);
+  }
+
+  async function shareContent(title, text, slugRef) {
+    let url = window.location.href;
+    try {
+      if (slugRef) {
+        const u = new URL(window.location.href);
+        u.hash = slugRef;
+        url = u.toString();
+      }
+    } catch {
+      /* keep plain url */
+    }
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text, url });
+        return;
+      }
+    } catch {
+      return; // user cancelled the native sheet
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      galleryToast("Link copiado");
+    } catch {
+      galleryToast("Nao foi possivel compartilhar");
+    }
+  }
+
+  function shareGallery(cardId) {
+    const card = galleryCards().find((c) => c.id === cardId);
+    if (!card) return;
+    shareContent(`${card.title} - PQOQ`, card.description || card.meta || "", `galeria-${card.slug}`);
+  }
+
+  function shareItem(cardId, itemId) {
+    const card = galleryCards().find((c) => c.id === cardId);
+    const item = card?.items.find((i) => i.id === itemId);
+    if (!item) return;
+    shareContent(`${item.title} - PQOQ`, item.caption || "", `galeria-${card.slug}-${item.id}`);
   }
 
   function enhanceEpisodeThumbs() {
@@ -719,6 +1042,7 @@
     enhanceEpisodeThumbs();
     fixYouTubePreview();
     ensureGalleryModal();
+    ensureLightbox();
     ensureLayoutDock();
     attachPopoverDragging();
     restorePopoverPosition();
@@ -728,6 +1052,47 @@
 
   function bindGlobalEvents() {
     document.addEventListener("click", (event) => {
+      // Lightbox controls (highest priority, sits above the modal)
+      const openLb = event.target.closest("[data-open-lightbox]");
+      if (openLb) {
+        event.preventDefault();
+        openLightbox(openLb.dataset.galleryId, openLb.dataset.openLightbox);
+        return;
+      }
+      const closeLb = event.target.closest("[data-close-lightbox]");
+      if (closeLb || event.target.id === "gallery-lightbox") {
+        closeLightbox();
+        return;
+      }
+      if (event.target.closest("[data-lightbox-prev]")) { moveLightbox(-1); return; }
+      if (event.target.closest("[data-lightbox-next]")) { moveLightbox(1); return; }
+      const lbShare = event.target.closest("[data-lightbox-share]");
+      if (lbShare && lightboxState) {
+        const item = lightboxState.items[lightboxState.index];
+        if (item) shareItem(lightboxState.cardId, item.id);
+        return;
+      }
+
+      // "Ler mais" expand/collapse
+      const moreToggle = event.target.closest("[data-more-toggle]");
+      if (moreToggle) {
+        event.preventDefault();
+        const block = moreToggle.parentElement.querySelector("[data-gallery-more]");
+        if (block) {
+          const willShow = block.hasAttribute("hidden");
+          block.toggleAttribute("hidden", !willShow);
+          moreToggle.setAttribute("aria-expanded", String(willShow));
+          moreToggle.textContent = willShow ? "Ler menos" : "Ler mais";
+        }
+        return;
+      }
+
+      // Sharing
+      const shareG = event.target.closest("[data-share-gallery]");
+      if (shareG) { event.preventDefault(); shareGallery(shareG.dataset.shareGallery); return; }
+      const shareI = event.target.closest("[data-share-item]");
+      if (shareI) { event.preventDefault(); shareItem(shareI.dataset.galleryId, shareI.dataset.shareItem); return; }
+
       const galleryButton = event.target.closest("[data-open-gallery]");
       if (galleryButton) {
         event.preventDefault();
@@ -743,11 +1108,23 @@
       const addGallery = event.target.closest("#gallery-add");
       if (addGallery && isAdmin()) addGalleryCard();
 
+      const moveGallery = event.target.closest("[data-gallery-move]");
+      if (moveGallery && isAdmin()) { moveGalleryCard(moveGallery.dataset.galleryId, moveGallery.dataset.galleryMove); return; }
+
+      const togglePub = event.target.closest("[data-toggle-gallery-publish]");
+      if (togglePub && isAdmin()) { toggleGalleryPublish(togglePub.dataset.toggleGalleryPublish); return; }
+
       const removeGallery = event.target.closest("[data-remove-gallery]");
       if (removeGallery) removeGalleryCard(removeGallery.dataset.removeGallery);
 
       const addGalleryItemButton = event.target.closest("[data-add-gallery-item]");
       if (addGalleryItemButton && isAdmin()) addGalleryItem(addGalleryItemButton.dataset.addGalleryItem);
+
+      const moveItem = event.target.closest("[data-gallery-item-move]");
+      if (moveItem && isAdmin()) { moveGalleryItem(moveItem.dataset.galleryId, moveItem.dataset.galleryItem, moveItem.dataset.galleryItemMove); return; }
+
+      const toggleItemPub = event.target.closest("[data-toggle-item-publish]");
+      if (toggleItemPub && isAdmin()) { toggleItemPublish(toggleItemPub.dataset.galleryId, toggleItemPub.dataset.toggleItemPublish); return; }
 
       const removeGalleryItemButton = event.target.closest("[data-remove-gallery-item]");
       if (removeGalleryItemButton && isAdmin()) removeGalleryItem(removeGalleryItemButton.dataset.removeGalleryItem, removeGalleryItemButton.dataset.galleryItem);
@@ -780,9 +1157,14 @@
         updateGalleryItemField(cardId, itemId, galleryItemField.dataset.galleryItemField, galleryItemField.textContent.trim());
       }
 
-      const galleryItemLink = event.target.closest("[data-gallery-item-link]");
-      if (galleryItemLink && isAdmin()) {
-        updateGalleryItemField(galleryItemLink.dataset.galleryItemLink, galleryItemLink.dataset.galleryItem, "link", galleryItemLink.value.trim());
+      const galleryItemInput = event.target.closest("[data-gallery-item-input]");
+      if (galleryItemInput && isAdmin()) {
+        updateGalleryItemInput(
+          galleryItemInput.dataset.galleryId,
+          galleryItemInput.dataset.galleryItem,
+          galleryItemInput.dataset.galleryItemInput,
+          galleryItemInput.value
+        );
       }
     });
 
@@ -793,6 +1175,20 @@
     });
 
     window.addEventListener("resize", queueEnhance);
+
+    document.addEventListener("keydown", (event) => {
+      const lb = document.getElementById("gallery-lightbox");
+      if (lb && lb.classList.contains("is-open")) {
+        if (event.key === "Escape") { closeLightbox(); return; }
+        if (event.key === "ArrowLeft") { moveLightbox(-1); return; }
+        if (event.key === "ArrowRight") { moveLightbox(1); return; }
+        return;
+      }
+      const modal = document.getElementById("gallery-modal");
+      if (event.key === "Escape" && modal && modal.classList.contains("is-open")) {
+        closeGalleryModal();
+      }
+    });
 
     document.addEventListener("pointermove", (event) => {
       if (popoverDrag) {
