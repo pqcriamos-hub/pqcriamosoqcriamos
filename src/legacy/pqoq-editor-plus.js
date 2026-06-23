@@ -6,6 +6,23 @@
   const LAYOUT_STATE_KEY = "layout-state";
   const STYLE_POPOVER_POSITION_KEY = "style-popover-position";
   const GRID_UNIT_SELECTOR = ".layout-grid-overlay";
+
+  // Phase 2: upload editorial media to Supabase Storage and return a URL.
+  // Falls back to base64 only if the upload bridge is unavailable.
+  function uploadEditorMedia(file, prefix) {
+    const media = window.PQOQ_MEDIA;
+    if (media && typeof media.upload === "function") {
+      return media.upload(file, prefix);
+    }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.addEventListener("load", () =>
+        resolve({ url: String(reader.result || ""), path: "" }),
+      );
+      reader.addEventListener("error", reject);
+      reader.readAsDataURL(file);
+    });
+  }
   const MODULAR_SELECTOR = [
     "main .section",
     "main .card",
@@ -281,14 +298,18 @@
     const key = input.dataset.pagePhoto;
     const file = input.files?.[0];
     if (!key || !file) return;
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      const state = pagePhotos();
-      state[key] = String(reader.result || "");
-      savePagePhotos(state);
-      applyPagePhotos();
-    });
-    reader.readAsDataURL(file);
+    input.disabled = true;
+    uploadEditorMedia(file, `pages/${key}`)
+      .then(({ url }) => {
+        const state = pagePhotos();
+        state[key] = url;
+        savePagePhotos(state);
+        applyPagePhotos();
+      })
+      .catch(() => {})
+      .finally(() => {
+        input.disabled = false;
+      });
   }
 
   function galleryCardTemplate(card) {
@@ -485,23 +506,30 @@
     const itemId = input.dataset.galleryItem;
     const file = input.files?.[0];
     if (!cardId || !file) return;
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      const list = galleryCards();
-      const card = list.find((entry) => entry.id === cardId);
-      if (!card) return;
-      if (input.dataset.galleryCover) {
-        card.coverImage = String(reader.result || "");
-      } else {
-        const item = card.items.find((entry) => entry.id === itemId);
-        if (item) item.image = String(reader.result || "");
-      }
-      saveGalleryCards(list);
-      renderGalleryCards();
-      renderGalleryModal(cardId);
-      queueEnhance();
-    });
-    reader.readAsDataURL(file);
+    const prefix = input.dataset.galleryCover
+      ? `gallery/${cardId}/covers`
+      : `gallery/${cardId}/items`;
+    input.disabled = true;
+    uploadEditorMedia(file, prefix)
+      .then(({ url }) => {
+        const list = galleryCards();
+        const card = list.find((entry) => entry.id === cardId);
+        if (!card) return;
+        if (input.dataset.galleryCover) {
+          card.coverImage = url;
+        } else {
+          const item = card.items.find((entry) => entry.id === itemId);
+          if (item) item.image = url;
+        }
+        saveGalleryCards(list);
+        renderGalleryCards();
+        renderGalleryModal(cardId);
+        queueEnhance();
+      })
+      .catch(() => {})
+      .finally(() => {
+        input.disabled = false;
+      });
   }
 
   function syncGalleryModalEditability() {
@@ -543,15 +571,19 @@
     const episodeId = input.dataset.episodeThumbInput;
     const file = input.files?.[0];
     if (!episodeId || !file) return;
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      const data = episodeEmbeds();
-      data[episodeId] = data[episodeId] || {};
-      data[episodeId].thumbnail = String(reader.result || "");
-      saveEpisodeEmbeds(data);
-      queueEnhance();
-    });
-    reader.readAsDataURL(file);
+    input.disabled = true;
+    uploadEditorMedia(file, `episodes/${episodeId}/thumbnails`)
+      .then(({ url }) => {
+        const data = episodeEmbeds();
+        data[episodeId] = data[episodeId] || {};
+        data[episodeId].thumbnail = url;
+        saveEpisodeEmbeds(data);
+        queueEnhance();
+      })
+      .catch(() => {})
+      .finally(() => {
+        input.disabled = false;
+      });
   }
 
   function fixYouTubePreview() {

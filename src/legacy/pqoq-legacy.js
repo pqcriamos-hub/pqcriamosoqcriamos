@@ -1,6 +1,23 @@
 (() => {
   const STORAGE_PREFIX = "pqoq-site:";
   const localConfig = typeof window !== "undefined" ? window.PQOQ_CONFIG || {} : {};
+
+  // Phase 2: upload editorial media to Supabase Storage and return a URL.
+  // Falls back to base64 only if the upload bridge is unavailable.
+  function uploadEditorMedia(file, prefix) {
+    const media = window.PQOQ_MEDIA;
+    if (media && typeof media.upload === "function") {
+      return media.upload(file, prefix);
+    }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.addEventListener("load", () =>
+        resolve({ url: String(reader.result || ""), path: "" }),
+      );
+      reader.addEventListener("error", reject);
+      reader.readAsDataURL(file);
+    });
+  }
   const ADMIN_EMAIL = localConfig.adminEmail || "";
   const ADMIN_PASSWORD = localConfig.adminPassword || "";
   const STYLE_STATE_KEY = "style-state";
@@ -1273,17 +1290,22 @@
     const field = input.dataset.fileField;
     const file = input.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      const data = episodeEmbeds();
-      data[episodeId] = data[episodeId] || {};
-      data[episodeId][field] = String(reader.result || "");
-      saveEpisodeEmbeds(data);
-      renderVideo(episodeId);
-      renderAudio(episodeId);
-      renderEpisodeCover(episodeId);
-    });
-    reader.readAsDataURL(file);
+    const sub = field === "mp3" ? "audio" : "thumbnails";
+    input.disabled = true;
+    uploadEditorMedia(file, `episodes/${episodeId}/${sub}`)
+      .then(({ url }) => {
+        const data = episodeEmbeds();
+        data[episodeId] = data[episodeId] || {};
+        data[episodeId][field] = url;
+        saveEpisodeEmbeds(data);
+        renderVideo(episodeId);
+        renderAudio(episodeId);
+        renderEpisodeCover(episodeId);
+      })
+      .catch(() => {})
+      .finally(() => {
+        input.disabled = false;
+      });
   }
 
   function updateEpisodeSource(input) {
@@ -1440,17 +1462,21 @@
     const id = input.dataset.artistImage;
     const file = input.files?.[0];
     if (!id || !file) return;
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      const list = artists();
-      const artist = list.find((item) => item.id === id);
-      if (!artist) return;
-      artist.image = String(reader.result || "");
-      saveArtists(list);
-      renderArtists();
-      setAdminEditing(document.body.classList.contains("admin-mode"));
-    });
-    reader.readAsDataURL(file);
+    input.disabled = true;
+    uploadEditorMedia(file, `artists/${id}/profile`)
+      .then(({ url }) => {
+        const list = artists();
+        const artist = list.find((item) => item.id === id);
+        if (!artist) return;
+        artist.image = url;
+        saveArtists(list);
+        renderArtists();
+        setAdminEditing(document.body.classList.contains("admin-mode"));
+      })
+      .catch(() => {})
+      .finally(() => {
+        input.disabled = false;
+      });
   }
 
   function refreshOpenArtistModal(artistId, tabName = activeArtistTab()) {
@@ -1488,15 +1514,19 @@
     const itemId = input.dataset.itemId;
     const file = input.files?.[0];
     if (!artistId || !itemId || !file) return;
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      saveArtistMutation(artistId, (artist) => {
-        const item = artist.portfolioItems.find((entry) => entry.id === itemId);
-        if (item) item.image = String(reader.result || "");
+    input.disabled = true;
+    uploadEditorMedia(file, `artists/${artistId}/portfolio`)
+      .then(({ url }) => {
+        saveArtistMutation(artistId, (artist) => {
+          const item = artist.portfolioItems.find((entry) => entry.id === itemId);
+          if (item) item.image = url;
+        });
+        refreshOpenArtistModal(artistId, "portfolio");
+      })
+      .catch(() => {})
+      .finally(() => {
+        input.disabled = false;
       });
-      refreshOpenArtistModal(artistId, "portfolio");
-    });
-    reader.readAsDataURL(file);
   }
 
   function addLinkItem(artistId) {
@@ -1524,15 +1554,19 @@
     const itemId = input.dataset.itemId;
     const file = input.files?.[0];
     if (!artistId || !itemId || !file) return;
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      saveArtistMutation(artistId, (artist) => {
-        const item = artist.linkItems.find((entry) => entry.id === itemId);
-        if (item) item.image = String(reader.result || "");
+    input.disabled = true;
+    uploadEditorMedia(file, `artists/${artistId}/links`)
+      .then(({ url }) => {
+        saveArtistMutation(artistId, (artist) => {
+          const item = artist.linkItems.find((entry) => entry.id === itemId);
+          if (item) item.image = url;
+        });
+        refreshOpenArtistModal(artistId, "links");
+      })
+      .catch(() => {})
+      .finally(() => {
+        input.disabled = false;
       });
-      refreshOpenArtistModal(artistId, "links");
-    });
-    reader.readAsDataURL(file);
   }
 
   function addArtist() {
