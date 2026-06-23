@@ -24,6 +24,12 @@ declare global {
       save: (key: string, value: unknown) => void;
       onStatus?: (status: "saving" | "saved" | "error", key: string) => void;
     };
+    PQOQ_MEDIA?: {
+      upload: (
+        file: File,
+        prefix: string,
+      ) => Promise<{ url: string; path: string }>;
+    };
   }
 }
 
