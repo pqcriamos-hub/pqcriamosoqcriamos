@@ -92,4 +92,16 @@ export function installRemoteSync(): void {
       })();
     },
   };
+
+  // Default status indicator: reflect remote-save state in the editor panel
+  // message area, unless a custom listener has already been attached.
+  if (!window.PQOQ_REMOTE.onStatus) {
+    window.PQOQ_REMOTE.onStatus = (status) => {
+      const el = document.getElementById("admin-message");
+      if (!el) return;
+      if (status === "saving") el.textContent = "Salvando…";
+      else if (status === "saved") el.textContent = "Salvo no site";
+      else el.textContent = "Erro ao salvar no Supabase";
+    };
+  }
 }
