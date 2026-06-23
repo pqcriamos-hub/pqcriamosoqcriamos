@@ -986,9 +986,12 @@
     const container = document.querySelector(`[data-render-support="${section}"]`);
     if (!container) return;
     const cards = visibleSupportCards(section);
-    container.innerHTML = cards.length
+    const html = cards.length
       ? cards.map((card) => supportCardTemplate(section, card)).join("")
       : '<div class="empty-state">Nenhum card publicado ainda.</div>';
+    if (container.dataset.renderedHtml === html) return;
+    container.dataset.renderedHtml = html;
+    container.innerHTML = html;
   }
 
   function renderSupportSections() {
