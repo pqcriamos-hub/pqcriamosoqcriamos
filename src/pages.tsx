@@ -124,7 +124,7 @@ export function GalleryPage() {
             <article className="card gallery-card">
               <div className="gallery-thumb" />
               <div className="meta">Carregando</div>
-              <h3>Galeria</h3>
+              <h3>ACERVO</h3>
               <p>Preparando cards da galeria...</p>
             </article>
           </div>
