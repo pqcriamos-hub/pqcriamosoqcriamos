@@ -556,15 +556,83 @@
     saveGalleryCards(list);
   }
 
+  function updateGalleryItemInput(cardId, itemId, field, value) {
+    const list = galleryCards();
+    const card = list.find((entry) => entry.id === cardId);
+    const item = card?.items.find((entry) => entry.id === itemId);
+    if (!item) return;
+    if (field === "tags") {
+      item.tags = value.split(",").map((t) => t.trim()).filter(Boolean);
+    } else {
+      item[field] = value;
+    }
+    saveGalleryCards(list);
+  }
+
+  function moveGalleryCard(cardId, dir) {
+    const list = galleryCards();
+    const idx = list.findIndex((c) => c.id === cardId);
+    const target = dir === "up" ? idx - 1 : idx + 1;
+    if (idx < 0 || target < 0 || target >= list.length) return;
+    const tmp = list[idx];
+    list[idx] = list[target];
+    list[target] = tmp;
+    list.forEach((c, i) => { c.sortOrder = i; });
+    saveGalleryCards(list);
+    renderGalleryCards();
+    queueEnhance();
+  }
+
+  function toggleGalleryPublish(cardId) {
+    const list = galleryCards();
+    const card = list.find((c) => c.id === cardId);
+    if (!card) return;
+    card.published = !card.published;
+    saveGalleryCards(list);
+    renderGalleryCards();
+    queueEnhance();
+  }
+
+  function moveGalleryItem(cardId, itemId, dir) {
+    const list = galleryCards();
+    const card = list.find((c) => c.id === cardId);
+    if (!card) return;
+    const idx = card.items.findIndex((i) => i.id === itemId);
+    const target = dir === "up" ? idx - 1 : idx + 1;
+    if (idx < 0 || target < 0 || target >= card.items.length) return;
+    const tmp = card.items[idx];
+    card.items[idx] = card.items[target];
+    card.items[target] = tmp;
+    card.items.forEach((i, n) => { i.sortOrder = n; });
+    saveGalleryCards(list);
+    renderGalleryModal(cardId);
+    queueEnhance();
+  }
+
+  function toggleItemPublish(cardId, itemId) {
+    const list = galleryCards();
+    const card = list.find((c) => c.id === cardId);
+    const item = card?.items.find((i) => i.id === itemId);
+    if (!item) return;
+    item.published = !item.published;
+    saveGalleryCards(list);
+    renderGalleryModal(cardId);
+    queueEnhance();
+  }
+
   function addGalleryCard() {
     const list = galleryCards();
+    const title = `Nova galeria ${list.length + 1}`;
     list.push({
       id: assetId("gallery"),
+      slug: slugify(title) + "-" + Math.random().toString(16).slice(2, 6),
       meta: "Nova categoria",
-      title: `Nova galeria ${list.length + 1}`,
+      title,
       description: "Descricao editavel da galeria.",
       intro: "Apresentacao editavel da galeria.",
       coverImage: "",
+      published: false,
+      sortOrder: list.length,
       items: []
     });
     saveGalleryCards(list);
@@ -589,10 +657,18 @@
       id: assetId("gallery-item"),
       title: "Novo item",
       caption: "Legenda editavel do item da galeria.",
+      description: "",
       credit: "Acervo",
       link: "",
-      image: ""
+      image: "",
+      episode: "",
+      date: "",
+      location: "",
+      tags: [],
+      published: false,
+      sortOrder: -1
     });
+    card.items.forEach((i, n) => { i.sortOrder = n; });
     saveGalleryCards(list);
     renderGalleryModal(cardId);
     queueEnhance();
@@ -602,6 +678,7 @@
     const list = galleryCards();
     const card = list.find((entry) => entry.id === cardId);
     if (!card) return;
+    if (!window.confirm("Remover este item?")) return;
     card.items = card.items.filter((entry) => entry.id !== itemId);
     saveGalleryCards(list);
     renderGalleryModal(cardId);
