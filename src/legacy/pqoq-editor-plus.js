@@ -366,15 +366,24 @@
 
   function galleryCardTemplate(card) {
     const coverStyle = card.coverImage ? ` style="background-image:url('${escapeHtml(card.coverImage)}')"` : "";
+    const unpub = card.published ? "" : " is-unpublished";
     return `
-      <article class="card gallery-card gallery-card-plus" data-gallery-id="${card.id}">
+      <article class="card gallery-card gallery-card-plus${unpub}" data-gallery-id="${card.id}">
         <button class="gallery-thumb gallery-card-open" type="button" data-open-gallery="${card.id}"${coverStyle}></button>
+        <span class="gallery-status admin-only">${card.published ? "Publicada" : "Rascunho"}</span>
         <div class="meta" data-gallery-field="meta">${escapeHtml(card.meta)}</div>
         <h3 data-gallery-field="title">${escapeHtml(card.title)}</h3>
         <p data-gallery-field="description">${escapeHtml(card.description)}</p>
         <div class="artist-actions gallery-card-actions">
           <button class="button primary small" type="button" data-open-gallery="${card.id}">Abrir galeria</button>
-          <button class="button small admin-only" type="button" data-remove-gallery="${card.id}">Remover</button>
+        </div>
+        <div class="admin-only admin-row compact gallery-card-admin">
+          <div class="gallery-admin-controls">
+            <button class="button small" type="button" data-gallery-move="up" data-gallery-id="${card.id}" aria-label="Subir galeria">&uarr;</button>
+            <button class="button small" type="button" data-gallery-move="down" data-gallery-id="${card.id}" aria-label="Descer galeria">&darr;</button>
+            <button class="button small" type="button" data-toggle-gallery-publish="${card.id}">${card.published ? "Despublicar" : "Publicar"}</button>
+            <button class="button small" type="button" data-remove-gallery="${card.id}">Remover</button>
+          </div>
         </div>
       </article>
     `;
@@ -383,7 +392,10 @@
   function renderGalleryCards() {
     const container = document.querySelector("[data-render-gallery-list]");
     if (!container) return;
-    container.innerHTML = galleryCards().map(galleryCardTemplate).join("");
+    const cards = visibleCards();
+    container.innerHTML = cards.length
+      ? cards.map(galleryCardTemplate).join("")
+      : '<div class="empty-state">Nenhuma galeria publicada ainda.</div>';
   }
 
   function ensureGalleryModal() {
@@ -404,22 +416,60 @@
   function galleryItemTemplate(cardId, item) {
     const imageStyle = item.image ? ` style="background-image:url('${escapeHtml(item.image)}')"` : "";
     const linkButton = item.link ? `<a class="button small" href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">Abrir referencia</a>` : "";
+    const hasMore = !!(item.description && item.description.trim());
+    const metaLine = [item.date, item.location].filter(Boolean).map(escapeHtml).join(" &middot; ");
+    const tagsHtml = item.tags && item.tags.length
+      ? `<div class="gallery-item-tags">${item.tags.map((t) => `<span class="gallery-tag">${escapeHtml(t)}</span>`).join("")}</div>`
+      : "";
+    const unpub = item.published ? "" : " is-unpublished";
+    const moreBlock = hasMore
+      ? `<div class="gallery-asset-more" data-gallery-more hidden>${escapeHtml(item.description)}</div>
+         <button class="gallery-more-toggle" type="button" data-more-toggle aria-expanded="false">Ler mais</button>`
+      : "";
     return `
-      <article class="gallery-asset" data-gallery-id="${cardId}" data-gallery-item-id="${item.id}">
+      <article class="gallery-asset${unpub}" data-gallery-id="${cardId}" data-gallery-item-id="${item.id}">
         <label class="gallery-asset-image"${imageStyle}>
           <span>${item.image ? "" : "Imagem"}</span>
           <input class="admin-only" type="file" accept="image/*" data-gallery-item-image="${cardId}" data-gallery-item="${item.id}" aria-label="Enviar imagem do item ${escapeHtml(item.title)}">
+          <button class="gallery-asset-zoom" type="button" data-open-lightbox="${item.id}" data-gallery-id="${cardId}" aria-label="Ampliar ${escapeHtml(item.title)}"></button>
+          <span class="gallery-status admin-only">${item.published ? "Publicado" : "Rascunho"}</span>
         </label>
         <div class="gallery-asset-copy">
           <div class="meta" data-gallery-item-field="credit">${escapeHtml(item.credit)}</div>
           <h3 data-gallery-item-field="title">${escapeHtml(item.title)}</h3>
           <p data-gallery-item-field="caption">${escapeHtml(item.caption)}</p>
-          ${linkButton}
-          <div class="admin-only admin-row compact">
-            <label>Link de referencia
-              <input type="url" value="${escapeHtml(item.link)}" data-gallery-item-link="${cardId}" data-gallery-item="${item.id}" placeholder="https://...">
+          ${moreBlock}
+          ${metaLine ? `<div class="gallery-item-metaline">${metaLine}</div>` : ""}
+          ${tagsHtml}
+          <div class="gallery-asset-foot">
+            ${linkButton}
+            <button class="button small gallery-share" type="button" data-share-item="${item.id}" data-gallery-id="${cardId}">Compartilhar</button>
+          </div>
+          <div class="admin-only admin-row compact gallery-item-admin">
+            <label>Descricao expandida
+              <textarea rows="3" data-gallery-item-input="description" data-gallery-id="${cardId}" data-gallery-item="${item.id}" placeholder="Descricao completa da imagem">${escapeHtml(item.description)}</textarea>
             </label>
-            <button class="button small" type="button" data-remove-gallery-item="${cardId}" data-gallery-item="${item.id}">Remover item</button>
+            <label>Episodio relacionado
+              <input type="text" value="${escapeHtml(item.episode)}" data-gallery-item-input="episode" data-gallery-id="${cardId}" data-gallery-item="${item.id}" placeholder="EP01">
+            </label>
+            <label>Data
+              <input type="text" value="${escapeHtml(item.date)}" data-gallery-item-input="date" data-gallery-id="${cardId}" data-gallery-item="${item.id}" placeholder="2026">
+            </label>
+            <label>Local
+              <input type="text" value="${escapeHtml(item.location)}" data-gallery-item-input="location" data-gallery-id="${cardId}" data-gallery-item="${item.id}" placeholder="Espaco Colaborar">
+            </label>
+            <label>Tags (separadas por virgula)
+              <input type="text" value="${escapeHtml(item.tags.join(", "))}" data-gallery-item-input="tags" data-gallery-id="${cardId}" data-gallery-item="${item.id}" placeholder="bastidor, luz">
+            </label>
+            <label>Link de referencia
+              <input type="url" value="${escapeHtml(item.link)}" data-gallery-item-input="link" data-gallery-id="${cardId}" data-gallery-item="${item.id}" placeholder="https://...">
+            </label>
+            <div class="gallery-admin-controls">
+              <button class="button small" type="button" data-gallery-item-move="up" data-gallery-id="${cardId}" data-gallery-item="${item.id}" aria-label="Subir item">&uarr;</button>
+              <button class="button small" type="button" data-gallery-item-move="down" data-gallery-id="${cardId}" data-gallery-item="${item.id}" aria-label="Descer item">&darr;</button>
+              <button class="button small" type="button" data-toggle-item-publish="${item.id}" data-gallery-id="${cardId}">${item.published ? "Despublicar" : "Publicar"}</button>
+              <button class="button small" type="button" data-remove-gallery-item="${cardId}" data-gallery-item="${item.id}">Remover item</button>
+            </div>
           </div>
         </div>
       </article>
@@ -432,7 +482,9 @@
     const body = document.getElementById("gallery-modal-body");
     const title = document.getElementById("gallery-modal-title");
     if (!card || !body || !title) return;
+    activeGalleryId = cardId;
     title.textContent = card.title;
+    const items = visibleItems(card);
     body.innerHTML = `
       <section class="gallery-modal-hero">
         <label class="gallery-modal-cover gallery-cover-upload"${card.coverImage ? ` style="background-image:url('${escapeHtml(card.coverImage)}')"` : ""}>
@@ -444,18 +496,21 @@
           <h3 data-gallery-modal-field="title" data-gallery-id="${card.id}">${escapeHtml(card.title)}</h3>
           <p data-gallery-modal-field="description" data-gallery-id="${card.id}">${escapeHtml(card.description)}</p>
           <div class="gallery-modal-intro" data-gallery-modal-field="intro" data-gallery-id="${card.id}">${escapeHtml(card.intro)}</div>
+          <div class="gallery-modal-actions">
+            <button class="button small gallery-share" type="button" data-share-gallery="${card.id}">Compartilhar</button>
+          </div>
         </div>
       </section>
       <section class="gallery-modal-section">
         <div class="gallery-modal-section-head">
           <h3>Acervo interno</h3>
-          <div class="gallery-modal-hint">Sugestao de uso: obras, capas, bastidores, processo, documentos, links e memoria visual do episodio.</div>
+          <div class="gallery-modal-hint">Clique em uma imagem para ampliar. Use "Ler mais" para abrir a descricao completa.</div>
         </div>
         <div class="admin-only gallery-modal-tools">
           <button class="button primary small" type="button" data-add-gallery-item="${card.id}">Adicionar item</button>
         </div>
-        <div class="gallery-asset-grid">
-          ${card.items.map((item) => galleryItemTemplate(card.id, item)).join("") || '<div class="empty-state">Nenhum item ainda.</div>'}
+        <div class="gallery-asset-grid gallery-mosaic">
+          ${items.map((item) => galleryItemTemplate(card.id, item)).join("") || '<div class="empty-state">Nenhum item ainda.</div>'}
         </div>
       </section>
     `;
