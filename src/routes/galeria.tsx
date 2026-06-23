@@ -18,9 +18,9 @@ export const Route = createFileRoute("/galeria")({
         content: "Imagens, bastidores, capas e registros de gravação do projeto PQOQ.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://pqcriamosoqcriamos.lovable.app/galeria" },
+      { property: "og:url", content: "https://pqoqcriamos.lovable.app/galeria" },
     ],
-    links: [{ rel: "canonical", href: "https://pqcriamosoqcriamos.lovable.app/galeria" }],
+    links: [{ rel: "canonical", href: "https://pqoqcriamos.lovable.app/galeria" }],
   }),
 });
 

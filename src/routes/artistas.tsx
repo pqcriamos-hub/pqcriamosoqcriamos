@@ -19,9 +19,9 @@ export const Route = createFileRoute("/artistas")({
           "Catálogo de artistas locais e regionais de diferentes linguagens e trajetórias.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://pqcriamosoqcriamos.lovable.app/artistas" },
+      { property: "og:url", content: "https://pqoqcriamos.lovable.app/artistas" },
     ],
-    links: [{ rel: "canonical", href: "https://pqcriamosoqcriamos.lovable.app/artistas" }],
+    links: [{ rel: "canonical", href: "https://pqoqcriamos.lovable.app/artistas" }],
   }),
 });
 

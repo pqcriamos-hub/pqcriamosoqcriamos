@@ -1,54 +1,48 @@
-## Objetivo
+# BLOCO 4 — Validação final do CMS editorial PQOQ
 
-Transformar o painel "Acesso editorial" (cadeado no rodapé) — hoje um placeholder que só mostra "A autenticação segura será conectada na etapa Lovable" — em um login real via Supabase. Criar a conta de editor `pqcriamos@gmail.com` e fazer com que **somente essa conta** desbloqueie o modo de edição.
+Objetivo: validar o painel editorial e corrigir apenas regressões pequenas, sem novas features, sem redesign, sem mexer em RLS/auth/service_role.
 
-## Como vai funcionar
+## Limitação importante (descoberta na exploração)
+- O projeto usa **Supabase externo/unmanaged** (`LOVABLE_BROWSER_AUTH_STATUS=external_unmanaged`). O sandbox **não consegue criar sessão de editor** automaticamente. Portanto os testes de **modo editor** (login, upload real, CRUD de Galeria/Apoio, salvar) **não podem ser dirigidos por mim** — serão validados via revisão de código + verificação de RLS/Storage, e a confirmação visual final fica com você no site publicado.
+- O site já está **publicado e público** (`pqoqcriamos.lovable.app`). Vou comparar a versão pública com a de preview para dizer se um novo Publish é necessário.
 
-```text
-Rodapé → cadeado "Acesso editorial"
-  ├─ Primeira vez:  [Criar conta de editor]  → define a senha → cria a conta
-  └─ Depois:        e-mail + senha → [Entrar] → modo de edição liberado
-                                     [Sair]    → volta ao modo público
-```
+## O que eu valido automaticamente
 
-- **Login**: e-mail + senha (Supabase Auth).
-- **Acesso**: apenas a conta `pqcriamos@gmail.com` recebe o papel de `editor`. Cadastro público fica desativado — ninguém mais consegue se tornar editor.
-- **Onde**: reaproveitando o painel atual no rodapé (nenhuma página nova).
+1. **Publish / deploy (Teste 1)**
+   - Buscar HTML/markdown da Preview e da URL publicada; comparar se Galeria (modais) e Apoio (2 seções dinâmicas) já estão na versão pública.
+   - Relatar claramente: "já publicado" ou "precisa Publish".
 
-## Etapas
+2. **Renderização pública (Testes 4, 5, 6, 7 — parte pública)**
+   - Via Playwright em `localhost` (rota pública, sem sessão): abrir Galeria, Apoio, Sobre, Episódios.
+   - Confirmar: cards Gravações/Capas/Obras; seções Frentes de apoio e Apoiadores; abertura de modais/lightbox; "Ler mais"; Compartilhar; fechar com ESC; campos opcionais vazios não renderizam; **nenhum controle admin visível para anônimo**.
+   - Screenshots desktop (1280) e mobile (390) para responsividade.
 
-### 1. Criação da conta (uma única vez)
-Como "só a minha conta" deve poder editar, a conta é criada por um processo controlado, não por cadastro aberto:
-- Uma função de servidor de "bootstrap" cria a conta apenas se: (a) o e-mail for exatamente `pqcriamos@gmail.com` e (b) ainda não existir nenhum editor/admin no sistema. Depois disso ela se recusa a criar qualquer outra conta.
-- Ao criar, a conta já recebe o papel de `editor` na tabela de papéis (`user_roles`), que é o que as regras de segurança (RLS) já existentes exigem.
-- No painel do rodapé aparece um botão **"Criar conta de editor"**: você digita a senha desejada uma vez e a conta é criada e confirmada automaticamente.
+3. **localStorage como cache (Teste 8)**
+   - Carregar a página, limpar `localStorage`, recarregar e confirmar que Galeria/Apoio/Artistas/Episódios/textos continuam vindo do Supabase (hidratação remota).
 
-### 2. Login / logout reais
-- O botão **Entrar** passa a autenticar de verdade no Supabase (e-mail + senha).
-- Após entrar, o sistema confirma que a conta tem papel de editor; só então libera o modo de edição.
-- O botão **Sair** encerra a sessão e volta ao modo público.
-- A sessão é lembrada: ao recarregar a página já logado, o modo de edição continua disponível.
-- Mensagens claras no painel: "Modo administrador ativo", "Login ou senha incorretos", "Conta criada com sucesso", etc.
+4. **Segurança / RLS (Teste 9)**
+   - `supabase--read_query` nas policies de `site_content` e `storage.objects`: confirmar whitelist explícita de keys, escrita restrita a editor/admin via `has_role`, sem policy de escrita pública/anon.
+   - Confirmar que `service_role`/tokens não aparecem no bundle do front (grep no código-fonte).
+   - Confirmar bucket `site-media` privado e que helper de upload usa Storage + URL assinada (sem base64).
 
-### 3. Integração com o editor existente
-O código legado (`pqoq-legacy.js`) hoje liga/desliga o modo de edição via uma função interna. O plano expõe essa função de forma controlada para que o novo login real a acione, **sem alterar o comportamento visual do editor** (edição inline, barra de estilo, etc. continuam iguais). O handler placeholder antigo deixa de rodar quando o login real está presente, evitando conflito de cliques.
+5. **Console / build / typecheck (Teste 10)**
+   - Rodar build/lint disponíveis (o harness já roda typecheck).
+   - Capturar erros de console em modo público.
 
-## Detalhes técnicos
+6. **Revisão de código do modo editor (Testes 2, 3, e partes editor de 4–7)**
+   - Ler `pqoq-editor-plus.js`, `site-content-sync.ts`, `pages.tsx`: confirmar que os controles editáveis existem (títulos Sobre/Apoio, tags, CRUD, reorder, upload via `PQOQ_MEDIA`, publish/unpublish) e que valores salvos são path/URL de Storage, não `data:image`.
 
-- **Nova função de servidor** `src/lib/editor-auth.functions.ts`:
-  - `bootstrapEditor({ email, password })` — sem `requireSupabaseAuth` (endpoint público), mas **auto-protegida**: rejeita se já existir qualquer linha com papel `editor`/`admin`, e rejeita se o e-mail ≠ `pqcriamos@gmail.com`. Usa o cliente admin (`supabaseAdmin`, carregado com `await import(...)` dentro do handler) para `auth.admin.createUser({ email, password, email_confirm: true })` e em seguida `insert` em `user_roles` com papel `editor`.
-- **Novo componente cliente** `src/components/EditorAuthBridge.tsx`, montado dentro de `SiteFooter` (logo, presente em todas as páginas):
-  - Liga os botões `#admin-login`, `#admin-logout` e um novo `#admin-create` aos métodos `supabase.auth.signInWithPassword`, `supabase.auth.signOut` e à função `bootstrapEditor` (via `useServerFn`).
-  - Após login, verifica o papel lendo `user_roles` (a RLS já permite ler o próprio papel) e chama a função exposta pelo legado para entrar no modo edição.
-  - No mount, checa sessão existente e religa o modo edição se houver papel válido.
-- **Ajuste mínimo em `src/components/SiteChrome.tsx`**: adicionar o botão "Criar conta de editor" (`#admin-create`) no `editor-panel` e montar `<EditorAuthBridge />`.
-- **Ajuste mínimo em `src/legacy/pqoq-legacy.js`**: em `initAdmin()`, quando existir o bridge (`window.PQOQ_AUTH`), não registrar os handlers placeholder de login/logout; expor `setAdminEditing` em `window` para o bridge acionar. O botão "Resetar" (limpeza de rascunhos locais) permanece inalterado.
-- **Sem migration**: a tabela `user_roles`, o enum `app_role` e as políticas RLS já existem. `attachSupabaseAuth` já está registrado em `src/start.ts`.
-- **Segurança**: nenhuma chave de serviço vai para o navegador (criação roda só no servidor); a regra "só uma conta editora" é garantida no servidor; as políticas RLS validadas anteriormente não são alteradas.
+## Correções permitidas (somente regressão)
+Apenas: salvamento, hidratação, permissão, upload, render público, modo editor, prévia pública, responsividade, erros de console, campos que deveriam ser editáveis e não são, controles admin vazando no público, dados sumindo após limpar localStorage. Cada correção será mínima e localizada.
 
-## Fora de escopo
-- Não muda o visual nem o conteúdo do site.
-- Não altera as políticas RLS / migrations já validadas.
-- Não conecta a persistência de conteúdo ao Supabase (a edição continua como está hoje); este plano cobre apenas autenticação e liberação do modo de edição. Posso fazer a sincronização de conteúdo num passo seguinte, se você quiser.
+## Fora de escopo (não farei)
+Novas páginas, redesign, mudança de identidade visual, grade/modular livre, remover/abrir RLS, mexer em auth ou service_role, trocar Supabase.
 
-Ao final você poderá: abrir o cadeado → criar a conta `pqcriamos@gmail.com` com uma senha → entrar e editar.
+## Ação externa (apenas relato)
+"Leaked Password Protection Disabled" — tratar manualmente no painel Supabase Auth (owner/admin). Não resolvo via código.
+
+## Entregável
+Relatório por teste (1–10) com: status publish, evidências de render público, evidências de RLS/Storage/anon bloqueado, evidência de localStorage como cache, console/build, correções aplicadas (se houver), riscos residuais, próximos passos, e como reverter. Os passos de **modo editor** virão com checklist para você confirmar no site publicado, já que a sessão de editor não pode ser automatizada neste ambiente.
+
+## Confirmação necessária de você
+Para os testes de modo editor que não consigo automatizar, posso (a) apenas revisar o código e te entregar um checklist manual, ou (b) se você colar/criar um acesso de editor de teste, eu não tenho como usar com segurança aqui — então (a) é o caminho. Confirma que seguimos assim?

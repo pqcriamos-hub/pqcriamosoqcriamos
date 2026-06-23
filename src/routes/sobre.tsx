@@ -19,9 +19,9 @@ export const Route = createFileRoute("/sobre")({
           "Projeto de extensão e produção audiovisual sobre processos criativos no extremo sul da Bahia.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://pqcriamosoqcriamos.lovable.app/sobre" },
+      { property: "og:url", content: "https://pqoqcriamos.lovable.app/sobre" },
     ],
-    links: [{ rel: "canonical", href: "https://pqcriamosoqcriamos.lovable.app/sobre" }],
+    links: [{ rel: "canonical", href: "https://pqoqcriamos.lovable.app/sobre" }],
   }),
 });
 

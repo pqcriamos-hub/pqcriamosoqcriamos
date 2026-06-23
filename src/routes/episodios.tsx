@@ -19,9 +19,9 @@ export const Route = createFileRoute("/episodios")({
           "Videocast e podcast com artistas do extremo sul da Bahia, com vídeo, áudio e acervo.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://pqcriamosoqcriamos.lovable.app/episodios" },
+      { property: "og:url", content: "https://pqoqcriamos.lovable.app/episodios" },
     ],
-    links: [{ rel: "canonical", href: "https://pqcriamosoqcriamos.lovable.app/episodios" }],
+    links: [{ rel: "canonical", href: "https://pqoqcriamos.lovable.app/episodios" }],
   }),
 });
 
