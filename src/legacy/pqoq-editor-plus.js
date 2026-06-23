@@ -406,7 +406,7 @@
       <div class="modal gallery-modal" id="gallery-modal" aria-hidden="true">
         <div class="modal-panel gallery-modal-panel">
           <div class="modal-head">
-            <h2 id="gallery-modal-title">Galeria</h2>
+            <h2 id="gallery-modal-title">ACERVO</h2>
             <button class="close-modal" type="button" data-close-modal>&times;</button>
           </div>
           <div class="modal-body" id="gallery-modal-body"></div>
