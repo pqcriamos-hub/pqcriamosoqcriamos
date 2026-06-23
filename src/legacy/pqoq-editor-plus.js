@@ -43,38 +43,47 @@
   const galleryDefaults = [
     {
       id: "gallery-recordings",
+      slug: "gravacoes",
       meta: "Bastidores",
       title: "Gravacoes",
       description: "Registros do set, do Espaco Colaborar e da equipe em processo.",
       intro: "Use esta galeria para reunir making of, disposicao do set, montagem de luz, registros de ensaio, capturas da conversa e memoria de producao.",
       coverImage: "",
+      published: true,
+      sortOrder: 0,
       items: [
-        { id: "recording-set", title: "Set de gravacao", caption: "Mesa, enquadramento, luz e atmosfera do episodio.", credit: "Bastidores", link: "", image: "" },
-        { id: "recording-process", title: "Processo de conversa", caption: "Trechos do encontro, anotacoes, roteiro e material de apoio.", credit: "Processo", link: "", image: "" }
+        { id: "recording-set", title: "Set de gravacao", caption: "Mesa, enquadramento, luz e atmosfera do episodio.", description: "", credit: "Bastidores", link: "", image: "", episode: "", date: "", location: "", tags: [], published: true, sortOrder: 0 },
+        { id: "recording-process", title: "Processo de conversa", caption: "Trechos do encontro, anotacoes, roteiro e material de apoio.", description: "", credit: "Processo", link: "", image: "", episode: "", date: "", location: "", tags: [], published: true, sortOrder: 1 }
       ]
     },
     {
       id: "gallery-covers",
+      slug: "capas",
       meta: "Identidade visual",
       title: "Capas",
       description: "Artes dos episodios, thumbnails e pecas graficas do projeto.",
       intro: "Aqui entram capas principais, thumbnails, pecas para redes, cartazes de circulacao e variacoes visuais de cada temporada.",
       coverImage: "",
+      published: true,
+      sortOrder: 1,
       items: [
-        { id: "cover-main", title: "Capa do episodio", caption: "Arte principal usada no streaming, no feed e no arquivo do projeto.", credit: "Design", link: "", image: "" },
-        { id: "cover-social", title: "Peca para divulgacao", caption: "Recortes visuais para stories, cartazes, reels e posts de circulacao.", credit: "Rede", link: "", image: "" }
+        { id: "cover-main", title: "Capa do episodio", caption: "Arte principal usada no streaming, no feed e no arquivo do projeto.", description: "", credit: "Design", link: "", image: "", episode: "", date: "", location: "", tags: [], published: true, sortOrder: 0 },
+        { id: "cover-social", title: "Peca para divulgacao", caption: "Recortes visuais para stories, cartazes, reels e posts de circulacao.", description: "", credit: "Rede", link: "", image: "", episode: "", date: "", location: "", tags: [], published: true, sortOrder: 1 }
       ]
     },
     {
       id: "gallery-works",
+      slug: "obras",
       meta: "Acervo de artistas",
       title: "Obras",
       description: "Imagens, processos e fragmentos visuais ligados a cada convidado.",
       intro: "Organize obras, fragmentos, documentos, estudos, fotografias de processo e materiais enviados pelos artistas convidados.",
       coverImage: "",
+      published: true,
+      sortOrder: 2,
       items: [
-        { id: "works-piece", title: "Obra principal", caption: "Imagem de destaque do artista ou do episodio relacionado.", credit: "Acervo", link: "", image: "" },
-        { id: "works-process", title: "Processo criativo", caption: "Rascunho, detalhe, textura, fragmento ou documento de processo.", credit: "Memoria", link: "", image: "" }
+        { id: "works-piece", title: "Obra principal", caption: "Imagem de destaque do artista ou do episodio relacionado.", description: "", credit: "Acervo", link: "", image: "", episode: "", date: "", location: "", tags: [], published: true, sortOrder: 0 },
+        { id: "works-process", title: "Processo criativo", caption: "Rascunho, detalhe, textura, fragmento ou documento de processo.", description: "", credit: "Memoria", link: "", image: "", episode: "", date: "", location: "", tags: [], published: true, sortOrder: 1 }
       ]
     }
   ];
