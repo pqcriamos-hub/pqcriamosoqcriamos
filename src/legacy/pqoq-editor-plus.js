@@ -298,14 +298,18 @@
     const key = input.dataset.pagePhoto;
     const file = input.files?.[0];
     if (!key || !file) return;
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      const state = pagePhotos();
-      state[key] = String(reader.result || "");
-      savePagePhotos(state);
-      applyPagePhotos();
-    });
-    reader.readAsDataURL(file);
+    input.disabled = true;
+    uploadEditorMedia(file, `pages/${key}`)
+      .then(({ url }) => {
+        const state = pagePhotos();
+        state[key] = url;
+        savePagePhotos(state);
+        applyPagePhotos();
+      })
+      .catch(() => {})
+      .finally(() => {
+        input.disabled = false;
+      });
   }
 
   function galleryCardTemplate(card) {
