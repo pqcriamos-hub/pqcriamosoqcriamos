@@ -19,7 +19,7 @@ export function SiteHeader() {
       <nav className="nav" aria-label="Navegação principal">
         <a href="/episodios" data-page="episodios">Episódios</a>
         <a href="/artistas" data-page="artistas">Artistas</a>
-        <a href="/galeria" data-page="galeria">Galeria</a>
+        <a href="/galeria" data-page="galeria">ACERVO</a>
         <a href="/sobre" data-page="sobre">Sobre</a>
         <a href="/apoio" data-page="apoio">Apoio</a>
       </nav>
