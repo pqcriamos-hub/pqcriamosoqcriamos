@@ -107,7 +107,7 @@ export function ArtistsPage() {
 export function GalleryPage() {
   return (
     <PageShell
-      footerText="PQOQ - galeria e memória visual do projeto."
+      footerText="PQOQ - acervo e memória visual do projeto."
       editorDescription="Entre para editar textos e reorganizar conteúdo no Lovable."
       toolbar="compact"
     >
