@@ -1175,6 +1175,20 @@
 
     window.addEventListener("resize", queueEnhance);
 
+    document.addEventListener("keydown", (event) => {
+      const lb = document.getElementById("gallery-lightbox");
+      if (lb && lb.classList.contains("is-open")) {
+        if (event.key === "Escape") { closeLightbox(); return; }
+        if (event.key === "ArrowLeft") { moveLightbox(-1); return; }
+        if (event.key === "ArrowRight") { moveLightbox(1); return; }
+        return;
+      }
+      const modal = document.getElementById("gallery-modal");
+      if (event.key === "Escape" && modal && modal.classList.contains("is-open")) {
+        closeGalleryModal();
+      }
+    });
+
     document.addEventListener("pointermove", (event) => {
       if (popoverDrag) {
         const popover = document.getElementById("style-popover");
