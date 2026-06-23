@@ -1341,7 +1341,7 @@
       }
       if (isAdmin()) {
         list.classList.add("tag-list-editing");
-        list.innerHTML = tags
+        const html = tags
           .map((tag, i) => `
             <span class="tag-edit" data-tag-index="${i}">
               <span class="tag-edit-text" contenteditable="true" data-static-tag-text data-tag-key="${escapeHtml(key)}" data-tag-index="${i}">${escapeHtml(tag)}</span>
@@ -1350,9 +1350,11 @@
               <button class="tag-edit-btn" type="button" data-static-tag-remove data-tag-key="${escapeHtml(key)}" data-tag-index="${i}" aria-label="Remover">&times;</button>
             </span>`).join("")
           + `<button class="button small tag-add-btn" type="button" data-static-tag-add data-tag-key="${escapeHtml(key)}">+ tag</button>`;
+        if (list.dataset.renderedHtml !== html) { list.dataset.renderedHtml = html; list.innerHTML = html; }
       } else {
         list.classList.remove("tag-list-editing");
-        list.innerHTML = tags.map((t) => `<span>${escapeHtml(t)}</span>`).join("");
+        const html = tags.map((t) => `<span>${escapeHtml(t)}</span>`).join("");
+        if (list.dataset.renderedHtml !== html) { list.dataset.renderedHtml = html; list.innerHTML = html; }
       }
     });
   }
