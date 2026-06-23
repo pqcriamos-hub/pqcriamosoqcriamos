@@ -571,15 +571,19 @@
     const episodeId = input.dataset.episodeThumbInput;
     const file = input.files?.[0];
     if (!episodeId || !file) return;
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      const data = episodeEmbeds();
-      data[episodeId] = data[episodeId] || {};
-      data[episodeId].thumbnail = String(reader.result || "");
-      saveEpisodeEmbeds(data);
-      queueEnhance();
-    });
-    reader.readAsDataURL(file);
+    input.disabled = true;
+    uploadEditorMedia(file, `episodes/${episodeId}/thumbnails`)
+      .then(({ url }) => {
+        const data = episodeEmbeds();
+        data[episodeId] = data[episodeId] || {};
+        data[episodeId].thumbnail = url;
+        saveEpisodeEmbeds(data);
+        queueEnhance();
+      })
+      .catch(() => {})
+      .finally(() => {
+        input.disabled = false;
+      });
   }
 
   function fixYouTubePreview() {
