@@ -1290,17 +1290,22 @@
     const field = input.dataset.fileField;
     const file = input.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      const data = episodeEmbeds();
-      data[episodeId] = data[episodeId] || {};
-      data[episodeId][field] = String(reader.result || "");
-      saveEpisodeEmbeds(data);
-      renderVideo(episodeId);
-      renderAudio(episodeId);
-      renderEpisodeCover(episodeId);
-    });
-    reader.readAsDataURL(file);
+    const sub = field === "mp3" ? "audio" : "thumbnails";
+    input.disabled = true;
+    uploadEditorMedia(file, `episodes/${episodeId}/${sub}`)
+      .then(({ url }) => {
+        const data = episodeEmbeds();
+        data[episodeId] = data[episodeId] || {};
+        data[episodeId][field] = url;
+        saveEpisodeEmbeds(data);
+        renderVideo(episodeId);
+        renderAudio(episodeId);
+        renderEpisodeCover(episodeId);
+      })
+      .catch(() => {})
+      .finally(() => {
+        input.disabled = false;
+      });
   }
 
   function updateEpisodeSource(input) {
