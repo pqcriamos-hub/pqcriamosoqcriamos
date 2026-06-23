@@ -6,13 +6,13 @@ export const Route = createFileRoute("/galeria")({
   component: GalleryRoute,
   head: () => ({
     meta: [
-      { title: "Galeria — PQOQ Criamos" },
+      { title: "ACERVO — PQOQ Criamos" },
       {
         name: "description",
         content:
-          "Galeria de imagens, bastidores, capas e registros de gravação do projeto PQOQ e dos artistas convidados.",
+          "Acervo de imagens, bastidores, capas e registros de gravação do projeto PQOQ e dos artistas convidados.",
       },
-      { property: "og:title", content: "Galeria — PQOQ Criamos" },
+      { property: "og:title", content: "ACERVO — PQOQ Criamos" },
       {
         property: "og:description",
         content: "Imagens, bastidores, capas e registros de gravação do projeto PQOQ.",
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/galeria")({
 
 function GalleryRoute() {
   return (
-    <PQOQRoute page="galeria" title="PQOQ Criamos - Galeria">
+    <PQOQRoute page="galeria" title="PQOQ Criamos - ACERVO">
       <GalleryPage />
     </PQOQRoute>
   );

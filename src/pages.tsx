@@ -107,14 +107,14 @@ export function ArtistsPage() {
 export function GalleryPage() {
   return (
     <PageShell
-      footerText="PQOQ - galeria e memória visual do projeto."
+      footerText="PQOQ - acervo e memória visual do projeto."
       editorDescription="Entre para editar textos e reorganizar conteúdo no Lovable."
       toolbar="compact"
     >
       <main>
         <section className="section">
           <div className="section-head">
-            <h1 className="page-title" data-editable="gallery.page.title">Galeria</h1>
+            <h1 className="page-title" data-editable="gallery.page.title">ACERVO</h1>
             <p data-rich data-editable="gallery.page.intro">A galeria organiza imagens, bastidores, capas, registros de gravação e materiais enviados pelos artistas.</p>
           </div>
           <div className="admin-only" style={{ marginBottom: 18 }}>
@@ -124,7 +124,7 @@ export function GalleryPage() {
             <article className="card gallery-card">
               <div className="gallery-thumb" />
               <div className="meta">Carregando</div>
-              <h3>Galeria</h3>
+              <h3>ACERVO</h3>
               <p>Preparando cards da galeria...</p>
             </article>
           </div>
