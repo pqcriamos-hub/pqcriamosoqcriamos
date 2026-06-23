@@ -12,6 +12,8 @@ const SYNC_KEYS = [
   "page-photos",
   "link-state",
   "layout-state",
+  "support-content",
+  "card-tags",
 ] as const;
 // NOTE: "style-popover-position" is intentionally NOT synced. It only stores
 // the screen position of the editor's floating popover — a per-editor UI
