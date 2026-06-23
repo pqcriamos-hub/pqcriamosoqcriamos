@@ -140,31 +140,74 @@
   }
 
   function normalizeGalleryItem(item, index) {
+    const tags = Array.isArray(item.tags)
+      ? item.tags.map((t) => String(t).trim()).filter(Boolean)
+      : item.tags
+        ? String(item.tags).split(",").map((t) => t.trim()).filter(Boolean)
+        : [];
     return {
       id: item.id || assetId(`gallery-item-${index + 1}`),
       title: item.title || `Item ${index + 1}`,
       caption: item.caption || "Legenda editavel do item da galeria.",
+      description: item.description || "",
       credit: item.credit || "Acervo",
       link: item.link || "",
-      image: item.image || ""
+      image: item.image || "",
+      episode: item.episode || "",
+      date: item.date || "",
+      location: item.location || "",
+      tags,
+      published: item.published !== false,
+      sortOrder: typeof item.sortOrder === "number" ? item.sortOrder : index
     };
+  }
+
+  function slugify(value) {
+    return (
+      String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 48) || "galeria"
+    );
   }
 
   function galleryCards() {
     const list = getState(GALLERY_KEY, galleryDefaults);
-    return list.map((card, index) => ({
-      id: card.id || `gallery-card-${index + 1}`,
-      meta: card.meta || "Nova categoria",
-      title: card.title || `Nova galeria ${index + 1}`,
-      description: card.description || "Descricao editavel da galeria.",
-      intro: card.intro || "Apresentacao editavel da galeria.",
-      coverImage: card.coverImage || "",
-      items: Array.isArray(card.items) ? card.items.map(normalizeGalleryItem) : []
-    }));
+    return list
+      .map((card, index) => {
+        const items = (Array.isArray(card.items) ? card.items.map(normalizeGalleryItem) : [])
+          .sort((a, b) => a.sortOrder - b.sortOrder);
+        return {
+          id: card.id || `gallery-card-${index + 1}`,
+          slug: card.slug || slugify(card.title || card.id || `galeria-${index + 1}`),
+          meta: card.meta || "Nova categoria",
+          title: card.title || `Nova galeria ${index + 1}`,
+          description: card.description || "Descricao editavel da galeria.",
+          intro: card.intro || "Apresentacao editavel da galeria.",
+          coverImage: card.coverImage || "",
+          published: card.published !== false,
+          sortOrder: typeof card.sortOrder === "number" ? card.sortOrder : index,
+          items
+        };
+      })
+      .sort((a, b) => a.sortOrder - b.sortOrder);
   }
 
   function saveGalleryCards(list) {
     setState(GALLERY_KEY, list);
+  }
+
+  // Public visitors only see published galleries/items; editors see everything.
+  function visibleCards() {
+    const cards = galleryCards();
+    return isAdmin() ? cards : cards.filter((card) => card.published);
+  }
+
+  function visibleItems(card) {
+    return isAdmin() ? card.items : card.items.filter((item) => item.published);
   }
 
   function pagePhotos() {
