@@ -8,12 +8,21 @@ const SYNC_KEYS = [
   "artists",
   "episodes",
   "episode-embeds",
+  "gallery-cards",
+  "page-photos",
+  "link-state",
+  "layout-state",
 ] as const;
+// NOTE: "style-popover-position" is intentionally NOT synced. It only stores
+// the screen position of the editor's floating popover — a per-editor UI
+// preference, not site content. Keeping it local avoids one editor's window
+// position leaking to every visitor.
 
 declare global {
   interface Window {
     PQOQ_REMOTE?: {
       save: (key: string, value: unknown) => void;
+      onStatus?: (status: "saving" | "saved" | "error", key: string) => void;
     };
   }
 }
@@ -51,6 +60,13 @@ export async function hydrateFromRemote(): Promise<void> {
  */
 export function installRemoteSync(): void {
   if (typeof window === "undefined") return;
+  const emit = (status: "saving" | "saved" | "error", key: string) => {
+    try {
+      window.PQOQ_REMOTE?.onStatus?.(status, key);
+    } catch {
+      /* ignore listener errors */
+    }
+  };
   window.PQOQ_REMOTE = {
     save: (key, value) => {
       if (!(SYNC_KEYS as unknown as string[]).includes(key)) return;
@@ -58,14 +74,20 @@ export function installRemoteSync(): void {
         try {
           const { data } = await supabase.auth.getSession();
           if (!data.session) return; // only editors persist remotely
-          await supabase
+          emit("saving", key);
+          const { error } = await supabase
             .from("site_content")
             .upsert(
               { key, value: value as never, published: true, updated_at: new Date().toISOString() },
               { onConflict: "key" },
             );
+          if (error) {
+            emit("error", key);
+            return;
+          }
+          emit("saved", key);
         } catch {
-          /* best-effort */
+          emit("error", key);
         }
       })();
     },
