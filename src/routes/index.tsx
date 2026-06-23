@@ -19,9 +19,9 @@ export const Route = createFileRoute("/")({
           "Acervo vivo de artistas, processos criativos e memória cultural do extremo sul da Bahia.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://pqcriamosoqcriamos.lovable.app/" },
+      { property: "og:url", content: "https://pqoqcriamos.lovable.app/" },
     ],
-    links: [{ rel: "canonical", href: "https://pqcriamosoqcriamos.lovable.app/" }],
+    links: [{ rel: "canonical", href: "https://pqoqcriamos.lovable.app/" }],
     scripts: [
       {
         type: "application/ld+json",
@@ -29,13 +29,13 @@ export const Route = createFileRoute("/")({
           "@context": "https://schema.org",
           "@type": "WebSite",
           name: "PQOQ Criamos",
-          url: "https://pqcriamosoqcriamos.lovable.app/",
+          url: "https://pqoqcriamos.lovable.app/",
           description:
             "Acervo vivo de artistas, processos criativos e memória cultural do extremo sul da Bahia.",
           publisher: {
             "@type": "Organization",
             name: "PQOQ Criamos",
-            url: "https://pqcriamosoqcriamos.lovable.app/",
+            url: "https://pqoqcriamos.lovable.app/",
           },
         }),
       },

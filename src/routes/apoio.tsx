@@ -18,9 +18,9 @@ export const Route = createFileRoute("/apoio")({
         content: "Rede de apoio e colaboração do PQOQ com universidade, parceiros e comunidade.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://pqcriamosoqcriamos.lovable.app/apoio" },
+      { property: "og:url", content: "https://pqoqcriamos.lovable.app/apoio" },
     ],
-    links: [{ rel: "canonical", href: "https://pqcriamosoqcriamos.lovable.app/apoio" }],
+    links: [{ rel: "canonical", href: "https://pqoqcriamos.lovable.app/apoio" }],
   }),
 });
 
