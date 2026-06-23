@@ -1070,7 +1070,7 @@
       .join("");
     const galleryBlock = optional("galeria", card.gallery.length, `
       <section class="support-modal-block">
-        <h4>Galeria</h4>
+        <h4>ACERVO</h4>
         <div class="support-gallery-grid">${galleryThumbs || (admin ? "" : "")}</div>
         <label class="admin-only support-gallery-add">
           <span>Adicionar imagem a galeria</span>
