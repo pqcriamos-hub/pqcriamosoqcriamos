@@ -80,6 +80,16 @@
 
   function setState(key, value) {
     localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
+    // Mirror to Supabase for shared/persistent content. The remote layer
+    // (site-content-sync.ts) only persists whitelisted keys for authenticated
+    // editors; everything else is a silent no-op. localStorage stays as cache.
+    try {
+      if (typeof window !== "undefined" && window.PQOQ_REMOTE && typeof window.PQOQ_REMOTE.save === "function") {
+        window.PQOQ_REMOTE.save(key, value);
+      }
+    } catch {
+      /* remote sync is best-effort */
+    }
   }
 
   function escapeHtml(value) {
