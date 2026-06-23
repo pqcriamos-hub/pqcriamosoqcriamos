@@ -1051,6 +1051,47 @@
 
   function bindGlobalEvents() {
     document.addEventListener("click", (event) => {
+      // Lightbox controls (highest priority, sits above the modal)
+      const openLb = event.target.closest("[data-open-lightbox]");
+      if (openLb) {
+        event.preventDefault();
+        openLightbox(openLb.dataset.galleryId, openLb.dataset.openLightbox);
+        return;
+      }
+      const closeLb = event.target.closest("[data-close-lightbox]");
+      if (closeLb || event.target.id === "gallery-lightbox") {
+        closeLightbox();
+        return;
+      }
+      if (event.target.closest("[data-lightbox-prev]")) { moveLightbox(-1); return; }
+      if (event.target.closest("[data-lightbox-next]")) { moveLightbox(1); return; }
+      const lbShare = event.target.closest("[data-lightbox-share]");
+      if (lbShare && lightboxState) {
+        const item = lightboxState.items[lightboxState.index];
+        if (item) shareItem(lightboxState.cardId, item.id);
+        return;
+      }
+
+      // "Ler mais" expand/collapse
+      const moreToggle = event.target.closest("[data-more-toggle]");
+      if (moreToggle) {
+        event.preventDefault();
+        const block = moreToggle.parentElement.querySelector("[data-gallery-more]");
+        if (block) {
+          const willShow = block.hasAttribute("hidden");
+          block.toggleAttribute("hidden", !willShow);
+          moreToggle.setAttribute("aria-expanded", String(willShow));
+          moreToggle.textContent = willShow ? "Ler menos" : "Ler mais";
+        }
+        return;
+      }
+
+      // Sharing
+      const shareG = event.target.closest("[data-share-gallery]");
+      if (shareG) { event.preventDefault(); shareGallery(shareG.dataset.shareGallery); return; }
+      const shareI = event.target.closest("[data-share-item]");
+      if (shareI) { event.preventDefault(); shareItem(shareI.dataset.galleryId, shareI.dataset.shareItem); return; }
+
       const galleryButton = event.target.closest("[data-open-gallery]");
       if (galleryButton) {
         event.preventDefault();
@@ -1066,11 +1107,23 @@
       const addGallery = event.target.closest("#gallery-add");
       if (addGallery && isAdmin()) addGalleryCard();
 
+      const moveGallery = event.target.closest("[data-gallery-move]");
+      if (moveGallery && isAdmin()) { moveGalleryCard(moveGallery.dataset.galleryId, moveGallery.dataset.galleryMove); return; }
+
+      const togglePub = event.target.closest("[data-toggle-gallery-publish]");
+      if (togglePub && isAdmin()) { toggleGalleryPublish(togglePub.dataset.toggleGalleryPublish); return; }
+
       const removeGallery = event.target.closest("[data-remove-gallery]");
       if (removeGallery) removeGalleryCard(removeGallery.dataset.removeGallery);
 
       const addGalleryItemButton = event.target.closest("[data-add-gallery-item]");
       if (addGalleryItemButton && isAdmin()) addGalleryItem(addGalleryItemButton.dataset.addGalleryItem);
+
+      const moveItem = event.target.closest("[data-gallery-item-move]");
+      if (moveItem && isAdmin()) { moveGalleryItem(moveItem.dataset.galleryId, moveItem.dataset.galleryItem, moveItem.dataset.galleryItemMove); return; }
+
+      const toggleItemPub = event.target.closest("[data-toggle-item-publish]");
+      if (toggleItemPub && isAdmin()) { toggleItemPublish(toggleItemPub.dataset.galleryId, toggleItemPub.dataset.toggleItemPublish); return; }
 
       const removeGalleryItemButton = event.target.closest("[data-remove-gallery-item]");
       if (removeGalleryItemButton && isAdmin()) removeGalleryItem(removeGalleryItemButton.dataset.removeGalleryItem, removeGalleryItemButton.dataset.galleryItem);
@@ -1103,9 +1156,14 @@
         updateGalleryItemField(cardId, itemId, galleryItemField.dataset.galleryItemField, galleryItemField.textContent.trim());
       }
 
-      const galleryItemLink = event.target.closest("[data-gallery-item-link]");
-      if (galleryItemLink && isAdmin()) {
-        updateGalleryItemField(galleryItemLink.dataset.galleryItemLink, galleryItemLink.dataset.galleryItem, "link", galleryItemLink.value.trim());
+      const galleryItemInput = event.target.closest("[data-gallery-item-input]");
+      if (galleryItemInput && isAdmin()) {
+        updateGalleryItemInput(
+          galleryItemInput.dataset.galleryId,
+          galleryItemInput.dataset.galleryItem,
+          galleryItemInput.dataset.galleryItemInput,
+          galleryItemInput.value
+        );
       }
     });
 
