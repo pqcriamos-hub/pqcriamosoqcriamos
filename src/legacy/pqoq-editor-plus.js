@@ -6,6 +6,23 @@
   const LAYOUT_STATE_KEY = "layout-state";
   const STYLE_POPOVER_POSITION_KEY = "style-popover-position";
   const GRID_UNIT_SELECTOR = ".layout-grid-overlay";
+
+  // Phase 2: upload editorial media to Supabase Storage and return a URL.
+  // Falls back to base64 only if the upload bridge is unavailable.
+  function uploadEditorMedia(file, prefix) {
+    const media = window.PQOQ_MEDIA;
+    if (media && typeof media.upload === "function") {
+      return media.upload(file, prefix);
+    }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.addEventListener("load", () =>
+        resolve({ url: String(reader.result || ""), path: "" }),
+      );
+      reader.addEventListener("error", reject);
+      reader.readAsDataURL(file);
+    });
+  }
   const MODULAR_SELECTOR = [
     "main .section",
     "main .card",
