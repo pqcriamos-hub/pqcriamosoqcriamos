@@ -1,6 +1,23 @@
 (() => {
   const STORAGE_PREFIX = "pqoq-site:";
   const localConfig = typeof window !== "undefined" ? window.PQOQ_CONFIG || {} : {};
+
+  // Phase 2: upload editorial media to Supabase Storage and return a URL.
+  // Falls back to base64 only if the upload bridge is unavailable.
+  function uploadEditorMedia(file, prefix) {
+    const media = window.PQOQ_MEDIA;
+    if (media && typeof media.upload === "function") {
+      return media.upload(file, prefix);
+    }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.addEventListener("load", () =>
+        resolve({ url: String(reader.result || ""), path: "" }),
+      );
+      reader.addEventListener("error", reject);
+      reader.readAsDataURL(file);
+    });
+  }
   const ADMIN_EMAIL = localConfig.adminEmail || "";
   const ADMIN_PASSWORD = localConfig.adminPassword || "";
   const STYLE_STATE_KEY = "style-state";
