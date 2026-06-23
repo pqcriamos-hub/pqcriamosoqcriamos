@@ -725,6 +725,143 @@
     });
   }
 
+  // ---- Lightbox -----------------------------------------------------------
+  function ensureLightbox() {
+    if (document.getElementById("gallery-lightbox")) return;
+    document.body.insertAdjacentHTML("beforeend", `
+      <div class="modal gallery-lightbox" id="gallery-lightbox" aria-hidden="true">
+        <div class="lightbox-panel">
+          <button class="close-modal lightbox-close" type="button" data-close-lightbox aria-label="Fechar">&times;</button>
+          <button class="lightbox-nav lightbox-prev" type="button" data-lightbox-prev aria-label="Anterior">&#8249;</button>
+          <figure class="lightbox-figure">
+            <div class="lightbox-image" data-lightbox-image></div>
+            <figcaption class="lightbox-copy">
+              <div class="meta" data-lightbox-credit></div>
+              <h3 data-lightbox-title></h3>
+              <p class="lightbox-caption" data-lightbox-caption></p>
+              <p class="lightbox-desc" data-lightbox-desc></p>
+              <div class="lightbox-meta" data-lightbox-meta></div>
+              <div class="gallery-item-tags" data-lightbox-tags></div>
+              <button class="button small gallery-share" type="button" data-lightbox-share>Compartilhar</button>
+            </figcaption>
+          </figure>
+          <button class="lightbox-nav lightbox-next" type="button" data-lightbox-next aria-label="Proximo">&#8250;</button>
+        </div>
+      </div>
+    `);
+  }
+
+  function renderLightbox() {
+    if (!lightboxState) return;
+    const lb = document.getElementById("gallery-lightbox");
+    if (!lb) return;
+    const item = lightboxState.items[lightboxState.index];
+    if (!item) return;
+    const img = lb.querySelector("[data-lightbox-image]");
+    img.style.backgroundImage = item.image ? `url('${String(item.image).replace(/'/g, "%27")}')` : "";
+    img.classList.toggle("is-empty", !item.image);
+    lb.querySelector("[data-lightbox-credit]").textContent = item.credit || "";
+    lb.querySelector("[data-lightbox-title]").textContent = item.title || "";
+    lb.querySelector("[data-lightbox-caption]").textContent = item.caption || "";
+    const desc = lb.querySelector("[data-lightbox-desc]");
+    desc.textContent = item.description || "";
+    desc.style.display = item.description ? "" : "none";
+    const metaParts = [];
+    if (item.date) metaParts.push(item.date);
+    if (item.location) metaParts.push(item.location);
+    if (item.episode) metaParts.push("Episodio " + item.episode);
+    lb.querySelector("[data-lightbox-meta]").textContent = metaParts.join(" \u00b7 ");
+    lb.querySelector("[data-lightbox-tags]").innerHTML = (item.tags || [])
+      .map((t) => `<span class="gallery-tag">${escapeHtml(t)}</span>`)
+      .join("");
+    const single = lightboxState.items.length <= 1;
+    lb.querySelector("[data-lightbox-prev]").style.display = single ? "none" : "";
+    lb.querySelector("[data-lightbox-next]").style.display = single ? "none" : "";
+  }
+
+  function openLightbox(cardId, itemId) {
+    ensureLightbox();
+    const card = galleryCards().find((c) => c.id === cardId);
+    if (!card) return;
+    const items = visibleItems(card);
+    const index = items.findIndex((i) => i.id === itemId);
+    if (index < 0) return;
+    lightboxState = { cardId, items, index };
+    renderLightbox();
+    const lb = document.getElementById("gallery-lightbox");
+    lb?.classList.add("is-open");
+    lb?.setAttribute("aria-hidden", "false");
+  }
+
+  function moveLightbox(delta) {
+    if (!lightboxState || lightboxState.items.length <= 1) return;
+    const n = lightboxState.items.length;
+    lightboxState.index = (lightboxState.index + delta + n) % n;
+    renderLightbox();
+  }
+
+  function closeLightbox() {
+    const lb = document.getElementById("gallery-lightbox");
+    lb?.classList.remove("is-open");
+    lb?.setAttribute("aria-hidden", "true");
+    lightboxState = null;
+  }
+
+  // ---- Sharing ------------------------------------------------------------
+  function galleryToast(message) {
+    let el = document.getElementById("gallery-toast");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "gallery-toast";
+      el.className = "gallery-toast";
+      document.body.appendChild(el);
+    }
+    el.textContent = message;
+    el.classList.add("is-visible");
+    clearTimeout(el._timer);
+    el._timer = setTimeout(() => el.classList.remove("is-visible"), 2200);
+  }
+
+  async function shareContent(title, text, slugRef) {
+    let url = window.location.href;
+    try {
+      if (slugRef) {
+        const u = new URL(window.location.href);
+        u.hash = slugRef;
+        url = u.toString();
+      }
+    } catch {
+      /* keep plain url */
+    }
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text, url });
+        return;
+      }
+    } catch {
+      return; // user cancelled the native sheet
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      galleryToast("Link copiado");
+    } catch {
+      galleryToast("Nao foi possivel compartilhar");
+    }
+  }
+
+  function shareGallery(cardId) {
+    const card = galleryCards().find((c) => c.id === cardId);
+    if (!card) return;
+    shareContent(`${card.title} - PQOQ`, card.description || card.meta || "", `galeria-${card.slug}`);
+  }
+
+  function shareItem(cardId, itemId) {
+    const card = galleryCards().find((c) => c.id === cardId);
+    const item = card?.items.find((i) => i.id === itemId);
+    if (!item) return;
+    shareContent(`${item.title} - PQOQ`, item.caption || "", `galeria-${card.slug}-${item.id}`);
+  }
+
   function enhanceEpisodeThumbs() {
     const embeds = episodeEmbeds();
     document.querySelectorAll(".episode-card[data-episode-id]").forEach((card) => {
