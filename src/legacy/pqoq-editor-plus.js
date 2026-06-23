@@ -94,6 +94,8 @@
   let gridMode = false;
   let activeDrag = null;
   let popoverDrag = null;
+  let activeGalleryId = null;
+  let lightboxState = null;
 
   function getState(key, fallback) {
     try {
