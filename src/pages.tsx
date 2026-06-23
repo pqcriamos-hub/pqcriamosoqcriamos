@@ -114,7 +114,7 @@ export function GalleryPage() {
       <main>
         <section className="section">
           <div className="section-head">
-            <h1 className="page-title" data-editable="gallery.page.title">Galeria</h1>
+            <h1 className="page-title" data-editable="gallery.page.title">ACERVO</h1>
             <p data-rich data-editable="gallery.page.intro">A galeria organiza imagens, bastidores, capas, registros de gravação e materiais enviados pelos artistas.</p>
           </div>
           <div className="admin-only" style={{ marginBottom: 18 }}>
