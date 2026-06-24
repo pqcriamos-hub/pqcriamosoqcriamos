@@ -1721,6 +1721,28 @@
   }
 
   function initEvents() {
+    // Capture-phase guard: block any attempt to open a file picker (by clicking
+    // an image, an avatar label, or a file input) unless an editor is editing.
+    document.addEventListener(
+      "click",
+      (event) => {
+        if (canUseEditorialUpload()) return;
+        const target = event.target;
+        if (!target || typeof target.closest !== "function") return;
+        if (
+          target.closest('input[type="file"]') ||
+          target.closest(".artist-avatar") ||
+          target.closest(".portfolio-image") ||
+          target.closest(".link-image") ||
+          target.closest("label[data-upload]")
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      },
+      true,
+    );
+    syncUploadControls();
     document.addEventListener("click", (event) => {
       handleStylePopoverClick(event);
       if (styleSelectionFromClick(event)) return;
