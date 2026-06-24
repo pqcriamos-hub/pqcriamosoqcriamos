@@ -312,6 +312,7 @@
       if (observer) observer.disconnect();
       try {
         enhancePage();
+        syncUploadControls();
       } finally {
         if (observer) {
           observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style"] });
