@@ -262,3 +262,89 @@ export function slugify(text: string): string {
 export function isBase64(value?: string): boolean {
   return Boolean(value && value.startsWith("data:"));
 }
+
+// ---------------------------------------------------------------------------
+// Domain types & helpers for Acervo (gallery-cards) and Apoio (support-content).
+// Shapes mirror src/legacy/pqoq-editor-plus.js so the public site keeps
+// rendering data written here. Do not change field names without updating the
+// legacy normalizers.
+// ---------------------------------------------------------------------------
+
+export interface GalleryItem {
+  id: string;
+  title?: string;
+  caption?: string;
+  description?: string;
+  credit?: string;
+  link?: string;
+  image?: string;
+  episode?: string;
+  date?: string;
+  location?: string;
+  tags?: string[];
+  published?: boolean;
+  sortOrder?: number;
+}
+
+export interface GalleryCard {
+  id: string;
+  slug?: string;
+  meta?: string;
+  title?: string;
+  description?: string;
+  intro?: string;
+  coverImage?: string;
+  published?: boolean;
+  sortOrder?: number;
+  items?: GalleryItem[];
+}
+
+/** A label/href pair, matching the legacy normalizeLinkPairs() shape. */
+export interface LinkPair {
+  id?: string;
+  label?: string;
+  href?: string;
+}
+
+export interface SupportCard {
+  id: string;
+  slug?: string;
+  title?: string;
+  subtitle?: string;
+  meta?: string;
+  description?: string;
+  fullText?: string;
+  image?: string;
+  relation?: string;
+  contact?: string;
+  location?: string;
+  links?: LinkPair[];
+  docs?: LinkPair[];
+  /** Legacy public render reads gallery as an array of image URL strings. */
+  gallery?: string[];
+  tags?: string[];
+  published?: boolean;
+  sortOrder?: number;
+}
+
+export type SupportSection = "fronts" | "partners";
+
+export interface SupportContent {
+  fronts: SupportCard[];
+  partners: SupportCard[];
+}
+
+export function genId(prefix: string): string {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+}
+
+/** Validates an http(s) URL. Empty string is treated as valid (optional). */
+export function isValidUrl(value?: string): boolean {
+  if (!value || !value.trim()) return true;
+  try {
+    const u = new URL(value.trim());
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
