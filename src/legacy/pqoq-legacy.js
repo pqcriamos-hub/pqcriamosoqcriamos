@@ -1368,6 +1368,14 @@
   function ensureTextKeys() {
     editableTextNodes().forEach((element, index) => {
       if (!element.dataset.textKey) {
+        if (element.dataset.episodeArtistBio) {
+          element.dataset.textKey = `episode-artist:${element.dataset.episodeArtistBio}:bio`;
+          return;
+        }
+        if (element.dataset.episodeDescription) {
+          element.dataset.textKey = `episode:${element.dataset.episodeDescription}:description`;
+          return;
+        }
         const module = element.closest("[data-editable]")?.dataset.editable || element.closest("[data-artist-id]")?.dataset.artistId || document.body.dataset.page || "page";
         const own = element.dataset.editable || element.dataset.artistField || element.dataset.rich || element.tagName.toLowerCase();
         element.dataset.textKey = `${module}:${own}:${index}`;
