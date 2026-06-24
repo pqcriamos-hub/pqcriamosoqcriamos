@@ -13,8 +13,10 @@ import {
 import { AdminDashboard } from "./AdminDashboard";
 import { EpisodesAdmin } from "./EpisodesAdmin";
 import { ArtistsAdmin } from "./ArtistsAdmin";
+import { AcervoAdmin } from "./AcervoAdmin";
+import { ApoioAdmin } from "./ApoioAdmin";
 
-type SectionId = "dashboard" | "episodes" | "artists";
+type SectionId = "dashboard" | "episodes" | "artists" | "acervo" | "apoio";
 
 interface NavItem {
   label: string;
@@ -29,8 +31,8 @@ const NAV: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, section: "dashboard" },
   { label: "Episódios", icon: Mic, section: "episodes" },
   { label: "Artistas", icon: Users, section: "artists" },
-  { label: "Acervo", icon: Images, href: "/galeria" },
-  { label: "Apoio", icon: HeartHandshake, href: "/apoio" },
+  { label: "Acervo", icon: Images, section: "acervo" },
+  { label: "Apoio", icon: HeartHandshake, section: "apoio" },
 ];
 
 export function AdminShell({
@@ -102,6 +104,8 @@ export function AdminShell({
               <option value="dashboard">Dashboard</option>
               <option value="episodes">Episódios</option>
               <option value="artists">Artistas</option>
+              <option value="acervo">Acervo</option>
+              <option value="apoio">Apoio</option>
             </select>
             <Link
               to="/"
@@ -118,6 +122,8 @@ export function AdminShell({
           {active === "dashboard" ? <AdminDashboard /> : null}
           {active === "episodes" ? <EpisodesAdmin /> : null}
           {active === "artists" ? <ArtistsAdmin /> : null}
+          {active === "acervo" ? <AcervoAdmin /> : null}
+          {active === "apoio" ? <ApoioAdmin /> : null}
         </main>
       </div>
     </div>
