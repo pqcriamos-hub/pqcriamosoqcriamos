@@ -193,10 +193,18 @@ export function AdminGate({
             <Button onClick={() => void onLogin()} disabled={busy}>
               Entrar
             </Button>
-            <Button variant="outline" onClick={() => void onCreate()} disabled={busy}>
-              Criar conta de editor
-            </Button>
+            {bootstrapAvailable ? (
+              <Button variant="outline" onClick={() => void onCreate()} disabled={busy}>
+                Criar conta de editor
+              </Button>
+            ) : null}
           </div>
+          {!bootstrapAvailable ? (
+            <p className="text-xs text-muted-foreground">
+              Funções de criação automática de editor estão indisponíveis neste
+              ambiente. Use uma conta de editor existente.
+            </p>
+          ) : null}
         </CardContent>
       </Card>
     </div>
