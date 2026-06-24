@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { bootstrapEditor } from "@/lib/editor-auth.functions";
+import { bootstrapEditor, getBootstrapStatus } from "@/lib/editor-auth.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,11 +29,13 @@ export function AdminGate({
   children: (ctx: { email: string; signOut: () => Promise<void> }) => ReactNode;
 }) {
   const bootstrap = useServerFn(bootstrapEditor);
+  const bootstrapStatus = useServerFn(getBootstrapStatus);
   const [state, setState] = useState<GateState>({ status: "loading" });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [bootstrapAvailable, setBootstrapAvailable] = useState(false);
 
   const resolveSession = async () => {
     const { data } = await supabase.auth.getSession();
@@ -59,6 +61,22 @@ export function AdminGate({
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  // Check (without ever exposing the key) whether editor bootstrap is
+  // configured in this environment. Failures default to "unavailable".
+  useEffect(() => {
+    let active = true;
+    bootstrapStatus()
+      .then((res) => {
+        if (active) setBootstrapAvailable(Boolean(res?.available));
+      })
+      .catch(() => {
+        if (active) setBootstrapAvailable(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [bootstrapStatus]);
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setState({ status: "anon" });
@@ -76,13 +94,13 @@ export function AdminGate({
       password,
     });
     if (error || !data.user) {
-      setMessage("Login ou senha incorretos.");
+      setMessage("E-mail ou senha inválidos.");
       setBusy(false);
       return;
     }
     if (!(await hasEditorRole(data.user.id))) {
       await supabase.auth.signOut();
-      setMessage("Esta conta não tem acesso de editor.");
+      setMessage("Sem permissão editorial.");
       setState({ status: "anon" });
       setBusy(false);
       return;
