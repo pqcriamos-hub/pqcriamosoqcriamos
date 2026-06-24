@@ -286,7 +286,17 @@
     enhanceQueued = true;
     requestAnimationFrame(() => {
       enhanceQueued = false;
-      enhancePage();
+      // Pause the observer while we mutate the DOM, otherwise enhancePage's own
+      // innerHTML/style writes retrigger the observer -> infinite re-render loop
+      // (which detaches buttons mid-click so "Abrir galeria" never fires).
+      if (observer) observer.disconnect();
+      try {
+        enhancePage();
+      } finally {
+        if (observer) {
+          observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style"] });
+        }
+      }
     });
   }
 
