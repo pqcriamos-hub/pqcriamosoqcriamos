@@ -812,7 +812,10 @@
   function renderHomeEpisodes() {
     const container = document.querySelector("[data-render-home-episodes]");
     if (!container) return;
-    const items = episodes().filter((episode) => episode.id !== "t01ep00").slice(0, 2);
+    const items = episodes()
+      .filter((episode) => episode.id !== "t01ep00")
+      .filter((episode) => isOwnerEditing() || episode.published !== false)
+      .slice(0, 2);
     container.innerHTML = items.map((episode) => `
       <article class="home-episode" data-episode-id="${episode.id}" data-episode-link="${episodeHref(episode.id)}">
         <div class="episode-thumb lettered">${thumbLabel(episode)}</div>
