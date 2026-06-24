@@ -401,11 +401,19 @@ p { margin-top: 0; }
 
 .episode-video-box {
   min-height: clamp(260px, 34vw, 388px);
-  background: rgba(194,102,39,.18);
+  background: transparent;
+  border: 0;
+  overflow: hidden;
 }
 
 .episode-video-box iframe {
   min-height: clamp(260px, 34vw, 388px);
+  border: 0;
+}
+
+.episode-video-box.is-empty {
+  background: rgba(194,102,39,.12);
+  border: var(--line);
 }
 
 .platform-row {
