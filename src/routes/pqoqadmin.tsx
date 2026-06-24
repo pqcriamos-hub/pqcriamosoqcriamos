@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AdminGate } from "@/components/admin/AdminGate";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { AdminDashboard } from "@/components/admin/AdminDashboard";
 
 export const Route = createFileRoute("/pqoqadmin")({
   ssr: false,
