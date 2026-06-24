@@ -379,6 +379,7 @@
   }
 
   function handlePagePhotoUpload(input) {
+    if (!canUseEditorialUpload()) return;
     const key = input.dataset.pagePhoto;
     const file = input.files?.[0];
     if (!key || !file) return;
@@ -718,6 +719,7 @@
   }
 
   function handleGalleryImageUpload(input) {
+    if (!canUseEditorialUpload()) return;
     const cardId = input.dataset.galleryCover || input.dataset.galleryItemImage;
     const itemId = input.dataset.galleryItem;
     const file = input.files?.[0];
@@ -1307,6 +1309,7 @@
   }
 
   function handleSupportImageUpload(input) {
+    if (!canUseEditorialUpload()) return;
     const section = input.dataset.supportSection;
     const cardId = input.dataset.supportId;
     const file = input.files?.[0];
@@ -1434,6 +1437,7 @@
   }
 
   function handleEpisodeThumbUpload(input) {
+    if (!canUseEditorialUpload()) return;
     const episodeId = input.dataset.episodeThumbInput;
     const file = input.files?.[0];
     if (!episodeId || !file) return;
