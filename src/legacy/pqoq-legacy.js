@@ -836,7 +836,9 @@
   function renderEpisodeList() {
     const container = document.querySelector("[data-render-episode-list]");
     if (!container) return;
-    container.innerHTML = episodes().map((episode) => `
+    container.innerHTML = episodes()
+      .filter((episode) => isOwnerEditing() || episode.published !== false)
+      .map((episode) => `
       <article class="card episode-card" data-episode-id="${episode.id}" data-editable="episode.${episode.id}" data-episode-link="${episodeHref(episode.id)}">
         <div class="episode-thumb lettered">${thumbLabel(episode)}</div>
         <div>
