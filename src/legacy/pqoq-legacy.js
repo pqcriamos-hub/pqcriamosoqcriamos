@@ -5,10 +5,16 @@
   // Phase 2: upload editorial media to Supabase Storage and return a URL.
   // Falls back to base64 only if the upload bridge is unavailable.
   function uploadEditorMedia(file, prefix) {
+    // Hard guard: never let a public/anonymous visitor trigger an upload or a
+    // base64 fallback, even if a handler somehow reaches this point.
+    if (!canUseEditorialUpload()) {
+      return Promise.reject(new Error("upload-not-authorized"));
+    }
     const media = window.PQOQ_MEDIA;
     if (media && typeof media.upload === "function") {
       return media.upload(file, prefix);
     }
+    // base64 fallback is allowed ONLY for an authorized editor without bridge.
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.addEventListener("load", () =>
