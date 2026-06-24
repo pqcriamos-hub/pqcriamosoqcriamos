@@ -354,8 +354,8 @@ export function ApoioAdmin() {
 function structuredCloneCard(c: SupportCard): SupportCard {
   return {
     ...c,
-    links: (c.links || []).map((l) => ({ ...l })),
-    docs: (c.docs || []).map((l) => ({ ...l })),
+    links: (c.links || []).map((l) => ({ ...l, id: l.id || genId("links") })),
+    docs: (c.docs || []).map((l) => ({ ...l, id: l.id || genId("docs") })),
     gallery: [...(c.gallery || [])],
     tags: [...(c.tags || [])],
   };
