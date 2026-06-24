@@ -142,6 +142,21 @@
     return document.body.classList.contains("admin-mode") && !document.body.classList.contains("public-preview");
   }
 
+  // Single source of truth for upload permission (mirrors isAdmin). admin-mode
+  // is only set after a verified editor/admin login; public-preview must be off.
+  function canUseEditorialUpload() {
+    return isAdmin();
+  }
+
+  function syncUploadControls() {
+    const allow = canUseEditorialUpload();
+    document.querySelectorAll('input[type="file"]').forEach((input) => {
+      input.disabled = !allow;
+      if (!allow) input.setAttribute("aria-hidden", "true");
+      else input.removeAttribute("aria-hidden");
+    });
+  }
+
   function currentPage() {
     return document.body.dataset.page || "page";
   }
