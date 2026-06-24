@@ -1494,6 +1494,7 @@
   }
 
   function handleImageUpload(input) {
+    if (!canUseEditorialUpload()) return;
     const id = input.dataset.artistImage;
     const file = input.files?.[0];
     if (!id || !file) return;
@@ -1545,6 +1546,7 @@
   }
 
   function handlePortfolioImageUpload(input) {
+    if (!canUseEditorialUpload()) return;
     const artistId = input.dataset.portfolioImage;
     const itemId = input.dataset.itemId;
     const file = input.files?.[0];
@@ -1585,6 +1587,7 @@
   }
 
   function handleLinkImageUpload(input) {
+    if (!canUseEditorialUpload()) return;
     const artistId = input.dataset.linkImage;
     const itemId = input.dataset.itemId;
     const file = input.files?.[0];
