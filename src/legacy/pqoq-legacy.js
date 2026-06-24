@@ -877,7 +877,10 @@
   function renderArtists() {
     const container = document.querySelector("[data-render-artists]");
     if (!container) return;
-    container.innerHTML = artists().map(artistCard).join("");
+    container.innerHTML = artists()
+      .filter((artist) => isOwnerEditing() || artist.published !== false)
+      .map(artistCard)
+      .join("");
     applySavedStyles(container);
   }
 
