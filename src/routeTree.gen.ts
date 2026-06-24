@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SobreRouteImport } from './routes/sobre'
+import { Route as PqoqadminRouteImport } from './routes/pqoqadmin'
 import { Route as GaleriaRouteImport } from './routes/galeria'
 import { Route as EpisodiosRouteImport } from './routes/episodios'
 import { Route as EpisodioRouteImport } from './routes/episodio'
@@ -20,6 +21,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const SobreRoute = SobreRouteImport.update({
   id: '/sobre',
   path: '/sobre',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PqoqadminRoute = PqoqadminRouteImport.update({
+  id: '/pqoqadmin',
+  path: '/pqoqadmin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GaleriaRoute = GaleriaRouteImport.update({
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/episodio': typeof EpisodioRoute
   '/episodios': typeof EpisodiosRoute
   '/galeria': typeof GaleriaRoute
+  '/pqoqadmin': typeof PqoqadminRoute
   '/sobre': typeof SobreRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   '/episodio': typeof EpisodioRoute
   '/episodios': typeof EpisodiosRoute
   '/galeria': typeof GaleriaRoute
+  '/pqoqadmin': typeof PqoqadminRoute
   '/sobre': typeof SobreRoute
 }
 export interface FileRoutesById {
@@ -79,6 +87,7 @@ export interface FileRoutesById {
   '/episodio': typeof EpisodioRoute
   '/episodios': typeof EpisodiosRoute
   '/galeria': typeof GaleriaRoute
+  '/pqoqadmin': typeof PqoqadminRoute
   '/sobre': typeof SobreRoute
 }
 export interface FileRouteTypes {
@@ -90,6 +99,7 @@ export interface FileRouteTypes {
     | '/episodio'
     | '/episodios'
     | '/galeria'
+    | '/pqoqadmin'
     | '/sobre'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/episodio'
     | '/episodios'
     | '/galeria'
+    | '/pqoqadmin'
     | '/sobre'
   id:
     | '__root__'
@@ -108,6 +119,7 @@ export interface FileRouteTypes {
     | '/episodio'
     | '/episodios'
     | '/galeria'
+    | '/pqoqadmin'
     | '/sobre'
   fileRoutesById: FileRoutesById
 }
@@ -118,6 +130,7 @@ export interface RootRouteChildren {
   EpisodioRoute: typeof EpisodioRoute
   EpisodiosRoute: typeof EpisodiosRoute
   GaleriaRoute: typeof GaleriaRoute
+  PqoqadminRoute: typeof PqoqadminRoute
   SobreRoute: typeof SobreRoute
 }
 
@@ -128,6 +141,13 @@ declare module '@tanstack/react-router' {
       path: '/sobre'
       fullPath: '/sobre'
       preLoaderRoute: typeof SobreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pqoqadmin': {
+      id: '/pqoqadmin'
+      path: '/pqoqadmin'
+      fullPath: '/pqoqadmin'
+      preLoaderRoute: typeof PqoqadminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/galeria': {
@@ -182,6 +202,7 @@ const rootRouteChildren: RootRouteChildren = {
   EpisodioRoute: EpisodioRoute,
   EpisodiosRoute: EpisodiosRoute,
   GaleriaRoute: GaleriaRoute,
+  PqoqadminRoute: PqoqadminRoute,
   SobreRoute: SobreRoute,
 }
 export const routeTree = rootRouteImport
