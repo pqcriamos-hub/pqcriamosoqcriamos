@@ -907,6 +907,7 @@
       .map(artistCard)
       .join("");
     applySavedStyles(container);
+    syncUploadControls();
   }
 
   function ensureArtistModal() {
