@@ -18,9 +18,7 @@ function AdminRoute() {
   return (
     <AdminGate>
       {({ email, signOut }) => (
-        <AdminShell email={email} onSignOut={() => void signOut()}>
-          <AdminDashboard />
-        </AdminShell>
+        <AdminShell email={email} onSignOut={() => void signOut()} />
       )}
     </AdminGate>
   );
