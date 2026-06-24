@@ -1610,14 +1610,14 @@
         if (canUseEditorialUpload()) return;
         const target = event.target;
         if (!target || typeof target.closest !== "function") return;
-        if (
-          target.closest('input[type="file"]') ||
-          target.closest(".gallery-cover-upload") ||
-          target.closest(".gallery-asset-image") ||
-          target.closest(".episode-thumb-upload") ||
-          target.closest(".bio-photo-upload") ||
-          target.closest("label[data-upload]")
-        ) {
+        // Never interfere with real interactive controls (lightbox, links).
+        if (target.closest('button, a, [data-open-lightbox], [role="button"]')) {
+          if (!target.closest('input[type="file"]')) return;
+        }
+        const inUploadLabel = target.closest(
+          'input[type="file"], .gallery-cover-upload, .gallery-asset-image, .episode-thumb-upload, .bio-photo-upload, label[data-upload]',
+        );
+        if (inUploadLabel) {
           event.preventDefault();
           event.stopPropagation();
         }
