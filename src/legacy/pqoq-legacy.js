@@ -1380,6 +1380,7 @@
     applySavedStyles();
     if (!enabled || document.body.classList.contains("public-preview")) closeStylePopover();
     setOwnerPreview(enabled ? document.body.classList.contains("public-preview") : false);
+    syncUploadControls();
   }
 
   function saveEditableContent(target) {
