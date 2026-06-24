@@ -399,13 +399,21 @@ p { margin-top: 0; }
   letter-spacing: .02em;
 }
 
-.episode-video-box {
+.embed-box.episode-video-box {
   min-height: clamp(260px, 34vw, 388px);
-  background: rgba(194,102,39,.18);
+  background: transparent;
+  border: 0;
+  overflow: hidden;
 }
 
-.episode-video-box iframe {
+.embed-box.episode-video-box iframe {
   min-height: clamp(260px, 34vw, 388px);
+  border: 0;
+}
+
+.embed-box.episode-video-box.is-empty {
+  background: rgba(194,102,39,.12);
+  border: var(--line);
 }
 
 .platform-row {

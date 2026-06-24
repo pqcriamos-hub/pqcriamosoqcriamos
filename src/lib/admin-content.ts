@@ -285,6 +285,7 @@ export interface EpisodeEmbed {
   youtube?: string;
   spotify?: string;
   mp3?: string;
+  videoEnabled?: boolean;
 }
 
 export type EpisodeEmbeds = Record<string, EpisodeEmbed>;

@@ -420,6 +420,14 @@ function EpisodeEditor({
           <Field label="RSS / URL original"><Input value={value.sourceUrl || ""} onChange={(e) => set({ sourceUrl: e.target.value })} /></Field>
           <Field label="MP3 URL"><Input value={embed.mp3 || ""} onChange={(e) => setEmbed({ mp3: e.target.value })} /></Field>
         </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={embed.videoEnabled !== false}
+            onChange={(e) => setEmbed({ videoEnabled: e.target.checked })}
+          />
+          Exibir player de vídeo
+        </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Thumbnail (upload)">
             <input type="file" accept="image/*" disabled={uploading}

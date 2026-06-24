@@ -1121,6 +1121,14 @@
     const data = episodeEmbeds()[episodeId] || {};
     const box = document.querySelector(`[data-video-box="${episodeId}"]`);
     if (!box) return;
+    const videoEnabled = data.videoEnabled !== false;
+    if (!videoEnabled && !isOwnerEditing()) {
+      box.classList.remove("has-video", "has-thumbnail", "is-empty");
+      box.style.backgroundImage = "";
+      box.style.display = "none";
+      return;
+    }
+    box.style.display = "";
     const id = youtubeId(data.youtube);
     box.classList.remove("has-video", "has-thumbnail", "is-empty");
     box.style.backgroundImage = "";
