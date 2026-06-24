@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,18 +10,25 @@ import {
   ExternalLink,
   LogOut,
 } from "lucide-react";
+import { AdminDashboard } from "./AdminDashboard";
+import { EpisodesAdmin } from "./EpisodesAdmin";
+import { ArtistsAdmin } from "./ArtistsAdmin";
+
+type SectionId = "dashboard" | "episodes" | "artists";
 
 interface NavItem {
   label: string;
   icon: typeof LayoutDashboard;
-  /** Public route this section manages (opens in a new tab for now). */
+  /** Internal admin section. */
+  section?: SectionId;
+  /** External public route this card manages (opens in a new tab). */
   href?: string;
 }
 
 const NAV: NavItem[] = [
-  { label: "Dashboard", icon: LayoutDashboard },
-  { label: "Episódios", icon: Mic, href: "/episodios" },
-  { label: "Artistas", icon: Users, href: "/artistas" },
+  { label: "Dashboard", icon: LayoutDashboard, section: "dashboard" },
+  { label: "Episódios", icon: Mic, section: "episodes" },
+  { label: "Artistas", icon: Users, section: "artists" },
   { label: "Acervo", icon: Images, href: "/galeria" },
   { label: "Apoio", icon: HeartHandshake, href: "/apoio" },
 ];
@@ -29,13 +36,11 @@ const NAV: NavItem[] = [
 export function AdminShell({
   email,
   onSignOut,
-  children,
 }: {
   email: string;
   onSignOut: () => void;
-  children: ReactNode;
 }) {
-  const [active, setActive] = useState("Dashboard");
+  const [active, setActive] = useState<SectionId>("dashboard");
 
   return (
     <div className="flex min-h-screen w-full bg-background text-foreground">
@@ -47,7 +52,7 @@ export function AdminShell({
         <nav className="flex-1 space-y-1 p-3">
           {NAV.map((item) => {
             const Icon = item.icon;
-            const isActive = active === item.label;
+            const isActive = item.section && active === item.section;
             const base =
               "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors";
             const cls = isActive
@@ -60,7 +65,6 @@ export function AdminShell({
                 target="_blank"
                 rel="noreferrer"
                 className={cls}
-                onClick={() => setActive(item.label)}
               >
                 <Icon className="h-4 w-4" />
                 <span className="flex-1 text-left">{item.label}</span>
@@ -71,7 +75,7 @@ export function AdminShell({
                 key={item.label}
                 type="button"
                 className={cls}
-                onClick={() => setActive(item.label)}
+                onClick={() => item.section && setActive(item.section)}
               >
                 <Icon className="h-4 w-4" />
                 <span className="flex-1 text-left">{item.label}</span>
@@ -90,6 +94,15 @@ export function AdminShell({
         <header className="flex items-center justify-between border-b border-border px-6 py-4">
           <h1 className="text-lg font-semibold">Painel administrativo</h1>
           <div className="flex items-center gap-2">
+            <select
+              className="rounded-md border border-input bg-background px-2 py-1 text-sm md:hidden"
+              value={active}
+              onChange={(e) => setActive(e.target.value as SectionId)}
+            >
+              <option value="dashboard">Dashboard</option>
+              <option value="episodes">Episódios</option>
+              <option value="artists">Artistas</option>
+            </select>
             <Link
               to="/"
               className="text-sm text-muted-foreground underline-offset-4 hover:underline"
@@ -101,7 +114,11 @@ export function AdminShell({
             </Button>
           </div>
         </header>
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 p-6">
+          {active === "dashboard" ? <AdminDashboard /> : null}
+          {active === "episodes" ? <EpisodesAdmin /> : null}
+          {active === "artists" ? <ArtistsAdmin /> : null}
+        </main>
       </div>
     </div>
   );
