@@ -721,6 +721,25 @@
     return document.body.classList.contains("admin-mode") && !document.body.classList.contains("public-preview");
   }
 
+  // Single source of truth for whether an editorial upload may be triggered.
+  // admin-mode is only set by the auth bridge AFTER an editor/admin login is
+  // verified, and public-preview must be off. CSS is never the only barrier.
+  function canUseEditorialUpload() {
+    return isOwnerEditing();
+  }
+  if (typeof window !== "undefined") window.PQOQCanUploadLegacy = canUseEditorialUpload;
+
+  // Disable/enable file inputs and avatar labels so a public visitor can never
+  // open the file picker by clicking an image.
+  function syncUploadControls() {
+    const allow = canUseEditorialUpload();
+    document.querySelectorAll('input[type="file"]').forEach((input) => {
+      input.disabled = !allow;
+      if (!allow) input.setAttribute("aria-hidden", "true");
+      else input.removeAttribute("aria-hidden");
+    });
+  }
+
   function ensureOwnerBar() {
     if (document.getElementById("owner-bar")) return;
     document.body.insertAdjacentHTML("afterbegin", `
