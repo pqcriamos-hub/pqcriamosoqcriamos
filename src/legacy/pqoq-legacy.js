@@ -5,10 +5,16 @@
   // Phase 2: upload editorial media to Supabase Storage and return a URL.
   // Falls back to base64 only if the upload bridge is unavailable.
   function uploadEditorMedia(file, prefix) {
+    // Hard guard: never let a public/anonymous visitor trigger an upload or a
+    // base64 fallback, even if a handler somehow reaches this point.
+    if (!canUseEditorialUpload()) {
+      return Promise.reject(new Error("upload-not-authorized"));
+    }
     const media = window.PQOQ_MEDIA;
     if (media && typeof media.upload === "function") {
       return media.upload(file, prefix);
     }
+    // base64 fallback is allowed ONLY for an authorized editor without bridge.
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.addEventListener("load", () =>
@@ -715,6 +721,25 @@
     return document.body.classList.contains("admin-mode") && !document.body.classList.contains("public-preview");
   }
 
+  // Single source of truth for whether an editorial upload may be triggered.
+  // admin-mode is only set by the auth bridge AFTER an editor/admin login is
+  // verified, and public-preview must be off. CSS is never the only barrier.
+  function canUseEditorialUpload() {
+    return isOwnerEditing();
+  }
+  if (typeof window !== "undefined") window.PQOQCanUploadLegacy = canUseEditorialUpload;
+
+  // Disable/enable file inputs and avatar labels so a public visitor can never
+  // open the file picker by clicking an image.
+  function syncUploadControls() {
+    const allow = canUseEditorialUpload();
+    document.querySelectorAll('input[type="file"]').forEach((input) => {
+      input.disabled = !allow;
+      if (!allow) input.setAttribute("aria-hidden", "true");
+      else input.removeAttribute("aria-hidden");
+    });
+  }
+
   function ensureOwnerBar() {
     if (document.getElementById("owner-bar")) return;
     document.body.insertAdjacentHTML("afterbegin", `
@@ -882,6 +907,7 @@
       .map(artistCard)
       .join("");
     applySavedStyles(container);
+    syncUploadControls();
   }
 
   function ensureArtistModal() {
@@ -1355,6 +1381,7 @@
     applySavedStyles();
     if (!enabled || document.body.classList.contains("public-preview")) closeStylePopover();
     setOwnerPreview(enabled ? document.body.classList.contains("public-preview") : false);
+    syncUploadControls();
   }
 
   function saveEditableContent(target) {
@@ -1467,6 +1494,7 @@
   }
 
   function handleImageUpload(input) {
+    if (!canUseEditorialUpload()) return;
     const id = input.dataset.artistImage;
     const file = input.files?.[0];
     if (!id || !file) return;
@@ -1518,6 +1546,7 @@
   }
 
   function handlePortfolioImageUpload(input) {
+    if (!canUseEditorialUpload()) return;
     const artistId = input.dataset.portfolioImage;
     const itemId = input.dataset.itemId;
     const file = input.files?.[0];
@@ -1558,6 +1587,7 @@
   }
 
   function handleLinkImageUpload(input) {
+    if (!canUseEditorialUpload()) return;
     const artistId = input.dataset.linkImage;
     const itemId = input.dataset.itemId;
     const file = input.files?.[0];
@@ -1691,6 +1721,29 @@
   }
 
   function initEvents() {
+    // Capture-phase guard: block any attempt to open a file picker (by clicking
+    // an image, an avatar label, or a file input) unless an editor is editing.
+    document.addEventListener(
+      "click",
+      (event) => {
+        if (canUseEditorialUpload()) return;
+        const target = event.target;
+        if (!target || typeof target.closest !== "function") return;
+        // Never interfere with real interactive controls (links, buttons).
+        if (target.closest('button, a, [data-open-lightbox], [role="button"]')) {
+          if (!target.closest('input[type="file"]')) return;
+        }
+        const inUploadLabel = target.closest(
+          'input[type="file"], .artist-avatar, .portfolio-image, .link-image, label[data-upload]',
+        );
+        if (inUploadLabel) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      },
+      true,
+    );
+    syncUploadControls();
     document.addEventListener("click", (event) => {
       handleStylePopoverClick(event);
       if (styleSelectionFromClick(event)) return;

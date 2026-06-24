@@ -1,4 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
+import {
+  adminKeyFor,
+  isDraftContentKey,
+  sanitizeForPublic,
+} from "./content-sanitize";
+
+const STORAGE_PREFIX = "pqoq-site:";
 
 // Keys mirrored from site-content-sync's RLS whitelist.
 export const ADMIN_CONTENT_KEYS = [
@@ -81,43 +88,96 @@ export function formatBytes(bytes: number): string {
 // Supabase is the source of truth; localStorage stays a cache/fallback only.
 // ---------------------------------------------------------------------------
 
-/** Reads a single site_content value as the signed-in editor. */
-export async function fetchContentValue<T>(
-  key: AdminContentKey,
-  fallback: T,
-): Promise<T> {
+async function readRow(key: string): Promise<unknown> {
   const { data, error } = await supabase
     .from("site_content")
     .select("value")
     .eq("key", key)
     .maybeSingle();
-  if (error || !data) return fallback;
-  return (data.value as T) ?? fallback;
+  if (error || !data) return undefined;
+  return data.value ?? undefined;
 }
 
-/** Upserts a site_content value. Row stays published so the public can read. */
+function mirrorLocal(key: string, value: unknown): void {
+  try {
+    localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
+  } catch {
+    /* ignore cache write failures */
+  }
+}
+
+function readLocalValue(key: string): unknown {
+  try {
+    const raw = localStorage.getItem(STORAGE_PREFIX + key);
+    return raw ? JSON.parse(raw) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function upsertRow(
+  key: string,
+  value: unknown,
+  published: boolean,
+): Promise<void> {
+  const { error } = await supabase.from("site_content").upsert(
+    { key, value: value as never, published, updated_at: new Date().toISOString() },
+    { onConflict: "key" },
+  );
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Reads a single site_content value as the signed-in editor. For draft-bearing
+ * keys the full admin row is preferred, falling back to the public row.
+ */
+export async function fetchContentValue<T>(
+  key: AdminContentKey,
+  fallback: T,
+): Promise<T> {
+  if (isDraftContentKey(key)) {
+    const adminVal = await readRow(adminKeyFor(key));
+    if (adminVal !== undefined && adminVal !== null) return adminVal as T;
+  }
+  const val = await readRow(key);
+  return ((val as T) ?? fallback);
+}
+
+/**
+ * Upserts a site_content value. For draft-bearing keys the full payload is
+ * written to the editors-only "<key>-admin" row (published=false) and a
+ * sanitized, published-only payload is written to the public "<key>" row.
+ */
 export async function saveContentValue(
   key: AdminContentKey,
   value: unknown,
 ): Promise<void> {
   const { data: sess } = await supabase.auth.getSession();
   if (!sess.session) throw new Error("Sessão expirada. Faça login novamente.");
-  const { error } = await supabase.from("site_content").upsert(
-    {
-      key,
-      value: value as never,
-      published: true,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "key" },
-  );
-  if (error) throw new Error(error.message);
-  // Mirror to the localStorage cache so the public render picks it up too.
-  try {
-    localStorage.setItem("pqoq-site:" + key, JSON.stringify(value));
-  } catch {
-    /* ignore cache write failures */
+
+  if (isDraftContentKey(key)) {
+    // Full draft payload -> admin-only row.
+    await upsertRow(adminKeyFor(key), value, false);
+    // Keep the editor's local cache full so inline editing still shows drafts.
+    mirrorLocal(key, value);
+    // Sanitized payload -> public row.
+    const episodes = key === "episode-embeds" ? readLocalValue("episodes") : value;
+    await upsertRow(key, sanitizeForPublic(key, value, { episodes }), true);
+    if (key === "episodes") {
+      const embeds = readLocalValue("episode-embeds");
+      if (embeds !== undefined) {
+        await upsertRow(
+          "episode-embeds",
+          sanitizeForPublic("episode-embeds", embeds, { episodes: value }),
+          true,
+        );
+      }
+    }
+    return;
   }
+
+  await upsertRow(key, value, true);
+  mirrorLocal(key, value);
 }
 
 // ---------------------------------------------------------------------------

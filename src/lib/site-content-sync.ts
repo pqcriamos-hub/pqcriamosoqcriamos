@@ -1,4 +1,10 @@
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DRAFT_CONTENT_KEYS,
+  adminKeyFor,
+  isDraftContentKey,
+  sanitizeForPublic,
+} from "./content-sanitize";
 
 const STORAGE_PREFIX = "pqoq-site:";
 // Keys allowed by the site_content RLS whitelist.
@@ -35,26 +41,123 @@ declare global {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Helpers: editor detection, localStorage cache, and remote row upserts.
+// ---------------------------------------------------------------------------
+
+/** True only for an authenticated user with editor/admin role. */
+async function isEditorSession(): Promise<boolean> {
+  try {
+    const { data: sess } = await supabase.auth.getSession();
+    const user = sess.session?.user;
+    if (!user) return false;
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .in("role", ["editor", "admin"])
+      .limit(1);
+    return Boolean(data && data.length > 0);
+  } catch {
+    return false;
+  }
+}
+
+function readLocal(key: string): unknown {
+  try {
+    const raw = localStorage.getItem(STORAGE_PREFIX + key);
+    return raw ? JSON.parse(raw) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeLocal(key: string, value: unknown): void {
+  try {
+    localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
+  } catch {
+    /* ignore cache write failures */
+  }
+}
+
+async function upsertRow(
+  key: string,
+  value: unknown,
+  published: boolean,
+): Promise<void> {
+  const { error } = await supabase.from("site_content").upsert(
+    { key, value: value as never, published, updated_at: new Date().toISOString() },
+    { onConflict: "key" },
+  );
+  if (error) throw error;
+}
+
 /**
- * Loads published site content from Supabase into localStorage so every
- * visitor sees editor changes without a manual publish step.
+ * Persists a draft-bearing content key as the signed-in editor:
+ * full payload -> "<key>-admin" (published=false, editors only),
+ * sanitized payload -> "<key>" (published=true, public).
+ */
+async function persistDraftContent(key: string, value: unknown): Promise<void> {
+  await upsertRow(adminKeyFor(key), value, false);
+  const episodes = key === "episode-embeds" ? readLocal("episodes") : value;
+  await upsertRow(key, sanitizeForPublic(key, value, { episodes }), true);
+  // When the episodes list changes, the public embeds row must be recomputed
+  // so unpublished episodes never leak their embeds.
+  if (key === "episodes") {
+    const embeds = readLocal("episode-embeds");
+    if (embeds !== undefined) {
+      await upsertRow(
+        "episode-embeds",
+        sanitizeForPublic("episode-embeds", embeds, { episodes: value }),
+        true,
+      );
+    }
+  }
+}
+
+/**
+ * Loads site content from Supabase into localStorage.
+ * - Anonymous visitors get only the sanitized public rows.
+ * - Editors/admins get the full admin rows (drafts visible inline).
+ * On first editor visit, legacy public rows that still hold drafts are
+ * auto-migrated into the admin/public split.
  */
 export async function hydrateFromRemote(): Promise<void> {
   try {
+    const editor = await isEditorSession();
+    const keysToRead = editor
+      ? [...SYNC_KEYS, ...DRAFT_CONTENT_KEYS.map(adminKeyFor)]
+      : (SYNC_KEYS as unknown as string[]);
     const { data, error } = await supabase
       .from("site_content")
       .select("key, value")
-      .in("key", SYNC_KEYS as unknown as string[]);
+      .in("key", keysToRead);
     if (error || !data) return;
-    for (const row of data) {
-      try {
-        localStorage.setItem(
-          STORAGE_PREFIX + row.key,
-          JSON.stringify(row.value),
-        );
-      } catch {
-        /* ignore individual write failures */
+    const byKey = new Map<string, unknown>(data.map((r) => [r.key, r.value]));
+
+    for (const key of SYNC_KEYS) {
+      if (editor && isDraftContentKey(key)) {
+        const adminVal = byKey.get(adminKeyFor(key));
+        if (adminVal !== undefined) {
+          // Editor sees the full draft payload.
+          writeLocal(key, adminVal);
+          continue;
+        }
+        // No admin row yet: auto-migrate legacy public row into the split.
+        const publicVal = byKey.get(key);
+        if (publicVal !== undefined) {
+          writeLocal(key, publicVal);
+          void persistDraftContent(key, publicVal).catch(() => {});
+        }
+        continue;
       }
+      const value = byKey.get(key);
+      if (value === undefined) continue;
+      // Defense in depth: even if a stale public row still holds drafts,
+      // never write them into an anonymous visitor's cache.
+      writeLocal(key, editor ? value : sanitizeForPublic(key, value, {
+        episodes: key === "episode-embeds" ? byKey.get("episodes") : value,
+      }));
     }
   } catch {
     /* offline / not configured — fall back to local content */
@@ -83,15 +186,10 @@ export function installRemoteSync(): void {
           const { data } = await supabase.auth.getSession();
           if (!data.session) return; // only editors persist remotely
           emit("saving", key);
-          const { error } = await supabase
-            .from("site_content")
-            .upsert(
-              { key, value: value as never, published: true, updated_at: new Date().toISOString() },
-              { onConflict: "key" },
-            );
-          if (error) {
-            emit("error", key);
-            return;
+          if (isDraftContentKey(key)) {
+            await persistDraftContent(key, value);
+          } else {
+            await upsertRow(key, value, true);
           }
           emit("saved", key);
         } catch {

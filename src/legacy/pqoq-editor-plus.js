@@ -10,6 +10,11 @@
   // Phase 2: upload editorial media to Supabase Storage and return a URL.
   // Falls back to base64 only if the upload bridge is unavailable.
   function uploadEditorMedia(file, prefix) {
+    // Hard guard: never allow public/anonymous visitors to upload or to write a
+    // base64 fallback, even if a handler is somehow reached.
+    if (!canUseEditorialUpload()) {
+      return Promise.reject(new Error("upload-not-authorized"));
+    }
     const media = window.PQOQ_MEDIA;
     if (media && typeof media.upload === "function") {
       return media.upload(file, prefix);
@@ -135,6 +140,21 @@
 
   function isAdmin() {
     return document.body.classList.contains("admin-mode") && !document.body.classList.contains("public-preview");
+  }
+
+  // Single source of truth for upload permission (mirrors isAdmin). admin-mode
+  // is only set after a verified editor/admin login; public-preview must be off.
+  function canUseEditorialUpload() {
+    return isAdmin();
+  }
+
+  function syncUploadControls() {
+    const allow = canUseEditorialUpload();
+    document.querySelectorAll('input[type="file"]').forEach((input) => {
+      input.disabled = !allow;
+      if (!allow) input.setAttribute("aria-hidden", "true");
+      else input.removeAttribute("aria-hidden");
+    });
   }
 
   function currentPage() {
@@ -292,6 +312,7 @@
       if (observer) observer.disconnect();
       try {
         enhancePage();
+        syncUploadControls();
       } finally {
         if (observer) {
           observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style"] });
@@ -359,6 +380,7 @@
   }
 
   function handlePagePhotoUpload(input) {
+    if (!canUseEditorialUpload()) return;
     const key = input.dataset.pagePhoto;
     const file = input.files?.[0];
     if (!key || !file) return;
@@ -698,6 +720,7 @@
   }
 
   function handleGalleryImageUpload(input) {
+    if (!canUseEditorialUpload()) return;
     const cardId = input.dataset.galleryCover || input.dataset.galleryItemImage;
     const itemId = input.dataset.galleryItem;
     const file = input.files?.[0];
@@ -1287,6 +1310,7 @@
   }
 
   function handleSupportImageUpload(input) {
+    if (!canUseEditorialUpload()) return;
     const section = input.dataset.supportSection;
     const cardId = input.dataset.supportId;
     const file = input.files?.[0];
@@ -1414,6 +1438,7 @@
   }
 
   function handleEpisodeThumbUpload(input) {
+    if (!canUseEditorialUpload()) return;
     const episodeId = input.dataset.episodeThumbInput;
     const file = input.files?.[0];
     if (!episodeId || !file) return;
@@ -1577,6 +1602,28 @@
   }
 
   function bindGlobalEvents() {
+    // Capture-phase guard: block opening a file picker (image, upload label, or
+    // file input) for anyone who is not an editor in edit mode.
+    document.addEventListener(
+      "click",
+      (event) => {
+        if (canUseEditorialUpload()) return;
+        const target = event.target;
+        if (!target || typeof target.closest !== "function") return;
+        // Never interfere with real interactive controls (lightbox, links).
+        if (target.closest('button, a, [data-open-lightbox], [role="button"]')) {
+          if (!target.closest('input[type="file"]')) return;
+        }
+        const inUploadLabel = target.closest(
+          'input[type="file"], .gallery-cover-upload, .gallery-asset-image, .episode-thumb-upload, .bio-photo-upload, label[data-upload]',
+        );
+        if (inUploadLabel) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      },
+      true,
+    );
     document.addEventListener("click", (event) => {
       // Lightbox controls (highest priority, sits above the modal)
       const openLb = event.target.closest("[data-open-lightbox]");
