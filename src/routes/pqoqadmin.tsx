@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AdminGate } from "@/components/admin/AdminGate";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { AdminDashboard } from "@/components/admin/AdminDashboard";
 
 export const Route = createFileRoute("/pqoqadmin")({
   ssr: false,
@@ -18,9 +17,7 @@ function AdminRoute() {
   return (
     <AdminGate>
       {({ email, signOut }) => (
-        <AdminShell email={email} onSignOut={() => void signOut()}>
-          <AdminDashboard />
-        </AdminShell>
+        <AdminShell email={email} onSignOut={() => void signOut()} />
       )}
     </AdminGate>
   );

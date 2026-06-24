@@ -812,7 +812,10 @@
   function renderHomeEpisodes() {
     const container = document.querySelector("[data-render-home-episodes]");
     if (!container) return;
-    const items = episodes().filter((episode) => episode.id !== "t01ep00").slice(0, 2);
+    const items = episodes()
+      .filter((episode) => episode.id !== "t01ep00")
+      .filter((episode) => isOwnerEditing() || episode.published !== false)
+      .slice(0, 2);
     container.innerHTML = items.map((episode) => `
       <article class="home-episode" data-episode-id="${episode.id}" data-episode-link="${episodeHref(episode.id)}">
         <div class="episode-thumb lettered">${thumbLabel(episode)}</div>
@@ -833,7 +836,9 @@
   function renderEpisodeList() {
     const container = document.querySelector("[data-render-episode-list]");
     if (!container) return;
-    container.innerHTML = episodes().map((episode) => `
+    container.innerHTML = episodes()
+      .filter((episode) => isOwnerEditing() || episode.published !== false)
+      .map((episode) => `
       <article class="card episode-card" data-episode-id="${episode.id}" data-editable="episode.${episode.id}" data-episode-link="${episodeHref(episode.id)}">
         <div class="episode-thumb lettered">${thumbLabel(episode)}</div>
         <div>
@@ -872,7 +877,10 @@
   function renderArtists() {
     const container = document.querySelector("[data-render-artists]");
     if (!container) return;
-    container.innerHTML = artists().map(artistCard).join("");
+    container.innerHTML = artists()
+      .filter((artist) => isOwnerEditing() || artist.published !== false)
+      .map(artistCard)
+      .join("");
     applySavedStyles(container);
   }
 
