@@ -8,6 +8,17 @@ interface BootstrapInput {
 }
 
 /**
+ * Reports whether privileged editor bootstrap is available in this
+ * environment. Safe to call from anyone: it only checks for the presence of
+ * the service-role key, never reads or returns it.
+ */
+export const getBootstrapStatus = createServerFn({ method: "GET" }).handler(
+  async () => ({
+    available: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.SUPABASE_URL),
+  }),
+);
+
+/**
  * One-time bootstrap of the single editor account.
  * Public endpoint, but self-guarded:
  *  - only the allowed editor email is accepted
@@ -24,6 +35,14 @@ export const bootstrapEditor = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (data.email !== ALLOWED_EDITOR_EMAIL) {
       throw new Error("Este e-mail não está autorizado a ser editor.");
+    }
+
+    // Fail safe and friendly when the privileged key is not configured here,
+    // instead of letting the admin client throw a raw env-var error.
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.SUPABASE_URL) {
+      throw new Error(
+        "Funções de bootstrap/criação automática de editor estão indisponíveis neste ambiente.",
+      );
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
