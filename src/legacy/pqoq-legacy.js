@@ -36,6 +36,7 @@
     "[data-link-item-field]",
     "[data-episode-description]",
     "[data-episode-artist-bio]",
+    "[data-episode-participant-about]",
     ".page-title",
     ".home-latest-title",
     ".section-head h1",
@@ -385,6 +386,7 @@
     if (element.dataset.portfolioField) return `portfolio:${element.dataset.artistId || "artist"}:${element.dataset.itemId || "item"}:${element.dataset.portfolioField}`;
     if (element.dataset.linkItemField) return `artist-link:${element.dataset.artistId || "artist"}:${element.dataset.itemId || "item"}:${element.dataset.linkItemField}`;
     if (element.dataset.episodeDescription) return `episode:${element.dataset.episodeDescription}:description`;
+    if (element.dataset.episodeParticipantAbout) return `episode:${element.dataset.episodeParticipantAbout}:participant-about`;
     if (element.dataset.episodeArtistBio) return `episode-artist:${element.dataset.episodeArtistBio}:bio`;
     const episode = element.closest("[data-episode-id]");
     const artist = element.closest("[data-artist-id]");
