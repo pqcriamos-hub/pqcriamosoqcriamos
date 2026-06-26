@@ -1251,7 +1251,7 @@
 
       <div class="episode-artist-panel">
         <h2 class="lettered">Sobre ${escapeHtml(artist?.name || episode.artist)}</h2>
-        <p data-rich data-episode-artist-bio="${artist?.id || episode.artistId}">${artist?.bio || "Biografia editável do artista."}</p>
+        <p data-rich data-episode-participant-about="${episode.id}">${episode.participantAbout || artist?.bio || "Informação editável sobre o participante deste episódio."}</p>
         <div class="artist-actions">
           <button class="button primary small" type="button" data-open-artist="${artist?.id || episode.artistId}">Abrir acervo do artista</button>
           <a class="button small" href="/artistas">Página Artistas</a>
@@ -1370,6 +1370,10 @@
   function ensureTextKeys() {
     editableTextNodes().forEach((element, index) => {
       if (!element.dataset.textKey) {
+        if (element.dataset.episodeParticipantAbout) {
+          element.dataset.textKey = `episode:${element.dataset.episodeParticipantAbout}:participant-about`;
+          return;
+        }
         if (element.dataset.episodeArtistBio) {
           element.dataset.textKey = `episode-artist:${element.dataset.episodeArtistBio}:bio`;
           return;
@@ -1509,6 +1513,16 @@
     if (!artist) return;
     artist.bio = target.innerHTML;
     saveArtists(list);
+  }
+
+  function updateEpisodeParticipantAbout(target) {
+    const episodeId = target.dataset.episodeParticipantAbout;
+    if (!episodeId) return;
+    const list = episodes();
+    const episode = list.find((item) => item.id === episodeId);
+    if (!episode) return;
+    episode.participantAbout = target.innerHTML;
+    saveEpisodes(list);
   }
 
   function handleImageUpload(input) {
@@ -1829,6 +1843,7 @@
       if (event.target.matches("[data-link-url]")) updateLinkUrl(event.target);
       if (event.target.matches("[data-contact-field]")) updateContactField(event.target);
       if (event.target.matches("[data-episode-description]")) updateEpisodeText(event.target);
+      if (event.target.matches("[data-episode-participant-about]")) updateEpisodeParticipantAbout(event.target);
       if (event.target.matches("[data-episode-artist-bio]")) updateEpisodeArtistBio(event.target);
       if (event.target.matches("[data-episode-embed]")) updateEpisodeEmbed(event.target);
       if (event.target.matches("[data-episode-source]")) updateEpisodeSource(event.target);
