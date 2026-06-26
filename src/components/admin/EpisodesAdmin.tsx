@@ -414,6 +414,13 @@ function EpisodeEditor({
         <Field label="Resumo expandido">
           <Textarea value={value.summary || ""} onChange={(e) => set({ summary: e.target.value })} />
         </Field>
+        <Field label="Sobre o participante (individual deste episódio)">
+          <Textarea
+            value={value.participantAbout || ""}
+            onChange={(e) => set({ participantAbout: e.target.value })}
+            placeholder="Texto exclusivo deste episódio. Se vazio, o site usa a bio do artista como fallback."
+          />
+        </Field>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="YouTube URL"><Input value={embed.youtube || ""} onChange={(e) => setEmbed({ youtube: e.target.value })} /></Field>
           <Field label="Spotify URL"><Input value={embed.spotify || ""} onChange={(e) => setEmbed({ spotify: e.target.value })} /></Field>
