@@ -275,6 +275,7 @@ export interface EpisodeItem {
   description?: string;
   summary?: string;
   sourceUrl?: string;
+  participantAbout?: string;
   tags?: string[];
   published?: boolean;
   latest?: boolean;
