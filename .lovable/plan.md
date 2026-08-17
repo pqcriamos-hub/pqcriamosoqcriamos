@@ -1,35 +1,47 @@
-# Player de vídeo: liga/desliga + remover moldura
+# Gestão de acessos no /pqoqadmin + promoção para admin
 
-Duas mudanças nos episódios:
+## Objetivo
+1. Elevar `pqcriamos@gmail.com` de `editor` para `admin`.
+2. Criar no `/pqoqadmin` um módulo "Acessos" para listar, conceder e revogar papéis editoriais.
 
-1. Opção para **ativar/desativar** o player de vídeo em cada episódio (no painel `/pqoqadmin`).
-2. **Remover a moldura/borda/linhas pretas** em volta do campo do player de vídeo, deixando visível apenas o player.
+## Estado atual verificado
+- `public.user_roles` tem 1 registro: `pqcriamos@gmail.com` → `editor` (desde 22/06/2026).
+- Enum `app_role` = `admin` | `editor`.
+- `user_roles` tem apenas UMA policy: `SELECT` do próprio usuário (`auth.uid() = user_id`). Não existe policy de insert/update/delete — hoje ninguém concede papel pelo app.
+- `private.has_role()` já existe e é usada pelas policies de `site_content`.
+- Listar e-mails exige `auth.users`, que só é acessível via service role no servidor.
 
-## 1. Liga/desliga do player de vídeo
+## Etapa 1 — Promoção para admin (dados)
+- Inserir a linha `role = 'admin'` para o usuário atual (mantendo `editor`, pois as policies de `site_content` aceitam os dois; nada quebra).
 
-- Adicionar um campo `videoEnabled?: boolean` ao tipo `EpisodeEmbed` em `src/lib/admin-content.ts`. Quando ausente, é tratado como ligado (padrão = ligado), preservando episódios já existentes.
-- No editor de episódio do painel (`src/components/admin/EpisodesAdmin.tsx`), adicionar um checkbox **"Exibir player de vídeo"** junto aos campos de YouTube/MP3. O valor é salvo dentro de `episode-embeds` (mesma estrutura já usada hoje).
-- Na renderização pública (`src/legacy/pqoq-legacy.js`, função `renderVideo` e `renderEpisodePage`):
-  - Se `videoEnabled === false`, o bloco de vídeo do episódio (`.episode-video-box`) não é exibido para o visitante — a página segue mostrando capa, áudio/Spotify e o restante normalmente.
-  - No modo administrador a área continua acessível para reativar quando necessário.
+## Etapa 2 — Permissões de gestão (migration, risco médio)
+- Nova policy em `user_roles`: `SELECT` liberado para quem é `admin` (via `private.has_role`), para o admin ver todos os papéis.
+- `INSERT`/`DELETE` em `user_roles` apenas para `admin`, com trava anti-lockout: um admin não pode remover o próprio papel `admin`.
+- Trava de segurança adicional: nunca conceder papel a e-mail não confirmado; a concessão será feita por e-mail já existente em `auth.users`.
+- Grants explícitos de Data API preservados/ajustados para `authenticated` e `service_role`.
 
-Comportamento: episódios que ainda não têm vídeo configurado continuam mostrando a mensagem atual; o toggle apenas controla a visibilidade do espaço do player.
+## Etapa 3 — Módulo "Acessos" no painel
+- `src/lib/admin-roles.functions.ts` (novo): server functions com `requireSupabaseAuth`
+  - `listAccessRoles` — verifica que o chamador é `admin`, então usa o cliente admin (import dinâmico dentro do handler) para cruzar `user_roles` com o e-mail de `auth.users`.
+  - `grantRole` — concede `editor`/`admin` a um e-mail já cadastrado e confirmado.
+  - `revokeRole` — remove papel; bloqueia auto-remoção de `admin` e remoção do último `admin`.
+- `src/components/admin/AccessAdmin.tsx` (novo): tabela com e-mail, papéis, data; campo para conceder papel; botão revogar com confirmação.
+- `src/components/admin/AdminShell.tsx`: novo item de menu "Acessos" (visível somente para `admin`), sem alterar os módulos existentes.
+- `src/components/admin/AdminGate.tsx`: passar ao shell se o usuário logado é `admin` (além de editor). Login e fluxo atual permanecem iguais.
 
-## 2. Remover a moldura do player
+## Degradação segura
+No ambiente atual o `SUPABASE_SERVICE_ROLE_KEY` não está disponível no sandbox. O módulo seguirá o mesmo padrão já usado no bootstrap: quando a chave não estiver configurada, a tela mostra a lista de papéis via RLS (sem e-mails) e uma mensagem clara em vez de erro/tela branca.
 
-No `src/pqoq.css`:
-- Remover a borda preta (`border: var(--line)`) e os fundos que criam o efeito de moldura no `.episode-video-box` (e nos estados `has-video`/`has-thumbnail`), deixando apenas o conteúdo do player/iframe visível, sem caixa em volta.
-- Ajustar para que, quando houver vídeo, o iframe ocupe a área sem o frame externo. Quando estiver vazio (sem vídeo e em preparação), manter um espaço discreto apenas onde fizer sentido.
+## Fora de escopo
+Nenhuma alteração em Episódios, Artistas, Acervo, Apoio, editor inline, site público, uploads ou chaves de `site_content`.
 
-Isso elimina as linhas/retângulos pretos vistos ao redor do player na página do episódio.
+## Testes
+- Typecheck/build.
+- `/pqoqadmin` como admin: lista aparece, concessão e revogação funcionam, autorrevogação bloqueada.
+- Como editor (não admin): menu "Acessos" não aparece e as server functions recusam (403).
+- Anônimo: nada muda; nenhum vazamento de e-mail.
+- Console sem erros.
 
-## Arquivos alterados
-- `src/lib/admin-content.ts` — novo campo `videoEnabled` em `EpisodeEmbed`.
-- `src/components/admin/EpisodesAdmin.tsx` — checkbox de liga/desliga do player.
-- `src/legacy/pqoq-legacy.js` — respeitar o toggle ao renderizar o vídeo.
-- `src/pqoq.css` — remover a moldura/borda do player de vídeo.
-
-## Notas técnicas
-- A persistência usa o mesmo fluxo já existente (`saveContentValue("episode-embeds", ...)`), com sanitização pública/admin já implementada — nenhuma migration nova é necessária.
-- Padrão "ligado" garante que nenhum episódio existente perca o vídeo após a mudança.
-- Após implementar: build/typecheck e verificação visual na página de episódio (vídeo visível sem moldura, e oculto quando desativado).
+## Rollback
+- Reverter a migration (drop das novas policies) e remover a linha `admin` de `user_roles`.
+- Remover `AccessAdmin.tsx`, `admin-roles.functions.ts` e o item de menu.
