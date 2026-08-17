@@ -9,9 +9,16 @@ import {
   isPublished,
   type EpisodeItem,
   type EpisodeEmbeds,
+  type ArtistItem,
   type LinkPair,
   genId,
 } from "@/lib/admin-content";
+import {
+  cascadeSuggestions,
+  episodeLinkInfo,
+  isEpisodeZero,
+  type CascadeSuggestion,
+} from "@/lib/episode-artist-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,11 +79,16 @@ export function EpisodesAdmin() {
     queryFn: async () => ({
       episodes: await fetchContentValue<EpisodeItem[]>("episodes", []),
       embeds: await fetchContentValue<EpisodeEmbeds>("episode-embeds", {}),
+      artists: await fetchContentValue<ArtistItem[]>("artists", []),
     }),
   });
 
   const [episodes, setEpisodes] = useState<EpisodeItem[]>([]);
   const [embeds, setEmbeds] = useState<EpisodeEmbeds>({});
+  const [artists, setArtists] = useState<ArtistItem[]>([]);
+  const [initialPublished, setInitialPublished] = useState<Record<string, boolean>>({});
+  const [pendingCascade, setPendingCascade] = useState<CascadeSuggestion[] | null>(null);
+  const [cascadeChoice, setCascadeChoice] = useState<Record<string, boolean>>({});
   const [dirty, setDirty] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -91,6 +103,10 @@ export function EpisodesAdmin() {
     if (data) {
       setEpisodes(data.episodes);
       setEmbeds(data.embeds);
+      setArtists(data.artists);
+      setInitialPublished(
+        Object.fromEntries(data.episodes.map((ep) => [ep.id, ep.published !== false])),
+      );
       setDirty(false);
     }
   }, [data]);
@@ -205,19 +221,50 @@ export function EpisodesAdmin() {
     }
   };
 
-  const saveAll = async () => {
+  const persist = async (nextEpisodes: EpisodeItem[], nextArtists: ArtistItem[]) => {
     setSaveState("saving");
     setErrorMsg("");
     try {
-      await saveContentValue("episodes", episodes);
+      await saveContentValue("episodes", nextEpisodes);
       await saveContentValue("episode-embeds", embeds);
+      // Só grava artistas quando a cascata alterou algum published.
+      if (nextArtists !== artists) await saveContentValue("artists", nextArtists);
       setSaveState("saved");
       setDirty(false);
+      setPendingCascade(null);
+      setCascadeChoice({});
       void refetch();
     } catch (err) {
       setSaveState("error");
       setErrorMsg(err instanceof Error ? err.message : "Erro ao salvar.");
     }
+  };
+
+  const saveAll = async () => {
+    const suggestions = cascadeSuggestions(episodes, artists, initialPublished);
+    if (suggestions.length) {
+      setCascadeChoice({});
+      setPendingCascade(suggestions);
+      return;
+    }
+    await persist(episodes, artists);
+  };
+
+  /** Aplica as cascatas confirmadas: apenas troca published, nada é apagado. */
+  const confirmCascade = async () => {
+    const chosen = (pendingCascade ?? []).filter((s) => cascadeChoice[`${s.kind}:${s.artistId}`]);
+    let nextArtists = artists;
+    if (chosen.length) {
+      nextArtists = artists.map((a) => {
+        const hide = chosen.some((s) => s.kind === "hide-artist" && s.artistId === a.id);
+        const show = chosen.some((s) => s.kind === "publish-artist" && s.artistId === a.id);
+        if (show) return { ...a, published: true };
+        if (hide) return { ...a, published: false };
+        return a;
+      });
+      setArtists(nextArtists);
+    }
+    await persist(episodes, nextArtists);
   };
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Carregando episódios…</p>;
