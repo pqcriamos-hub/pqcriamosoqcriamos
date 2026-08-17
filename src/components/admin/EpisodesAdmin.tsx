@@ -448,6 +448,57 @@ export function EpisodesAdmin() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog
+        open={pendingCascade !== null}
+        onOpenChange={(o) => {
+          if (!o) {
+            setPendingCascade(null);
+            setCascadeChoice({});
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Publicação vinculada de artistas</AlertDialogTitle>
+            <AlertDialogDescription>
+              Nada será apagado. As opções abaixo apenas alteram a visibilidade pública do artista.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3">
+            {(pendingCascade ?? []).map((s) => {
+              const key = `${s.kind}:${s.artistId}`;
+              return (
+                <label key={key} className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={!!cascadeChoice[key]}
+                    onChange={(e) =>
+                      setCascadeChoice((prev) => ({ ...prev, [key]: e.target.checked }))
+                    }
+                  />
+                  <span>
+                    <strong>
+                      {s.kind === "hide-artist"
+                        ? "Também ocultar o artista vinculado"
+                        : "Também publicar o artista vinculado"}
+                    </strong>
+                    <br />
+                    <span className="text-muted-foreground">{s.message}</span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void confirmCascade()}>
+              Salvar alterações
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
