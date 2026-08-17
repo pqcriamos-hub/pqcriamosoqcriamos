@@ -456,6 +456,8 @@ function EpisodeEditor({
   value,
   embed,
   uploading,
+  artists,
+  episodes,
   onChange,
   onChangeEmbed,
   onUpload,
@@ -466,6 +468,8 @@ function EpisodeEditor({
   value: EpisodeItem;
   embed: EpisodeEmbeds[string];
   uploading: boolean;
+  artists: ArtistItem[];
+  episodes: EpisodeItem[];
   onChange: (e: EpisodeItem) => void;
   onChangeEmbed: (e: EpisodeEmbeds[string]) => void;
   onUpload: (file: File, field: "thumbnail" | "mp3") => void;
@@ -477,6 +481,7 @@ function EpisodeEditor({
   const setEmbed = (patch: Partial<EpisodeEmbeds[string]>) => onChangeEmbed({ ...embed, ...patch });
   const setLinks = (field: "links" | "participantLinks", next: LinkPair[]) =>
     set({ [field]: next } as Partial<EpisodeItem>);
+  const link = episodeLinkInfo(value, artists, episodes);
 
   return (
     <Card>
@@ -484,6 +489,41 @@ function EpisodeEditor({
         <h3 className="text-base font-semibold">
           {value.title ? `Editar: ${value.title}` : "Novo episódio"}
         </h3>
+        <div className="space-y-1 rounded-md border p-4 text-sm">
+          <h4 className="text-sm font-semibold">Artista vinculado</h4>
+          {link.isEp00 ? (
+            <p className="text-muted-foreground">
+              Este episódio é institucional/de apresentação e não controla publicação de artistas.
+            </p>
+          ) : link.artist ? (
+            <>
+              <p>
+                {link.artist.name || link.artist.id}{" "}
+                <span className="text-muted-foreground">({link.artistId})</span>{" "}
+                <Badge variant={link.artistPublished ? "default" : "secondary"}>
+                  {link.artistPublished ? "Artista publicado" : "Artista oculto"}
+                </Badge>
+              </p>
+              <p className="text-muted-foreground">
+                {link.publishedCount} episódio(s) publicado(s) · {link.draftCount} oculto(s)/rascunho
+                (EP00 não é contado).
+              </p>
+              {link.otherPublishedCount > 0 ? (
+                <p className="text-muted-foreground">
+                  Este artista possui outros episódios publicados. Ele continuará visível no
+                  catálogo.
+                </p>
+              ) : (
+                <p className="text-amber-600">
+                  Este é o único episódio publicado vinculado a este artista. Ao despublicar, o
+                  painel oferecerá ocultar o artista também.
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-amber-600">Este episódio não possui artista vinculado.</p>
+          )}
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Código">
             <Input value={value.code || ""} onChange={(e) => set({ code: e.target.value })} />
