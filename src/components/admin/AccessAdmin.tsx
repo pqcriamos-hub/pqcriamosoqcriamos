@@ -28,7 +28,17 @@ function formatDate(value: string) {
   }
 }
 
-export function AccessAdmin({ currentUserId }: { currentUserId: string }) {
+export function AccessAdmin({
+  currentUserId,
+  email: sessionEmail,
+  isAdmin,
+  onSignOut,
+}: {
+  currentUserId: string;
+  email?: string;
+  isAdmin?: boolean;
+  onSignOut?: () => void;
+}) {
   const [rows, setRows] = useState<AccessRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -101,11 +111,7 @@ export function AccessAdmin({ currentUserId }: { currentUserId: string }) {
       setMessage("É necessário manter ao menos um admin.");
       return;
     }
-    if (
-      !window.confirm(
-        `Remover o papel "${row.role}" de ${row.email ?? row.user_id}?`,
-      )
-    ) {
+    if (!window.confirm(`Remover o papel "${row.role}" de ${row.email ?? row.user_id}?`)) {
       return;
     }
     setBusy(true);
@@ -121,6 +127,65 @@ export function AccessAdmin({ currentUserId }: { currentUserId: string }) {
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Sua sessão</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <div className="space-y-1 text-muted-foreground">
+            <p>E-mail: {sessionEmail ?? "—"}</p>
+            <p>Papel: {isAdmin ? "administrador" : "editor"}</p>
+            <p>Status: sessão ativa neste navegador.</p>
+          </div>
+          <div>
+            <p className="font-medium text-foreground">O que este papel permite</p>
+            <ul className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">
+              <li>Ler o conteúdo público do site.</li>
+              <li>Editar textos, imagens e itens no painel e no editor inline.</li>
+              <li>Enviar mídia para o Storage privado do projeto.</li>
+              <li>Salvar em site_content, incluindo os rascunhos não publicados.</li>
+              {isAdmin && <li>Conceder e remover acessos de editores e administradores.</li>}
+            </ul>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {onSignOut && (
+              <Button variant="outline" size="sm" onClick={onSignOut}>
+                Sair
+              </Button>
+            )}
+            <Button variant="outline" size="sm" asChild>
+              <a href="/" target="_blank" rel="noreferrer">
+                Voltar ao site
+              </a>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Avisos de segurança</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <p>
+            O endereço oculto deste painel não é proteção: quem garante o acesso são o login e as
+            regras de permissão do banco.
+          </p>
+          <p>
+            Chaves administrativas do servidor nunca são usadas no navegador; o painel age sempre
+            como o seu usuário autenticado.
+          </p>
+          <p>
+            As mídias ficam em um bucket privado e são exibidas por links assinados de longa
+            duração.
+          </p>
+          <p>
+            Pendência manual: ativar a proteção contra senhas vazadas no painel do Supabase
+            (Authentication → Policies / Password settings). Não é possível ativar por código.
+          </p>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Acessos editoriais</CardTitle>
