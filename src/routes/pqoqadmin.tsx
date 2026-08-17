@@ -16,8 +16,13 @@ export const Route = createFileRoute("/pqoqadmin")({
 function AdminRoute() {
   return (
     <AdminGate>
-      {({ email, signOut }) => (
-        <AdminShell email={email} onSignOut={() => void signOut()} />
+      {({ email, userId, isAdmin, signOut }) => (
+        <AdminShell
+          email={email}
+          userId={userId}
+          isAdmin={isAdmin}
+          onSignOut={() => void signOut()}
+        />
       )}
     </AdminGate>
   );
