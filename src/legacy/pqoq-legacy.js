@@ -1406,12 +1406,22 @@
     syncUploadControls();
   }
 
+  // Stable content key for an element that carries data-editable. The legacy
+  // composite key (module:own:index) depends on DOM order, so it cannot be
+  // written from /pqoqadmin. Elements with data-editable also read/write this
+  // stable key, which takes precedence over the legacy one.
+  function stableTextKey(element) {
+    return element.dataset.editable || "";
+  }
+
   function saveEditableContent(target) {
     ensureTextKeys();
     const key = target.dataset.textKey;
     if (!key) return;
     const data = getState("editable-content", {});
     data[key] = target.innerHTML;
+    const stable = stableTextKey(target);
+    if (stable) data[stable] = target.innerHTML;
     setState("editable-content", data);
   }
 
@@ -1420,7 +1430,9 @@
     const data = getState("editable-content", {});
     editableTextNodes().forEach((element) => {
       const key = element.dataset.textKey;
-      if (key && data[key]) element.innerHTML = data[key];
+      const stable = stableTextKey(element);
+      const value = (stable && data[stable]) || (key && data[key]) || "";
+      if (value) element.innerHTML = value;
     });
   }
 
