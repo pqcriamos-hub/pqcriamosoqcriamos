@@ -346,7 +346,16 @@ export function EpisodesAdmin() {
                         </Badge>
                       ) : null}
                     </TableCell>
-                    <TableCell>{ep.artist}</TableCell>
+                    <TableCell>
+                      <div>{ep.artist}</div>
+                      {isEpisodeZero(ep) ? (
+                        <div className="text-xs text-muted-foreground">
+                          institucional (não controla artistas)
+                        </div>
+                      ) : !episodeLinkInfo(ep, artists, episodes).artist ? (
+                        <div className="text-xs text-amber-600">sem artista vinculado</div>
+                      ) : null}
+                    </TableCell>
                     <TableCell>
                       <button type="button" onClick={() => togglePublish(ep.id)}>
                         <Badge variant={isPublished(ep) ? "default" : "secondary"}>
