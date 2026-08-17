@@ -13,6 +13,7 @@ import {
   type ArtistLinkItem,
   genId,
 } from "@/lib/admin-content";
+import { artistEpisodeStats, isItemVisible } from "@/lib/episode-artist-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,7 +82,9 @@ export function ArtistsAdmin() {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "published" | "draft">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "published" | "draft" | "no-episodes">(
+    "all",
+  );
   const [editing, setEditing] = useState<ArtistItem | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -99,6 +102,12 @@ export function ArtistsAdmin() {
     return artists.filter((a) => {
       if (statusFilter === "published" && !isPublished(a)) return false;
       if (statusFilter === "draft" && isPublished(a)) return false;
+      if (
+        statusFilter === "no-episodes" &&
+        artistEpisodeStats(a, episodes).publishedCount > 0
+      ) {
+        return false;
+      }
       if (!q) return true;
       return [a.name, a.meta, ...(a.tags || [])].some((f) =>
         String(f || "")
@@ -106,7 +115,7 @@ export function ArtistsAdmin() {
           .includes(q),
       );
     });
-  }, [artists, search, statusFilter]);
+  }, [artists, episodes, search, statusFilter]);
 
   const markDirty = (next: ArtistItem[]) => {
     setArtists(next);
@@ -236,6 +245,7 @@ export function ArtistsAdmin() {
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="published">Publicados</SelectItem>
             <SelectItem value="draft">Rascunhos</SelectItem>
+            <SelectItem value="no-episodes">Sem episódios publicados</SelectItem>
           </SelectContent>
         </Select>
         <Button size="sm" onClick={() => setEditing(emptyArtist())}>
@@ -250,6 +260,7 @@ export function ArtistsAdmin() {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Atuação</TableHead>
+                <TableHead>Episódios</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -257,12 +268,14 @@ export function ArtistsAdmin() {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
                     Nenhum artista.
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((a) => (
+                filtered.map((a) => {
+                  const stats = artistEpisodeStats(a, episodes);
+                  return (
                   <TableRow key={a.id}>
                     <TableCell>
                       <div className="font-medium">{a.name || "(sem nome)"}</div>
@@ -273,6 +286,23 @@ export function ArtistsAdmin() {
                       ) : null}
                     </TableCell>
                     <TableCell>{a.meta}</TableCell>
+                    <TableCell className="text-sm">
+                      <div>
+                        {stats.publishedCount} publicado(s) · {stats.draftCount} oculto(s)
+                      </div>
+                      {stats.publishedCount === 0 ? (
+                        <div className="text-xs text-amber-600">
+                          {isPublished(a)
+                            ? "Publicado sem episódio publicado"
+                            : "Nenhum episódio publicado"}
+                        </div>
+                      ) : null}
+                      {!isPublished(a) && stats.publishedCount > 0 ? (
+                        <div className="text-xs text-amber-600">
+                          Artista oculto com episódios publicados
+                        </div>
+                      ) : null}
+                    </TableCell>
                     <TableCell>
                       <button type="button" onClick={() => togglePublish(a.id)}>
                         <Badge variant={isPublished(a) ? "default" : "secondary"}>
@@ -326,7 +356,8 @@ export function ArtistsAdmin() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
+                  );
+                })
               )}
             </TableBody>
           </Table>
