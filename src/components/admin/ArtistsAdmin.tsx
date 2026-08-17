@@ -368,9 +368,7 @@ export function ArtistsAdmin() {
         <ArtistEditor
           value={editing}
           uploading={uploading}
-          relatedEpisodes={episodes.filter(
-            (e) => e.artistId === editing!.id || e.artistId === editing!.slug,
-          )}
+          relatedEpisodes={artistEpisodeStats(editing, episodes).linked}
           onChange={setEditing}
           onUpload={onUpload}
           onUploadItem={onUploadItem}
