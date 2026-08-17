@@ -9,6 +9,8 @@ import {
   isPublished,
   type EpisodeItem,
   type EpisodeEmbeds,
+  type LinkPair,
+  genId,
 } from "@/lib/admin-content";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -196,6 +198,20 @@ export function EpisodesAdmin() {
     }
   };
 
+  const onUploadParticipant = async (file: File) => {
+    if (!editing) return;
+    setUploading(true);
+    setErrorMsg("");
+    try {
+      const { url } = await uploadAdminMedia(file, `episodes/${editing.id}/participant`);
+      setEditing((prev) => (prev ? { ...prev, participantImage: url } : prev));
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Falha no upload.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const saveAll = async () => {
     setSaveState("saving");
     setErrorMsg("");
@@ -339,6 +355,7 @@ export function EpisodesAdmin() {
           onChange={setEditing}
           onChangeEmbed={setEditingEmbed}
           onUpload={onUpload}
+          onUploadParticipant={onUploadParticipant}
           onCancel={() => setEditing(null)}
           onApply={applyEditor}
         />
@@ -371,6 +388,7 @@ function EpisodeEditor({
   onChange,
   onChangeEmbed,
   onUpload,
+  onUploadParticipant,
   onCancel,
   onApply,
 }: {
@@ -380,12 +398,15 @@ function EpisodeEditor({
   onChange: (e: EpisodeItem) => void;
   onChangeEmbed: (e: EpisodeEmbeds[string]) => void;
   onUpload: (file: File, field: "thumbnail" | "mp3") => void;
+  onUploadParticipant: (file: File) => void;
   onCancel: () => void;
   onApply: () => void;
 }) {
   const set = (patch: Partial<EpisodeItem>) => onChange({ ...value, ...patch });
   const setEmbed = (patch: Partial<EpisodeEmbeds[string]>) =>
     onChangeEmbed({ ...embed, ...patch });
+  const setLinks = (field: "links" | "participantLinks", next: LinkPair[]) =>
+    set({ [field]: next } as Partial<EpisodeItem>);
 
   return (
     <Card>
@@ -414,13 +435,70 @@ function EpisodeEditor({
         <Field label="Resumo expandido">
           <Textarea value={value.summary || ""} onChange={(e) => set({ summary: e.target.value })} />
         </Field>
-        <Field label="Sobre o participante (individual deste episódio)">
-          <Textarea
-            value={value.participantAbout || ""}
-            onChange={(e) => set({ participantAbout: e.target.value })}
-            placeholder="Texto exclusivo deste episódio. Se vazio, o site usa a bio do artista como fallback."
+        <div className="space-y-4 rounded-md border p-4">
+          <h4 className="text-sm font-semibold">
+            Participante deste episódio (campos individuais)
+          </h4>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Título do bloco">
+              <Input
+                value={value.participantTitle || ""}
+                onChange={(e) => set({ participantTitle: e.target.value })}
+                placeholder='Se vazio: "Sobre {nome do artista}"'
+              />
+            </Field>
+            <Field label="Tags do participante (vírgula)">
+              <Input
+                value={(value.participantTags || []).join(", ")}
+                onChange={(e) =>
+                  set({
+                    participantTags: e.target.value
+                      .split(",")
+                      .map((t) => t.trim())
+                      .filter(Boolean),
+                  })
+                }
+              />
+            </Field>
+          </div>
+          <Field label="Sobre o participante (individual deste episódio)">
+            <Textarea
+              value={value.participantAbout || ""}
+              onChange={(e) => set({ participantAbout: e.target.value })}
+              placeholder="Texto exclusivo deste episódio. Se vazio, o site usa a bio do artista como fallback."
+            />
+          </Field>
+          <Field label="Bio complementar do participante (opcional)">
+            <Textarea
+              value={value.participantBio || ""}
+              onChange={(e) => set({ participantBio: e.target.value })}
+              placeholder="Só aparece se preenchido. Fallback: bio do artista."
+            />
+          </Field>
+          <Field label="Foto do participante (upload)">
+            <input
+              type="file"
+              accept="image/*"
+              disabled={uploading}
+              onChange={(e) => e.target.files?.[0] && onUploadParticipant(e.target.files[0])}
+            />
+            {value.participantImage ? (
+              <span className="text-xs text-muted-foreground">
+                {isBase64(value.participantImage) ? "base64 legado" : "imagem enviada"}
+              </span>
+            ) : null}
+          </Field>
+          <LinkPairEditor
+            title="Links do participante"
+            pairs={value.participantLinks || []}
+            onChange={(next) => setLinks("participantLinks", next)}
           />
-        </Field>
+        </div>
+        <LinkPairEditor
+          title="Links do episódio"
+          pairs={value.links || []}
+          onChange={(next) => setLinks("links", next)}
+        />
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="YouTube URL"><Input value={embed.youtube || ""} onChange={(e) => setEmbed({ youtube: e.target.value })} /></Field>
           <Field label="Spotify URL"><Input value={embed.spotify || ""} onChange={(e) => setEmbed({ spotify: e.target.value })} /></Field>
@@ -467,6 +545,61 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div className="space-y-1.5">
       <Label className="text-xs">{label}</Label>
       {children}
+    </div>
+  );
+}
+
+function LinkPairEditor({
+  title,
+  pairs,
+  onChange,
+}: {
+  title: string;
+  pairs: LinkPair[];
+  onChange: (next: LinkPair[]) => void;
+}) {
+  const update = (id: string, patch: Partial<LinkPair>) =>
+    onChange(pairs.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">{title}</Label>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => onChange([...pairs, { id: genId("link"), label: "", href: "" }])}
+        >
+          <Plus className="mr-1 h-3 w-3" /> Adicionar link
+        </Button>
+      </div>
+      {pairs.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Nenhum link cadastrado.</p>
+      ) : (
+        pairs.map((pair) => (
+          <div key={pair.id} className="flex flex-wrap items-center gap-2">
+            <Input
+              className="max-w-[180px]"
+              placeholder="Rótulo"
+              value={pair.label || ""}
+              onChange={(e) => update(pair.id as string, { label: e.target.value })}
+            />
+            <Input
+              className="flex-1"
+              placeholder="https://…"
+              value={pair.href || ""}
+              onChange={(e) => update(pair.id as string, { href: e.target.value })}
+            />
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => onChange(pairs.filter((p) => p.id !== pair.id))}
+              title="Remover link"
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        ))
+      )}
     </div>
   );
 }
