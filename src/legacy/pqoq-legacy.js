@@ -1232,7 +1232,14 @@
     const container = document.querySelector("[data-render-episode-page]");
     if (!container) return;
     const episodeId = currentEpisodeId();
-    const episode = episodes().find((item) => item.id === episodeId) || episodes()[0];
+    const found = episodes().find((item) => item.id === episodeId);
+    // Episódio oculto: indisponível para visitante, visível para editor.
+    if (found && found.published === false && !isOwnerEditing()) {
+      container.innerHTML = '<div class="empty-state">Episódio indisponível. <a href="/episodios">Ver todos os episódios</a>.</div>';
+      return;
+    }
+    const visible = episodes().filter((item) => isOwnerEditing() || item.published !== false);
+    const episode = found || visible[0];
     if (!episode) {
       container.innerHTML = '<div class="empty-state">Nenhum episódio cadastrado ainda.</div>';
       return;
