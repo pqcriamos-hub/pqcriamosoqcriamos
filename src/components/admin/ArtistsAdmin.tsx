@@ -101,7 +101,9 @@ export function ArtistsAdmin() {
       if (statusFilter === "draft" && isPublished(a)) return false;
       if (!q) return true;
       return [a.name, a.meta, ...(a.tags || [])].some((f) =>
-        String(f || "").toLowerCase().includes(q),
+        String(f || "")
+          .toLowerCase()
+          .includes(q),
       );
     });
   }, [artists, search, statusFilter]);
@@ -137,9 +139,7 @@ export function ArtistsAdmin() {
       slug: editing.slug?.trim() || slugify(editing.name || editing.id),
     };
     const exists = artists.some((a) => a.id === item.id);
-    const next = exists
-      ? artists.map((a) => (a.id === item.id ? item : a))
-      : [...artists, item];
+    const next = exists ? artists.map((a) => (a.id === item.id ? item : a)) : [...artists, item];
     markDirty(next);
     setEditing(null);
   };
@@ -159,11 +159,7 @@ export function ArtistsAdmin() {
   };
 
   /** Upload de imagem de uma obra do portfólio ou de um link/rede. */
-  const onUploadItem = async (
-    kind: "portfolioItems" | "linkItems",
-    itemId: string,
-    file: File,
-  ) => {
+  const onUploadItem = async (kind: "portfolioItems" | "linkItems", itemId: string, file: File) => {
     if (!editing) return;
     setUploading(true);
     setErrorMsg("");
@@ -206,9 +202,15 @@ export function ArtistsAdmin() {
         <h2 className="text-lg font-semibold">Artistas</h2>
         <div className="flex items-center gap-2">
           {dirty ? <span className="text-xs text-amber-600">Alterações não salvas</span> : null}
-          {saveState === "saving" ? <span className="text-xs text-muted-foreground">Salvando…</span> : null}
+          {saveState === "saving" ? (
+            <span className="text-xs text-muted-foreground">Salvando…</span>
+          ) : null}
           {saveState === "saved" ? <span className="text-xs text-green-600">Salvo</span> : null}
-          <Button size="sm" onClick={() => void saveAll()} disabled={!dirty || saveState === "saving"}>
+          <Button
+            size="sm"
+            onClick={() => void saveAll()}
+            disabled={!dirty || saveState === "saving"}
+          >
             Salvar alterações
           </Button>
         </div>
@@ -223,8 +225,13 @@ export function ArtistsAdmin() {
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs"
         />
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+        <Select
+          value={statusFilter}
+          onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
+        >
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="published">Publicados</SelectItem>
@@ -260,7 +267,9 @@ export function ArtistsAdmin() {
                     <TableCell>
                       <div className="font-medium">{a.name || "(sem nome)"}</div>
                       {isBase64(a.image) ? (
-                        <Badge variant="outline" className="mt-1 text-amber-600">foto base64 legado</Badge>
+                        <Badge variant="outline" className="mt-1 text-amber-600">
+                          foto base64 legado
+                        </Badge>
                       ) : null}
                     </TableCell>
                     <TableCell>{a.meta}</TableCell>
@@ -273,14 +282,47 @@ export function ArtistsAdmin() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => move(a.id, -1)} title="Subir"><ArrowUp className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => move(a.id, 1)} title="Descer"><ArrowDown className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => setEditing({ ...a })} title="Editar"><Pencil className="h-4 w-4" /></Button>
-                        <a href="/artistas" target="_blank" rel="noreferrer"
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted" title="Ver no site">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => move(a.id, -1)}
+                          title="Subir"
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => move(a.id, 1)}
+                          title="Descer"
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setEditing({ ...a })}
+                          title="Editar"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <a
+                          href="/artistas"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted"
+                          title="Ver no site"
+                        >
                           <ExternalLink className="h-4 w-4" />
                         </a>
-                        <Button size="icon" variant="ghost" onClick={() => setConfirmId(a.id)} title="Remover"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setConfirmId(a.id)}
+                          title="Remover"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -295,7 +337,9 @@ export function ArtistsAdmin() {
         <ArtistEditor
           value={editing}
           uploading={uploading}
-          relatedEpisodes={episodes.filter((e) => e.artistId === editing!.id || e.artistId === editing!.slug)}
+          relatedEpisodes={episodes.filter(
+            (e) => e.artistId === editing!.id || e.artistId === editing!.slug,
+          )}
           onChange={setEditing}
           onUpload={onUpload}
           onUploadItem={onUploadItem}
@@ -309,12 +353,15 @@ export function ArtistsAdmin() {
           <AlertDialogHeader>
             <AlertDialogTitle>Remover artista?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação remove o artista da lista. Clique em "Salvar alterações" para confirmar no site.
+              Esta ação remove o artista da lista. Clique em "Salvar alterações" para confirmar no
+              site.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => confirmId && remove(confirmId)}>Remover</AlertDialogAction>
+            <AlertDialogAction onClick={() => confirmId && remove(confirmId)}>
+              Remover
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -337,11 +384,7 @@ function ArtistEditor({
   relatedEpisodes: EpisodeItem[];
   onChange: (a: ArtistItem) => void;
   onUpload: (file: File) => void;
-  onUploadItem: (
-    kind: "portfolioItems" | "linkItems",
-    itemId: string,
-    file: File,
-  ) => void;
+  onUploadItem: (kind: "portfolioItems" | "linkItems", itemId: string, file: File) => void;
   onCancel: () => void;
   onApply: () => void;
 }) {
@@ -354,21 +397,57 @@ function ArtistEditor({
   return (
     <Card>
       <CardContent className="space-y-4 p-6">
-        <h3 className="text-base font-semibold">{value.name ? `Editar: ${value.name}` : "Novo artista"}</h3>
+        <h3 className="text-base font-semibold">
+          {value.name ? `Editar: ${value.name}` : "Novo artista"}
+        </h3>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Nome"><Input value={value.name || ""} onChange={(e) => set({ name: e.target.value })} /></Field>
-          <Field label="Slug"><Input value={value.slug || ""} onChange={(e) => set({ slug: e.target.value })} /></Field>
-          <Field label="Formação / atuação"><Input value={value.meta || ""} onChange={(e) => set({ meta: e.target.value })} /></Field>
+          <Field label="Nome">
+            <Input value={value.name || ""} onChange={(e) => set({ name: e.target.value })} />
+          </Field>
+          <Field label="Slug">
+            <Input value={value.slug || ""} onChange={(e) => set({ slug: e.target.value })} />
+          </Field>
+          <Field label="Formação / atuação">
+            <Input value={value.meta || ""} onChange={(e) => set({ meta: e.target.value })} />
+          </Field>
           <Field label="Tags (vírgula)">
-            <Input value={(value.tags || []).join(", ")}
-              onChange={(e) => set({ tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) })} />
+            <Input
+              value={(value.tags || []).join(", ")}
+              onChange={(e) =>
+                set({
+                  tags: e.target.value
+                    .split(",")
+                    .map((t) => t.trim())
+                    .filter(Boolean),
+                })
+              }
+            />
           </Field>
         </div>
-        <Field label="Bio curta"><Textarea value={value.description || ""} onChange={(e) => set({ description: e.target.value })} /></Field>
-        <Field label="Bio expandida"><Textarea value={value.bio || ""} onChange={(e) => set({ bio: e.target.value })} /></Field>
-        <Field label="Portfólio / acervo"><Textarea value={value.portfolio || ""} onChange={(e) => set({ portfolio: e.target.value })} /></Field>
-        <Field label="Links / redes"><Textarea value={value.links || ""} onChange={(e) => set({ links: e.target.value })} /></Field>
-        <Field label="Contato profissional"><Textarea value={value.contact || ""} onChange={(e) => set({ contact: e.target.value })} /></Field>
+        <Field label="Bio curta">
+          <Textarea
+            value={value.description || ""}
+            onChange={(e) => set({ description: e.target.value })}
+          />
+        </Field>
+        <Field label="Bio expandida">
+          <Textarea value={value.bio || ""} onChange={(e) => set({ bio: e.target.value })} />
+        </Field>
+        <Field label="Portfólio / acervo">
+          <Textarea
+            value={value.portfolio || ""}
+            onChange={(e) => set({ portfolio: e.target.value })}
+          />
+        </Field>
+        <Field label="Links / redes">
+          <Textarea value={value.links || ""} onChange={(e) => set({ links: e.target.value })} />
+        </Field>
+        <Field label="Contato profissional">
+          <Textarea
+            value={value.contact || ""}
+            onChange={(e) => set({ contact: e.target.value })}
+          />
+        </Field>
 
         <div className="space-y-3 rounded-md border p-4">
           <div className="flex items-center justify-between">
@@ -523,8 +602,7 @@ function ArtistEditor({
                     accept="image/*"
                     disabled={uploading}
                     onChange={(e) =>
-                      e.target.files?.[0] &&
-                      onUploadItem("linkItems", item.id, e.target.files[0])
+                      e.target.files?.[0] && onUploadItem("linkItems", item.id, e.target.files[0])
                     }
                   />
                   {item.image ? (
@@ -566,10 +644,16 @@ function ArtistEditor({
         </div>
 
         <Field label="Foto (upload)">
-          <input type="file" accept="image/*" disabled={uploading}
-            onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])} />
+          <input
+            type="file"
+            accept="image/*"
+            disabled={uploading}
+            onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
+          />
           {value.image ? (
-            <span className="text-xs text-muted-foreground">{isBase64(value.image) ? "base64 legado" : "imagem enviada"}</span>
+            <span className="text-xs text-muted-foreground">
+              {isBase64(value.image) ? "base64 legado" : "imagem enviada"}
+            </span>
           ) : null}
         </Field>
         {relatedEpisodes.length > 0 ? (
@@ -578,13 +662,20 @@ function ArtistEditor({
           </div>
         ) : null}
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={value.published !== false}
-            onChange={(e) => set({ published: e.target.checked })} />
+          <input
+            type="checkbox"
+            checked={value.published !== false}
+            onChange={(e) => set({ published: e.target.checked })}
+          />
           Publicado
         </label>
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onCancel}>Cancelar</Button>
-          <Button onClick={onApply} disabled={uploading}>Aplicar</Button>
+          <Button variant="outline" onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button onClick={onApply} disabled={uploading}>
+            Aplicar
+          </Button>
         </div>
       </CardContent>
     </Card>

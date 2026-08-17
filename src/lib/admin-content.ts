@@ -1,9 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import {
-  adminKeyFor,
-  isDraftContentKey,
-  sanitizeForPublic,
-} from "./content-sanitize";
+import { adminKeyFor, isDraftContentKey, sanitizeForPublic } from "./content-sanitize";
 
 const STORAGE_PREFIX = "pqoq-site:";
 
@@ -115,15 +111,13 @@ function readLocalValue(key: string): unknown {
   }
 }
 
-async function upsertRow(
-  key: string,
-  value: unknown,
-  published: boolean,
-): Promise<void> {
-  const { error } = await supabase.from("site_content").upsert(
-    { key, value: value as never, published, updated_at: new Date().toISOString() },
-    { onConflict: "key" },
-  );
+async function upsertRow(key: string, value: unknown, published: boolean): Promise<void> {
+  const { error } = await supabase
+    .from("site_content")
+    .upsert(
+      { key, value: value as never, published, updated_at: new Date().toISOString() },
+      { onConflict: "key" },
+    );
   if (error) throw new Error(error.message);
 }
 
@@ -131,16 +125,13 @@ async function upsertRow(
  * Reads a single site_content value as the signed-in editor. For draft-bearing
  * keys the full admin row is preferred, falling back to the public row.
  */
-export async function fetchContentValue<T>(
-  key: AdminContentKey,
-  fallback: T,
-): Promise<T> {
+export async function fetchContentValue<T>(key: AdminContentKey, fallback: T): Promise<T> {
   if (isDraftContentKey(key)) {
     const adminVal = await readRow(adminKeyFor(key));
     if (adminVal !== undefined && adminVal !== null) return adminVal as T;
   }
   const val = await readRow(key);
-  return ((val as T) ?? fallback);
+  return (val as T) ?? fallback;
 }
 
 /**
@@ -148,10 +139,7 @@ export async function fetchContentValue<T>(
  * written to the editors-only "<key>-admin" row (published=false) and a
  * sanitized, published-only payload is written to the public "<key>" row.
  */
-export async function saveContentValue(
-  key: AdminContentKey,
-  value: unknown,
-): Promise<void> {
+export async function saveContentValue(key: AdminContentKey, value: unknown): Promise<void> {
   const { data: sess } = await supabase.auth.getSession();
   if (!sess.session) throw new Error("Sessão expirada. Faça login novamente.");
 
@@ -485,9 +473,7 @@ export async function migrateBase64Media(): Promise<MediaMigrationResult> {
       embedsChanged = true;
       result.migrated.push(`Thumbnail do episódio ${episodeId}`);
     } catch (err) {
-      result.errors.push(
-        `${episodeId}: ${err instanceof Error ? err.message : "falha no upload"}`,
-      );
+      result.errors.push(`${episodeId}: ${err instanceof Error ? err.message : "falha no upload"}`);
     }
   }
   if (embedsChanged) await saveContentValue("episode-embeds", embeds);

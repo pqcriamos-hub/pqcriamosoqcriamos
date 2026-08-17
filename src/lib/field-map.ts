@@ -12,15 +12,7 @@
 import { PAGE_GROUPS } from "./page-content";
 
 export type FieldScope = "global" | "per-item";
-export type FieldKind =
-  | "text"
-  | "rich"
-  | "url"
-  | "image"
-  | "audio"
-  | "tags"
-  | "links"
-  | "flag";
+export type FieldKind = "text" | "rich" | "url" | "image" | "audio" | "tags" | "links" | "flag";
 
 export interface FieldMapEntry {
   /** Identificador estável do campo no mapa. */
@@ -36,13 +28,7 @@ export interface FieldMapEntry {
   path: string;
   scope: FieldScope;
   /** Módulo do /pqoqadmin responsável. */
-  adminModule:
-    | "pages"
-    | "episodes"
-    | "artists"
-    | "acervo"
-    | "apoio"
-    | "dashboard";
+  adminModule: "pages" | "episodes" | "artists" | "acervo" | "apoio" | "dashboard";
   /** Editor inline responsável (seletor/atributo) ou null quando não há. */
   inline: string | null;
   /** Render público responsável. */
@@ -82,10 +68,9 @@ const EPISODE_FIELDS: FieldMapEntry[] = EPISODE_TUPLES.map(([id, kind, path, inl
   adminModule: "episodes" as const,
   inline,
   render: "pqoq-legacy.js → renderEpisodePage/renderEpisodes",
-  fallback:
-    id.startsWith("participant")
-      ? "artista vinculado (artist.bio) apenas quando vazio"
-      : "vazio",
+  fallback: id.startsWith("participant")
+    ? "artista vinculado (artist.bio) apenas quando vazio"
+    : "vazio",
 }));
 
 const EPISODE_EMBED_FIELDS: FieldMapEntry[] = [
