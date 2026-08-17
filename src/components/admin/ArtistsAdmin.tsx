@@ -9,6 +9,9 @@ import {
   isPublished,
   type ArtistItem,
   type EpisodeItem,
+  type ArtistPortfolioItem,
+  type ArtistLinkItem,
+  genId,
 } from "@/lib/admin-content";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -148,6 +151,32 @@ export function ArtistsAdmin() {
     try {
       const { url } = await uploadAdminMedia(file, `artists/${editing.id}/photo`);
       setEditing({ ...editing, image: url });
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Falha no upload.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  /** Upload de imagem de uma obra do portfólio ou de um link/rede. */
+  const onUploadItem = async (
+    kind: "portfolioItems" | "linkItems",
+    itemId: string,
+    file: File,
+  ) => {
+    if (!editing) return;
+    setUploading(true);
+    setErrorMsg("");
+    try {
+      const { url } = await uploadAdminMedia(file, `artists/${editing.id}/${kind}`);
+      setEditing((prev) => {
+        if (!prev) return prev;
+        const list = (prev[kind] || []) as { id: string }[];
+        return {
+          ...prev,
+          [kind]: list.map((it) => (it.id === itemId ? { ...it, image: url } : it)),
+        } as ArtistItem;
+      });
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Falha no upload.");
     } finally {
