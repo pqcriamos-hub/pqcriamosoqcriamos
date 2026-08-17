@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   ExternalLink,
   LogOut,
+  FileText,
 } from "lucide-react";
 import { AdminDashboard } from "./AdminDashboard";
 import { EpisodesAdmin } from "./EpisodesAdmin";
@@ -17,8 +18,16 @@ import { ArtistsAdmin } from "./ArtistsAdmin";
 import { AcervoAdmin } from "./AcervoAdmin";
 import { ApoioAdmin } from "./ApoioAdmin";
 import { AccessAdmin } from "./AccessAdmin";
+import { PagesAdmin } from "./PagesAdmin";
 
-type SectionId = "dashboard" | "episodes" | "artists" | "acervo" | "apoio" | "access";
+type SectionId =
+  | "dashboard"
+  | "pages"
+  | "episodes"
+  | "artists"
+  | "acervo"
+  | "apoio"
+  | "access";
 
 interface NavItem {
   label: string;
@@ -31,6 +40,7 @@ interface NavItem {
 
 const BASE_NAV: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, section: "dashboard" },
+  { label: "Páginas & Textos", icon: FileText, section: "pages" },
   { label: "Episódios", icon: Mic, section: "episodes" },
   { label: "Artistas", icon: Users, section: "artists" },
   { label: "Acervo", icon: Images, section: "acervo" },
@@ -111,6 +121,7 @@ export function AdminShell({
               onChange={(e) => setActive(e.target.value as SectionId)}
             >
               <option value="dashboard">Dashboard</option>
+              <option value="pages">Páginas &amp; Textos</option>
               <option value="episodes">Episódios</option>
               <option value="artists">Artistas</option>
               <option value="acervo">Acervo</option>
@@ -130,6 +141,7 @@ export function AdminShell({
         </header>
         <main className="flex-1 p-6">
           {active === "dashboard" ? <AdminDashboard /> : null}
+          {active === "pages" ? <PagesAdmin /> : null}
           {active === "episodes" ? <EpisodesAdmin /> : null}
           {active === "artists" ? <ArtistsAdmin /> : null}
           {active === "acervo" ? <AcervoAdmin /> : null}

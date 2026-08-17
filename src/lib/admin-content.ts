@@ -410,3 +410,68 @@ export function isValidUrl(value?: string): boolean {
     return false;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Maintenance: migrate legacy base64 media into Supabase Storage.
+// Runs as the signed-in editor from /pqoqadmin. Only converts values that are
+// data: URLs; everything else is left untouched.
+// ---------------------------------------------------------------------------
+
+function dataUrlToFile(dataUrl: string, name: string): File {
+  const [header, base64] = dataUrl.split(",", 2);
+  const mime = /data:([^;]+)/.exec(header || "")?.[1] || "image/jpeg";
+  const binary = atob(base64 || "");
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  const ext = mime.split("/")[1]?.replace(/[^a-z0-9]/g, "") || "jpg";
+  return new File([bytes], `${name}.${ext}`, { type: mime });
+}
+
+export interface MediaMigrationResult {
+  migrated: string[];
+  skipped: number;
+  errors: string[];
+}
+
+/** Converts base64 episode thumbnails and page photos into Storage URLs. */
+export async function migrateBase64Media(): Promise<MediaMigrationResult> {
+  const result: MediaMigrationResult = { migrated: [], skipped: 0, errors: [] };
+
+  const embeds = await fetchContentValue<EpisodeEmbeds>("episode-embeds", {});
+  let embedsChanged = false;
+  for (const [episodeId, embed] of Object.entries(embeds || {})) {
+    const thumb = embed?.thumbnail;
+    if (!isBase64(thumb)) continue;
+    try {
+      const file = dataUrlToFile(thumb as string, `thumb-${episodeId}`);
+      const { url } = await uploadAdminMedia(file, `episodes/${episodeId}`);
+      embeds[episodeId] = { ...embed, thumbnail: url };
+      embedsChanged = true;
+      result.migrated.push(`Thumbnail do episódio ${episodeId}`);
+    } catch (err) {
+      result.errors.push(
+        `${episodeId}: ${err instanceof Error ? err.message : "falha no upload"}`,
+      );
+    }
+  }
+  if (embedsChanged) await saveContentValue("episode-embeds", embeds);
+
+  const photos = await fetchContentValue<Record<string, string>>("page-photos", {});
+  let photosChanged = false;
+  for (const [key, value] of Object.entries(photos || {})) {
+    if (!isBase64(value)) continue;
+    try {
+      const file = dataUrlToFile(value, `photo-${key.replace(/[^a-z0-9]+/gi, "-")}`);
+      const { url } = await uploadAdminMedia(file, `pages/${key}`);
+      photos[key] = url;
+      photosChanged = true;
+      result.migrated.push(`Foto da página ${key}`);
+    } catch (err) {
+      result.errors.push(`${key}: ${err instanceof Error ? err.message : "falha no upload"}`);
+    }
+  }
+  if (photosChanged) await saveContentValue("page-photos", photos);
+
+  if (!result.migrated.length && !result.errors.length) result.skipped = 1;
+  return result;
+}
