@@ -276,6 +276,14 @@ export interface EpisodeItem {
   summary?: string;
   sourceUrl?: string;
   participantAbout?: string;
+  /** Campos individuais do participante deste episódio (nunca compartilhados). */
+  participantTitle?: string;
+  participantBio?: string;
+  participantImage?: string;
+  participantLinks?: LinkPair[];
+  participantTags?: string[];
+  /** Links próprios do episódio (rótulo + URL). */
+  links?: LinkPair[];
   tags?: string[];
   published?: boolean;
   latest?: boolean;
@@ -291,6 +299,31 @@ export interface EpisodeEmbed {
 
 export type EpisodeEmbeds = Record<string, EpisodeEmbed>;
 
+/** Obra do portfólio do artista (mesma forma do modal público). */
+export interface ArtistPortfolioItem {
+  id: string;
+  title?: string;
+  caption?: string;
+  link?: string;
+  image?: string;
+}
+
+/** Rede/link do artista (mesma forma do modal público). */
+export interface ArtistLinkItem {
+  id: string;
+  title?: string;
+  caption?: string;
+  href?: string;
+  image?: string;
+}
+
+export interface ArtistContactInfo {
+  email?: string;
+  phone?: string;
+  link?: string;
+  note?: string;
+}
+
 export interface ArtistItem {
   id: string;
   slug?: string;
@@ -303,6 +336,9 @@ export interface ArtistItem {
   contact?: string;
   image?: string;
   tags?: string[];
+  portfolioItems?: ArtistPortfolioItem[];
+  linkItems?: ArtistLinkItem[];
+  contactInfo?: ArtistContactInfo;
   published?: boolean;
 }
 
