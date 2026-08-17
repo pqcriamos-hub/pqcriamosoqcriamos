@@ -573,8 +573,8 @@ function EpisodeEditor({
                 </Badge>
               </p>
               <p className="text-muted-foreground">
-                {link.publishedCount} episódio(s) publicado(s) · {link.draftCount} oculto(s)/rascunho
-                (EP00 não é contado).
+                {link.publishedCount} episódio(s) publicado(s) · {link.draftCount}{" "}
+                oculto(s)/rascunho (EP00 não é contado).
               </p>
               {link.otherPublishedCount > 0 ? (
                 <p className="text-muted-foreground">

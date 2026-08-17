@@ -102,10 +102,7 @@ export function ArtistsAdmin() {
     return artists.filter((a) => {
       if (statusFilter === "published" && !isPublished(a)) return false;
       if (statusFilter === "draft" && isPublished(a)) return false;
-      if (
-        statusFilter === "no-episodes" &&
-        artistEpisodeStats(a, episodes).publishedCount > 0
-      ) {
+      if (statusFilter === "no-episodes" && artistEpisodeStats(a, episodes).publishedCount > 0) {
         return false;
       }
       if (!q) return true;
@@ -276,86 +273,86 @@ export function ArtistsAdmin() {
                 filtered.map((a) => {
                   const stats = artistEpisodeStats(a, episodes);
                   return (
-                  <TableRow key={a.id}>
-                    <TableCell>
-                      <div className="font-medium">{a.name || "(sem nome)"}</div>
-                      {isBase64(a.image) ? (
-                        <Badge variant="outline" className="mt-1 text-amber-600">
-                          foto base64 legado
-                        </Badge>
-                      ) : null}
-                    </TableCell>
-                    <TableCell>{a.meta}</TableCell>
-                    <TableCell className="text-sm">
-                      <div>
-                        {stats.publishedCount} publicado(s) · {stats.draftCount} oculto(s)
-                      </div>
-                      {stats.publishedCount === 0 ? (
-                        <div className="text-xs text-amber-600">
-                          {isPublished(a)
-                            ? "Publicado sem episódio publicado"
-                            : "Nenhum episódio publicado"}
+                    <TableRow key={a.id}>
+                      <TableCell>
+                        <div className="font-medium">{a.name || "(sem nome)"}</div>
+                        {isBase64(a.image) ? (
+                          <Badge variant="outline" className="mt-1 text-amber-600">
+                            foto base64 legado
+                          </Badge>
+                        ) : null}
+                      </TableCell>
+                      <TableCell>{a.meta}</TableCell>
+                      <TableCell className="text-sm">
+                        <div>
+                          {stats.publishedCount} publicado(s) · {stats.draftCount} oculto(s)
                         </div>
-                      ) : null}
-                      {!isPublished(a) && stats.publishedCount > 0 ? (
-                        <div className="text-xs text-amber-600">
-                          Artista oculto com episódios publicados
+                        {stats.publishedCount === 0 ? (
+                          <div className="text-xs text-amber-600">
+                            {isPublished(a)
+                              ? "Publicado sem episódio publicado"
+                              : "Nenhum episódio publicado"}
+                          </div>
+                        ) : null}
+                        {!isPublished(a) && stats.publishedCount > 0 ? (
+                          <div className="text-xs text-amber-600">
+                            Artista oculto com episódios publicados
+                          </div>
+                        ) : null}
+                      </TableCell>
+                      <TableCell>
+                        <button type="button" onClick={() => togglePublish(a.id)}>
+                          <Badge variant={isPublished(a) ? "default" : "secondary"}>
+                            {isPublished(a) ? "Publicado" : "Rascunho"}
+                          </Badge>
+                        </button>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => move(a.id, -1)}
+                            title="Subir"
+                          >
+                            <ArrowUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => move(a.id, 1)}
+                            title="Descer"
+                          >
+                            <ArrowDown className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setEditing({ ...a })}
+                            title="Editar"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <a
+                            href="/artistas"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted"
+                            title="Ver no site"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setConfirmId(a.id)}
+                            title="Remover"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
                         </div>
-                      ) : null}
-                    </TableCell>
-                    <TableCell>
-                      <button type="button" onClick={() => togglePublish(a.id)}>
-                        <Badge variant={isPublished(a) ? "default" : "secondary"}>
-                          {isPublished(a) ? "Publicado" : "Rascunho"}
-                        </Badge>
-                      </button>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => move(a.id, -1)}
-                          title="Subir"
-                        >
-                          <ArrowUp className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => move(a.id, 1)}
-                          title="Descer"
-                        >
-                          <ArrowDown className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => setEditing({ ...a })}
-                          title="Editar"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <a
-                          href="/artistas"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted"
-                          title="Ver no site"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => setConfirmId(a.id)}
-                          title="Remover"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                      </TableCell>
+                    </TableRow>
                   );
                 })
               )}

@@ -11,7 +11,11 @@ import type { ArtistItem, EpisodeItem } from "./admin-content";
 /** Ids/códigos tratados como EP00 (institucional). */
 export function isEpisodeZero(episode?: Pick<EpisodeItem, "id" | "code"> | null): boolean {
   if (!episode) return false;
-  const norm = (v?: string) => String(v || "").trim().toLowerCase().replace(/[\s_-]+/g, "");
+  const norm = (v?: string) =>
+    String(v || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\s_-]+/g, "");
   const id = norm(episode.id);
   const code = norm(episode.code);
   if (id === "t01ep00" || code === "t01ep00") return true;
@@ -24,7 +28,9 @@ export function isItemVisible(item?: { published?: boolean } | null): boolean {
 }
 
 function normId(value?: string): string {
-  return String(value || "").trim().toLowerCase();
+  return String(value || "")
+    .trim()
+    .toLowerCase();
 }
 
 /**
