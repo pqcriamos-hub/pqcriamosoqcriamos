@@ -298,6 +298,7 @@ export function ArtistsAdmin() {
           relatedEpisodes={episodes.filter((e) => e.artistId === editing!.id || e.artistId === editing!.slug)}
           onChange={setEditing}
           onUpload={onUpload}
+          onUploadItem={onUploadItem}
           onCancel={() => setEditing(null)}
           onApply={applyEditor}
         />
@@ -327,6 +328,7 @@ function ArtistEditor({
   relatedEpisodes,
   onChange,
   onUpload,
+  onUploadItem,
   onCancel,
   onApply,
 }: {
@@ -335,10 +337,20 @@ function ArtistEditor({
   relatedEpisodes: EpisodeItem[];
   onChange: (a: ArtistItem) => void;
   onUpload: (file: File) => void;
+  onUploadItem: (
+    kind: "portfolioItems" | "linkItems",
+    itemId: string,
+    file: File,
+  ) => void;
   onCancel: () => void;
   onApply: () => void;
 }) {
   const set = (patch: Partial<ArtistItem>) => onChange({ ...value, ...patch });
+  const portfolioItems = value.portfolioItems || [];
+  const linkItems = value.linkItems || [];
+  const contactInfo = value.contactInfo || {};
+  const setPortfolio = (next: ArtistPortfolioItem[]) => set({ portfolioItems: next });
+  const setLinkItems = (next: ArtistLinkItem[]) => set({ linkItems: next });
   return (
     <Card>
       <CardContent className="space-y-4 p-6">
@@ -357,6 +369,202 @@ function ArtistEditor({
         <Field label="Portfólio / acervo"><Textarea value={value.portfolio || ""} onChange={(e) => set({ portfolio: e.target.value })} /></Field>
         <Field label="Links / redes"><Textarea value={value.links || ""} onChange={(e) => set({ links: e.target.value })} /></Field>
         <Field label="Contato profissional"><Textarea value={value.contact || ""} onChange={(e) => set({ contact: e.target.value })} /></Field>
+
+        <div className="space-y-3 rounded-md border p-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold">Portfólio (obras do modal)</h4>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                setPortfolio([
+                  ...portfolioItems,
+                  { id: genId("portfolio"), title: "", caption: "", link: "", image: "" },
+                ])
+              }
+            >
+              <Plus className="mr-1 h-3 w-3" /> Adicionar obra
+            </Button>
+          </div>
+          {portfolioItems.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Nenhuma obra cadastrada.</p>
+          ) : (
+            portfolioItems.map((item) => (
+              <div key={item.id} className="space-y-2 rounded border p-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="Título">
+                    <Input
+                      value={item.title || ""}
+                      onChange={(e) =>
+                        setPortfolio(
+                          portfolioItems.map((p) =>
+                            p.id === item.id ? { ...p, title: e.target.value } : p,
+                          ),
+                        )
+                      }
+                    />
+                  </Field>
+                  <Field label="Link">
+                    <Input
+                      value={item.link || ""}
+                      onChange={(e) =>
+                        setPortfolio(
+                          portfolioItems.map((p) =>
+                            p.id === item.id ? { ...p, link: e.target.value } : p,
+                          ),
+                        )
+                      }
+                    />
+                  </Field>
+                </div>
+                <Field label="Legenda">
+                  <Textarea
+                    value={item.caption || ""}
+                    onChange={(e) =>
+                      setPortfolio(
+                        portfolioItems.map((p) =>
+                          p.id === item.id ? { ...p, caption: e.target.value } : p,
+                        ),
+                      )
+                    }
+                  />
+                </Field>
+                <div className="flex flex-wrap items-center gap-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={uploading}
+                    onChange={(e) =>
+                      e.target.files?.[0] &&
+                      onUploadItem("portfolioItems", item.id, e.target.files[0])
+                    }
+                  />
+                  {item.image ? (
+                    <span className="text-xs text-muted-foreground">
+                      {isBase64(item.image) ? "base64 legado" : "imagem enviada"}
+                    </span>
+                  ) : null}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setPortfolio(portfolioItems.filter((p) => p.id !== item.id))}
+                    title="Remover obra"
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="space-y-3 rounded-md border p-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold">Redes &amp; links (aba do modal)</h4>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                setLinkItems([
+                  ...linkItems,
+                  { id: genId("link"), title: "", caption: "", href: "", image: "" },
+                ])
+              }
+            >
+              <Plus className="mr-1 h-3 w-3" /> Adicionar link
+            </Button>
+          </div>
+          {linkItems.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Nenhuma rede cadastrada.</p>
+          ) : (
+            linkItems.map((item) => (
+              <div key={item.id} className="space-y-2 rounded border p-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="Título">
+                    <Input
+                      value={item.title || ""}
+                      onChange={(e) =>
+                        setLinkItems(
+                          linkItems.map((l) =>
+                            l.id === item.id ? { ...l, title: e.target.value } : l,
+                          ),
+                        )
+                      }
+                    />
+                  </Field>
+                  <Field label="URL">
+                    <Input
+                      value={item.href || ""}
+                      onChange={(e) =>
+                        setLinkItems(
+                          linkItems.map((l) =>
+                            l.id === item.id ? { ...l, href: e.target.value } : l,
+                          ),
+                        )
+                      }
+                    />
+                  </Field>
+                </div>
+                <Field label="Legenda">
+                  <Input
+                    value={item.caption || ""}
+                    onChange={(e) =>
+                      setLinkItems(
+                        linkItems.map((l) =>
+                          l.id === item.id ? { ...l, caption: e.target.value } : l,
+                        ),
+                      )
+                    }
+                  />
+                </Field>
+                <div className="flex flex-wrap items-center gap-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={uploading}
+                    onChange={(e) =>
+                      e.target.files?.[0] &&
+                      onUploadItem("linkItems", item.id, e.target.files[0])
+                    }
+                  />
+                  {item.image ? (
+                    <span className="text-xs text-muted-foreground">imagem enviada</span>
+                  ) : null}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setLinkItems(linkItems.filter((l) => l.id !== item.id))}
+                    title="Remover link"
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="grid gap-4 rounded-md border p-4 sm:grid-cols-3">
+          <Field label="Contato — e-mail">
+            <Input
+              value={contactInfo.email || ""}
+              onChange={(e) => set({ contactInfo: { ...contactInfo, email: e.target.value } })}
+            />
+          </Field>
+          <Field label="Contato — telefone/WhatsApp">
+            <Input
+              value={contactInfo.phone || ""}
+              onChange={(e) => set({ contactInfo: { ...contactInfo, phone: e.target.value } })}
+            />
+          </Field>
+          <Field label="Contato — link principal">
+            <Input
+              value={contactInfo.link || ""}
+              onChange={(e) => set({ contactInfo: { ...contactInfo, link: e.target.value } })}
+            />
+          </Field>
+        </div>
+
         <Field label="Foto (upload)">
           <input type="file" accept="image/*" disabled={uploading}
             onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])} />
