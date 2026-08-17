@@ -439,6 +439,43 @@ p { margin-top: 0; }
   text-transform: uppercase;
 }
 
+/* Participante individual do episódio (campos do /pqoqadmin) */
+.episode-participant-photo {
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border: var(--line);
+  border-radius: 10px;
+  box-shadow: 4px 4px 0 var(--shadow);
+  margin-bottom: 14px;
+}
+
+.episode-participant-bio {
+  margin-top: 10px;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 11px;
+  border: var(--line);
+  border-radius: 999px;
+  background: var(--wheat, var(--cream));
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .episode-player-block {
   display: grid;
   gap: 14px;
