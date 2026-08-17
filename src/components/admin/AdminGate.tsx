@@ -22,10 +22,6 @@ async function fetchRoles(userId: string): Promise<string[]> {
   return (data ?? []).map((r) => r.role as string);
 }
 
-async function hasEditorRole(userId: string): Promise<boolean> {
-  return (await fetchRoles(userId)).length > 0;
-}
-
 export function AdminGate({
   children,
 }: {
