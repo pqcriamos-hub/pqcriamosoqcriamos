@@ -685,11 +685,47 @@ function ArtistEditor({
             </span>
           ) : null}
         </Field>
-        {relatedEpisodes.length > 0 ? (
-          <div className="text-xs text-muted-foreground">
-            Episódios relacionados: {relatedEpisodes.map((e) => e.code || e.title).join(", ")}
-          </div>
-        ) : null}
+        <div className="space-y-2 rounded-md border p-4">
+          <h4 className="text-sm font-semibold">Episódios relacionados</h4>
+          <p className="text-xs text-muted-foreground">
+            O EP00 (institucional) não entra nesta relação.
+          </p>
+          {relatedEpisodes.length === 0 ? (
+            <p className="text-xs text-amber-600">
+              Este artista não possui episódios vinculados.
+              {value.published !== false
+                ? " Ele está publicado no catálogo mesmo sem episódio publicado."
+                : ""}
+            </p>
+          ) : (
+            <ul className="space-y-1 text-sm">
+              {relatedEpisodes.map((ep) => (
+                <li key={ep.id} className="flex flex-wrap items-center gap-2">
+                  <span>
+                    {ep.code ? `${ep.code} — ` : ""}
+                    {ep.title || ep.id}
+                  </span>
+                  <Badge variant={isItemVisible(ep) ? "default" : "secondary"}>
+                    {isItemVisible(ep) ? "Publicado" : "Oculto"}
+                  </Badge>
+                  <a
+                    className="text-xs underline"
+                    href={`/episodio?id=${ep.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    abrir episódio
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+          {relatedEpisodes.length > 0 && relatedEpisodes.every((ep) => !isItemVisible(ep)) ? (
+            <p className="text-xs text-amber-600">
+              Nenhum episódio publicado vinculado a este artista.
+            </p>
+          ) : null}
+        </div>
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
