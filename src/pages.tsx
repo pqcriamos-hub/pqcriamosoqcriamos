@@ -30,8 +30,8 @@ export function HomePage() {
             </div>
             <div className="intro-actions">
               <a className="button primary" href="/episodios" data-link-editable="home.watch-now">Assistir agora</a>
-              <a className="button" href="/episodios">Ouvir episódios</a>
-              <a className="button" href="/artistas">Conhecer artistas</a>
+              <a className="button" href="/episodios" data-link-editable="home.listen">Ouvir episódios</a>
+              <a className="button" href="/artistas" data-link-editable="home.artists">Conhecer artistas</a>
             </div>
           </div>
 
