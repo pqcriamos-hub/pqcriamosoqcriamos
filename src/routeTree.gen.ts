@@ -16,6 +16,7 @@ import { Route as EpisodiosRouteImport } from './routes/episodios'
 import { Route as EpisodioRouteImport } from './routes/episodio'
 import { Route as ArtistasRouteImport } from './routes/artistas'
 import { Route as ApoioRouteImport } from './routes/apoio'
+import { Route as AcervoRouteImport } from './routes/acervo'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SobreRoute = SobreRouteImport.update({
@@ -53,6 +54,11 @@ const ApoioRoute = ApoioRouteImport.update({
   path: '/apoio',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AcervoRoute = AcervoRouteImport.update({
+  id: '/acervo',
+  path: '/acervo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -61,6 +67,7 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/acervo': typeof AcervoRoute
   '/apoio': typeof ApoioRoute
   '/artistas': typeof ArtistasRoute
   '/episodio': typeof EpisodioRoute
@@ -71,6 +78,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/acervo': typeof AcervoRoute
   '/apoio': typeof ApoioRoute
   '/artistas': typeof ArtistasRoute
   '/episodio': typeof EpisodioRoute
@@ -82,6 +90,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/acervo': typeof AcervoRoute
   '/apoio': typeof ApoioRoute
   '/artistas': typeof ArtistasRoute
   '/episodio': typeof EpisodioRoute
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/acervo'
     | '/apoio'
     | '/artistas'
     | '/episodio'
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/acervo'
     | '/apoio'
     | '/artistas'
     | '/episodio'
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/acervo'
     | '/apoio'
     | '/artistas'
     | '/episodio'
@@ -125,6 +137,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AcervoRoute: typeof AcervoRoute
   ApoioRoute: typeof ApoioRoute
   ArtistasRoute: typeof ArtistasRoute
   EpisodioRoute: typeof EpisodioRoute
@@ -185,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApoioRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/acervo': {
+      id: '/acervo'
+      path: '/acervo'
+      fullPath: '/acervo'
+      preLoaderRoute: typeof AcervoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -197,6 +217,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AcervoRoute: AcervoRoute,
   ApoioRoute: ApoioRoute,
   ArtistasRoute: ArtistasRoute,
   EpisodioRoute: EpisodioRoute,

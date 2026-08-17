@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   fetchContentOverview,
   formatBytes,
   KEY_LABELS,
+  migrateBase64Media,
   type ContentRow,
 } from "@/lib/admin-content";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -24,13 +27,34 @@ function summaryStat(rows: ContentRow[]) {
 }
 
 export function AdminDashboard() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin", "content-overview"],
     queryFn: fetchContentOverview,
   });
+  const [migrating, setMigrating] = useState(false);
+  const [migrateMsg, setMigrateMsg] = useState("");
 
   const rows = data ?? [];
   const stats = summaryStat(rows);
+
+  async function handleMigrate() {
+    setMigrating(true);
+    setMigrateMsg("");
+    try {
+      const result = await migrateBase64Media();
+      if (result.skipped) setMigrateMsg("Nenhuma imagem em base64 encontrada.");
+      else
+        setMigrateMsg(
+          `${result.migrated.length} imagem(ns) migrada(s) para o Storage.` +
+            (result.errors.length ? ` Falhas: ${result.errors.join("; ")}` : ""),
+        );
+      void refetch();
+    } catch (err) {
+      setMigrateMsg(err instanceof Error ? err.message : "Erro na migração.");
+    } finally {
+      setMigrating(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -108,6 +132,29 @@ export function AdminDashboard() {
               </TableBody>
             </Table>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Manutenção de mídia</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Converte imagens antigas salvas em base64 (thumbnails de episódios e fotos
+            de página) para arquivos no Storage, reduzindo o tamanho do conteúdo
+            carregado pelos visitantes.
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => void handleMigrate()}
+              disabled={migrating}
+            >
+              {migrating ? "Migrando…" : "Migrar imagens base64"}
+            </Button>
+            {migrateMsg && <span className="text-sm text-muted-foreground">{migrateMsg}</span>}
+          </div>
         </CardContent>
       </Card>
     </div>
