@@ -1122,6 +1122,8 @@
     ensureArtistModal();
     const artist = normalizeArtistAssets(findArtist(id));
     if (!artist) return;
+    // Artista oculto não abre para visitante anônimo (falha segura).
+    if (artist.published === false && !isOwnerEditing()) return;
     document.getElementById("artist-modal-title").textContent = artist.name;
     renderArtistModalPanels(artist);
     setAdminEditing(document.body.classList.contains("admin-mode"));
