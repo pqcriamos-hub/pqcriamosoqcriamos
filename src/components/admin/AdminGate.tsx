@@ -11,22 +11,30 @@ type GateState =
   | { status: "loading" }
   | { status: "anon" }
   | { status: "denied" }
-  | { status: "authorized"; email: string };
+  | { status: "authorized"; email: string; userId: string; isAdmin: boolean };
 
-async function hasEditorRole(userId: string): Promise<boolean> {
+async function fetchRoles(userId: string): Promise<string[]> {
   const { data } = await supabase
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
-    .in("role", ["editor", "admin"])
-    .limit(1);
-  return Boolean(data && data.length > 0);
+    .in("role", ["editor", "admin"]);
+  return (data ?? []).map((r) => r.role as string);
+}
+
+async function hasEditorRole(userId: string): Promise<boolean> {
+  return (await fetchRoles(userId)).length > 0;
 }
 
 export function AdminGate({
   children,
 }: {
-  children: (ctx: { email: string; signOut: () => Promise<void> }) => ReactNode;
+  children: (ctx: {
+    email: string;
+    userId: string;
+    isAdmin: boolean;
+    signOut: () => Promise<void>;
+  }) => ReactNode;
 }) {
   const bootstrap = useServerFn(bootstrapEditor);
   const bootstrapStatus = useServerFn(getBootstrapStatus);
@@ -44,8 +52,14 @@ export function AdminGate({
       setState({ status: "anon" });
       return;
     }
-    if (await hasEditorRole(user.id)) {
-      setState({ status: "authorized", email: user.email ?? "" });
+    const roles = await fetchRoles(user.id);
+    if (roles.length > 0) {
+      setState({
+        status: "authorized",
+        email: user.email ?? "",
+        userId: user.id,
+        isAdmin: roles.includes("admin"),
+      });
     } else {
       setState({ status: "denied" });
     }
@@ -98,7 +112,8 @@ export function AdminGate({
       setBusy(false);
       return;
     }
-    if (!(await hasEditorRole(data.user.id))) {
+    const roles = await fetchRoles(data.user.id);
+    if (roles.length === 0) {
       await supabase.auth.signOut();
       setMessage("Sem permissão editorial.");
       setState({ status: "anon" });
@@ -106,7 +121,12 @@ export function AdminGate({
       return;
     }
     setMessage("");
-    setState({ status: "authorized", email: data.user.email ?? "" });
+    setState({
+      status: "authorized",
+      email: data.user.email ?? "",
+      userId: data.user.id,
+      isAdmin: roles.includes("admin"),
+    });
     setBusy(false);
   };
 
@@ -135,7 +155,16 @@ export function AdminGate({
   }
 
   if (state.status === "authorized") {
-    return <>{children({ email: state.email, signOut })}</>;
+    return (
+      <>
+        {children({
+          email: state.email,
+          userId: state.userId,
+          isAdmin: state.isAdmin,
+          signOut,
+        })}
+      </>
+    );
   }
 
   if (state.status === "denied") {
