@@ -225,7 +225,14 @@ export function EpisodesAdmin() {
     setSaveState("saving");
     setErrorMsg("");
     try {
-      await saveContentValue("episodes", nextEpisodes);
+      // Normalização no fluxo de salvar: preenche artistId quando o vínculo é
+      // resolvível pelo nome. Nunca altera o EP00.
+      const normalized = nextEpisodes.map((ep) => {
+        if (isEpisodeZero(ep) || String(ep.artistId || "").trim()) return ep;
+        const resolved = getEpisodeArtistId(ep, nextArtists);
+        return resolved ? { ...ep, artistId: resolved } : ep;
+      });
+      await saveContentValue("episodes", normalized);
       await saveContentValue("episode-embeds", embeds);
       // Só grava artistas quando a cascata alterou algum published.
       if (nextArtists !== artists) await saveContentValue("artists", nextArtists);
