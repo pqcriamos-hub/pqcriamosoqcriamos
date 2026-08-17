@@ -51,7 +51,9 @@ export interface FieldMapEntry {
   fallback: string;
 }
 
-const EPISODE_FIELDS: FieldMapEntry[] = [
+type EpisodeTuple = [string, FieldKind, string, string | null];
+
+const EPISODE_TUPLES: EpisodeTuple[] = [
   ["title", "text", "title", "[data-editable=episode.<id>.title]"],
   ["description", "rich", "description", "[data-episode-description]"],
   ["summary", "rich", "summary", null],
@@ -67,7 +69,9 @@ const EPISODE_FIELDS: FieldMapEntry[] = [
   ["participantTags", "tags", "participantTags", null],
   ["links", "links", "links", null],
   ["published", "flag", "published", null],
-] as [string, FieldKind, string, string | null][]).map(([id, kind, path, inline]) => ({
+];
+
+const EPISODE_FIELDS: FieldMapEntry[] = EPISODE_TUPLES.map(([id, kind, path, inline]) => ({
   id: `episode.${id}`,
   page: "/episodio",
   kind,
