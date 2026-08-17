@@ -420,6 +420,8 @@ export function EpisodesAdmin() {
           value={editing}
           embed={editingEmbed}
           uploading={uploading}
+          artists={artists}
+          episodes={episodes}
           onChange={setEditing}
           onChangeEmbed={setEditingEmbed}
           onUpload={onUpload}
