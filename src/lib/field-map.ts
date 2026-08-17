@@ -67,16 +67,16 @@ const EPISODE_FIELDS: FieldMapEntry[] = [
   ["participantTags", "tags", "participantTags", null],
   ["links", "links", "links", null],
   ["published", "flag", "published", null],
-].map(([id, kind, path, inline]) => ({
+] as [string, FieldKind, string, string | null][]).map(([id, kind, path, inline]) => ({
   id: `episode.${id}`,
   page: "/episodio",
-  kind: kind as FieldKind,
+  kind,
   key: "episodes",
   adminKey: "episodes-admin",
   path: `episodes[].${path}`,
   scope: "per-item" as FieldScope,
   adminModule: "episodes" as const,
-  inline: inline as string | null,
+  inline,
   render: "pqoq-legacy.js → renderEpisodePage/renderEpisodes",
   fallback:
     id.startsWith("participant")
