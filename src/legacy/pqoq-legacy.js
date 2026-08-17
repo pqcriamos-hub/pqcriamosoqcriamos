@@ -347,7 +347,18 @@
 
   function normalizeEpisodes(list) {
     const defaults = new Map(episodesDefault.map((episode) => [episode.id, episode]));
-    return list.map((episode) => ({ ...(defaults.get(episode.id) || {}), ...episode }));
+    return list.map((episode) => {
+      const merged = { ...(defaults.get(episode.id) || {}), ...episode };
+      // Campos individuais do participante e links próprios do episódio
+      // sempre existem como arrays/strings para o render não quebrar.
+      merged.participantLinks = Array.isArray(merged.participantLinks) ? merged.participantLinks : [];
+      merged.participantTags = Array.isArray(merged.participantTags) ? merged.participantTags : [];
+      merged.links = Array.isArray(merged.links) ? merged.links : [];
+      merged.participantTitle = merged.participantTitle || "";
+      merged.participantBio = merged.participantBio || "";
+      merged.participantImage = merged.participantImage || "";
+      return merged;
+    });
   }
 
   function styleState() {
