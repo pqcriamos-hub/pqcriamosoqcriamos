@@ -20,14 +20,7 @@ import { ApoioAdmin } from "./ApoioAdmin";
 import { AccessAdmin } from "./AccessAdmin";
 import { PagesAdmin } from "./PagesAdmin";
 
-type SectionId =
-  | "dashboard"
-  | "pages"
-  | "episodes"
-  | "artists"
-  | "acervo"
-  | "apoio"
-  | "access";
+type SectionId = "dashboard" | "pages" | "episodes" | "artists" | "acervo" | "apoio" | "access";
 
 interface NavItem {
   label: string;
@@ -80,13 +73,7 @@ export function AdminShell({
               ? `${base} bg-primary text-primary-foreground`
               : `${base} text-muted-foreground hover:bg-muted`;
             return item.href ? (
-              <a
-                key={item.label}
-                href={item.href}
-                target="_blank"
-                rel="noreferrer"
-                className={cls}
-              >
+              <a key={item.label} href={item.href} target="_blank" rel="noreferrer" className={cls}>
                 <Icon className="h-4 w-4" />
                 <span className="flex-1 text-left">{item.label}</span>
                 <ExternalLink className="h-3 w-3 opacity-60" />
@@ -140,13 +127,20 @@ export function AdminShell({
           </div>
         </header>
         <main className="flex-1 p-6">
-          {active === "dashboard" ? <AdminDashboard /> : null}
+          {active === "dashboard" ? <AdminDashboard email={email} isAdmin={isAdmin} /> : null}
           {active === "pages" ? <PagesAdmin /> : null}
           {active === "episodes" ? <EpisodesAdmin /> : null}
           {active === "artists" ? <ArtistsAdmin /> : null}
           {active === "acervo" ? <AcervoAdmin /> : null}
           {active === "apoio" ? <ApoioAdmin /> : null}
-          {active === "access" && isAdmin ? <AccessAdmin currentUserId={userId} /> : null}
+          {active === "access" && isAdmin ? (
+            <AccessAdmin
+              currentUserId={userId}
+              email={email}
+              isAdmin={isAdmin}
+              onSignOut={onSignOut}
+            />
+          ) : null}
         </main>
       </div>
     </div>
