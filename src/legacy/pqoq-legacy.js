@@ -347,7 +347,18 @@
 
   function normalizeEpisodes(list) {
     const defaults = new Map(episodesDefault.map((episode) => [episode.id, episode]));
-    return list.map((episode) => ({ ...(defaults.get(episode.id) || {}), ...episode }));
+    return list.map((episode) => {
+      const merged = { ...(defaults.get(episode.id) || {}), ...episode };
+      // Campos individuais do participante e links próprios do episódio
+      // sempre existem como arrays/strings para o render não quebrar.
+      merged.participantLinks = Array.isArray(merged.participantLinks) ? merged.participantLinks : [];
+      merged.participantTags = Array.isArray(merged.participantTags) ? merged.participantTags : [];
+      merged.links = Array.isArray(merged.links) ? merged.links : [];
+      merged.participantTitle = merged.participantTitle || "";
+      merged.participantBio = merged.participantBio || "";
+      merged.participantImage = merged.participantImage || "";
+      return merged;
+    });
   }
 
   function styleState() {
@@ -1197,6 +1208,24 @@
     return links.map((link) => `<a class="platform-chip" data-editable="episode.${episode.id}.platform.${link.key}" href="${escapeHtml(link.href)}" target="_blank" rel="noopener noreferrer">${link.label}</a>`).join("");
   }
 
+  /** Chips a partir de pares {label, href} salvos no /pqoqadmin. */
+  function customLinkChips(pairs) {
+    if (!Array.isArray(pairs)) return "";
+    return pairs
+      .filter((pair) => pair && pair.href)
+      .map((pair) => `<a class="platform-chip" href="${escapeHtml(pair.href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(pair.label || pair.href)}</a>`)
+      .join("");
+  }
+
+  /** Tags simples a partir de array de strings. */
+  function tagChips(tags) {
+    if (!Array.isArray(tags) || !tags.length) return "";
+    return `<div class="tag-row">${tags
+      .filter(Boolean)
+      .map((tag) => `<span class="tag-chip">${escapeHtml(String(tag))}</span>`)
+      .join("")}</div>`;
+  }
+
   function renderEpisodePage() {
     const container = document.querySelector("[data-render-episode-page]");
     if (!container) return;
@@ -1250,13 +1279,17 @@
       </div>
 
       <div class="episode-artist-panel">
-        <h2 class="lettered">Sobre ${escapeHtml(artist?.name || episode.artist)}</h2>
+        <h2 class="lettered">${escapeHtml(episode.participantTitle || `Sobre ${artist?.name || episode.artist || ""}`)}</h2>
+        ${episode.participantImage ? `<img class="episode-participant-photo" src="${escapeHtml(episode.participantImage)}" alt="${escapeHtml(artist?.name || episode.artist || "Participante")}" loading="lazy">` : ""}
         <p data-rich data-episode-participant-about="${episode.id}">${episode.participantAbout || artist?.bio || "Informação editável sobre o participante deste episódio."}</p>
+        ${episode.participantBio ? `<p class="episode-participant-bio">${episode.participantBio}</p>` : ""}
+        ${tagChips(episode.participantTags)}
+        ${customLinkChips(episode.participantLinks) ? `<div class="platform-row episode-participant-links">${customLinkChips(episode.participantLinks)}</div>` : ""}
         <div class="artist-actions">
           <button class="button primary small" type="button" data-open-artist="${artist?.id || episode.artistId}">Abrir acervo do artista</button>
           <a class="button small" href="/artistas">Página Artistas</a>
         </div>
-        <div class="platform-row episode-platform-row">${platformLinks(episode)}</div>
+        <div class="platform-row episode-platform-row">${platformLinks(episode)}${customLinkChips(episode.links)}</div>
       </div>
     `;
     renderEpisodeCover(episode.id);
