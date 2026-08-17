@@ -23,6 +23,12 @@ import {
   type SupportContent,
 } from "./admin-content";
 import { adminKeyFor, DRAFT_CONTENT_KEYS, isItemPublished } from "./content-sanitize";
+import {
+  artistEpisodeStats,
+  getEpisodeArtist,
+  isEpisodeZero,
+  isItemVisible,
+} from "./episode-artist-link";
 import { FIELD_MAP } from "./field-map";
 
 const STORAGE_PREFIX = "pqoq-site:";
@@ -470,6 +476,77 @@ export function healthChecks(rows: ContentDiagRow[], base64: Base64Finding[]): H
     label: "Links inválidos",
     level: badLinks.length ? "warn" : "ok",
     message: badLinks.length ? badLinks.join(" · ") : "Nenhum link inválido encontrado.",
+  });
+
+  checks.push(...relationChecks(episodes, artists));
+
+  return checks;
+}
+
+/** Diagnóstico da relação Episódio ↔ Artista (EP00 é sempre exceção). */
+export function relationChecks(
+  episodesInput: EpisodeItem[],
+  artistsInput: ArtistItem[],
+): HealthCheck[] {
+  const episodes = Array.isArray(episodesInput) ? episodesInput : [];
+  const artists = Array.isArray(artistsInput) ? artistsInput : [];
+  const checks: HealthCheck[] = [];
+
+  const publishedNoEpisodes = artists.filter(
+    (a) => isItemVisible(a) && artistEpisodeStats(a, episodes).publishedCount === 0,
+  );
+  checks.push({
+    id: "artist-without-published-episode",
+    label: "Artistas publicados sem episódio publicado",
+    level: publishedNoEpisodes.length ? "info" : "ok",
+    message: publishedNoEpisodes.length
+      ? publishedNoEpisodes.map((a) => a.name || a.id).join(", ")
+      : "Todos os artistas publicados têm episódio publicado.",
+  });
+
+  const hiddenWithEpisodes = artists.filter(
+    (a) => !isItemVisible(a) && artistEpisodeStats(a, episodes).publishedCount > 0,
+  );
+  checks.push({
+    id: "artist-hidden-with-episodes",
+    label: "Artistas ocultos com episódios publicados",
+    level: hiddenWithEpisodes.length ? "warn" : "ok",
+    message: hiddenWithEpisodes.length
+      ? hiddenWithEpisodes.map((a) => a.name || a.id).join(", ")
+      : "Nenhuma inconsistência.",
+  });
+
+  const relational = episodes.filter((ep) => !isEpisodeZero(ep));
+  const noArtist = relational.filter((ep) => isItemVisible(ep) && !getEpisodeArtist(ep, artists));
+  checks.push({
+    id: "episode-without-artist",
+    label: "Episódios publicados sem artista vinculado",
+    level: noArtist.length ? "info" : "ok",
+    message: noArtist.length
+      ? noArtist.map((ep) => ep.code || ep.title || ep.id).join(", ")
+      : "Todos os episódios publicados têm artista vinculado.",
+  });
+
+  const brokenLink = relational.filter(
+    (ep) => String(ep.artistId || "").trim() && !getEpisodeArtist(ep, artists),
+  );
+  checks.push({
+    id: "episode-artist-missing",
+    label: "Episódios com artistId inexistente",
+    level: brokenLink.length ? "warn" : "ok",
+    message: brokenLink.length
+      ? brokenLink.map((ep) => `${ep.code || ep.id} → ${ep.artistId}`).join(", ")
+      : "Nenhum vínculo quebrado.",
+  });
+
+  const ep00 = episodes.filter(isEpisodeZero);
+  checks.push({
+    id: "episode-zero",
+    label: "EP00 institucional",
+    level: "ok",
+    message: ep00.length
+      ? `${ep00.map((ep) => ep.code || ep.id).join(", ")} ignorado(s) na relação com artistas.`
+      : "Nenhum EP00 cadastrado.",
   });
 
   return checks;

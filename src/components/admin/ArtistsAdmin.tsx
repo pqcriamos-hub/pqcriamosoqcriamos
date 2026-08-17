@@ -13,6 +13,7 @@ import {
   type ArtistLinkItem,
   genId,
 } from "@/lib/admin-content";
+import { artistEpisodeStats, isItemVisible } from "@/lib/episode-artist-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,7 +82,9 @@ export function ArtistsAdmin() {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "published" | "draft">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "published" | "draft" | "no-episodes">(
+    "all",
+  );
   const [editing, setEditing] = useState<ArtistItem | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -99,6 +102,9 @@ export function ArtistsAdmin() {
     return artists.filter((a) => {
       if (statusFilter === "published" && !isPublished(a)) return false;
       if (statusFilter === "draft" && isPublished(a)) return false;
+      if (statusFilter === "no-episodes" && artistEpisodeStats(a, episodes).publishedCount > 0) {
+        return false;
+      }
       if (!q) return true;
       return [a.name, a.meta, ...(a.tags || [])].some((f) =>
         String(f || "")
@@ -106,7 +112,7 @@ export function ArtistsAdmin() {
           .includes(q),
       );
     });
-  }, [artists, search, statusFilter]);
+  }, [artists, episodes, search, statusFilter]);
 
   const markDirty = (next: ArtistItem[]) => {
     setArtists(next);
@@ -236,6 +242,7 @@ export function ArtistsAdmin() {
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="published">Publicados</SelectItem>
             <SelectItem value="draft">Rascunhos</SelectItem>
+            <SelectItem value="no-episodes">Sem episódios publicados</SelectItem>
           </SelectContent>
         </Select>
         <Button size="sm" onClick={() => setEditing(emptyArtist())}>
@@ -250,6 +257,7 @@ export function ArtistsAdmin() {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Atuação</TableHead>
+                <TableHead>Episódios</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -257,76 +265,96 @@ export function ArtistsAdmin() {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
                     Nenhum artista.
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((a) => (
-                  <TableRow key={a.id}>
-                    <TableCell>
-                      <div className="font-medium">{a.name || "(sem nome)"}</div>
-                      {isBase64(a.image) ? (
-                        <Badge variant="outline" className="mt-1 text-amber-600">
-                          foto base64 legado
-                        </Badge>
-                      ) : null}
-                    </TableCell>
-                    <TableCell>{a.meta}</TableCell>
-                    <TableCell>
-                      <button type="button" onClick={() => togglePublish(a.id)}>
-                        <Badge variant={isPublished(a) ? "default" : "secondary"}>
-                          {isPublished(a) ? "Publicado" : "Rascunho"}
-                        </Badge>
-                      </button>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => move(a.id, -1)}
-                          title="Subir"
-                        >
-                          <ArrowUp className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => move(a.id, 1)}
-                          title="Descer"
-                        >
-                          <ArrowDown className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => setEditing({ ...a })}
-                          title="Editar"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <a
-                          href="/artistas"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted"
-                          title="Ver no site"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => setConfirmId(a.id)}
-                          title="Remover"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                filtered.map((a) => {
+                  const stats = artistEpisodeStats(a, episodes);
+                  return (
+                    <TableRow key={a.id}>
+                      <TableCell>
+                        <div className="font-medium">{a.name || "(sem nome)"}</div>
+                        {isBase64(a.image) ? (
+                          <Badge variant="outline" className="mt-1 text-amber-600">
+                            foto base64 legado
+                          </Badge>
+                        ) : null}
+                      </TableCell>
+                      <TableCell>{a.meta}</TableCell>
+                      <TableCell className="text-sm">
+                        <div>
+                          {stats.publishedCount} publicado(s) · {stats.draftCount} oculto(s)
+                        </div>
+                        {stats.publishedCount === 0 ? (
+                          <div className="text-xs text-amber-600">
+                            {isPublished(a)
+                              ? "Publicado sem episódio publicado"
+                              : "Nenhum episódio publicado"}
+                          </div>
+                        ) : null}
+                        {!isPublished(a) && stats.publishedCount > 0 ? (
+                          <div className="text-xs text-amber-600">
+                            Artista oculto com episódios publicados
+                          </div>
+                        ) : null}
+                      </TableCell>
+                      <TableCell>
+                        <button type="button" onClick={() => togglePublish(a.id)}>
+                          <Badge variant={isPublished(a) ? "default" : "secondary"}>
+                            {isPublished(a) ? "Publicado" : "Rascunho"}
+                          </Badge>
+                        </button>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => move(a.id, -1)}
+                            title="Subir"
+                          >
+                            <ArrowUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => move(a.id, 1)}
+                            title="Descer"
+                          >
+                            <ArrowDown className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setEditing({ ...a })}
+                            title="Editar"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <a
+                            href="/artistas"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted"
+                            title="Ver no site"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setConfirmId(a.id)}
+                            title="Remover"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -337,9 +365,7 @@ export function ArtistsAdmin() {
         <ArtistEditor
           value={editing}
           uploading={uploading}
-          relatedEpisodes={episodes.filter(
-            (e) => e.artistId === editing!.id || e.artistId === editing!.slug,
-          )}
+          relatedEpisodes={artistEpisodeStats(editing, episodes).linked}
           onChange={setEditing}
           onUpload={onUpload}
           onUploadItem={onUploadItem}
@@ -656,11 +682,47 @@ function ArtistEditor({
             </span>
           ) : null}
         </Field>
-        {relatedEpisodes.length > 0 ? (
-          <div className="text-xs text-muted-foreground">
-            Episódios relacionados: {relatedEpisodes.map((e) => e.code || e.title).join(", ")}
-          </div>
-        ) : null}
+        <div className="space-y-2 rounded-md border p-4">
+          <h4 className="text-sm font-semibold">Episódios relacionados</h4>
+          <p className="text-xs text-muted-foreground">
+            O EP00 (institucional) não entra nesta relação.
+          </p>
+          {relatedEpisodes.length === 0 ? (
+            <p className="text-xs text-amber-600">
+              Este artista não possui episódios vinculados.
+              {value.published !== false
+                ? " Ele está publicado no catálogo mesmo sem episódio publicado."
+                : ""}
+            </p>
+          ) : (
+            <ul className="space-y-1 text-sm">
+              {relatedEpisodes.map((ep) => (
+                <li key={ep.id} className="flex flex-wrap items-center gap-2">
+                  <span>
+                    {ep.code ? `${ep.code} — ` : ""}
+                    {ep.title || ep.id}
+                  </span>
+                  <Badge variant={isItemVisible(ep) ? "default" : "secondary"}>
+                    {isItemVisible(ep) ? "Publicado" : "Oculto"}
+                  </Badge>
+                  <a
+                    className="text-xs underline"
+                    href={`/episodio?id=${ep.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    abrir episódio
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+          {relatedEpisodes.length > 0 && relatedEpisodes.every((ep) => !isItemVisible(ep)) ? (
+            <p className="text-xs text-amber-600">
+              Nenhum episódio publicado vinculado a este artista.
+            </p>
+          ) : null}
+        </div>
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
