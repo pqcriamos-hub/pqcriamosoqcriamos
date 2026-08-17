@@ -61,7 +61,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_list_access: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }[]
+      }
+      admin_lookup_user_id: { Args: { _email: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "editor"
