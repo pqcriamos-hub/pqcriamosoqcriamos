@@ -7,6 +7,7 @@ import {
   Users,
   Images,
   HeartHandshake,
+  ShieldCheck,
   ExternalLink,
   LogOut,
 } from "lucide-react";
@@ -15,8 +16,9 @@ import { EpisodesAdmin } from "./EpisodesAdmin";
 import { ArtistsAdmin } from "./ArtistsAdmin";
 import { AcervoAdmin } from "./AcervoAdmin";
 import { ApoioAdmin } from "./ApoioAdmin";
+import { AccessAdmin } from "./AccessAdmin";
 
-type SectionId = "dashboard" | "episodes" | "artists" | "acervo" | "apoio";
+type SectionId = "dashboard" | "episodes" | "artists" | "acervo" | "apoio" | "access";
 
 interface NavItem {
   label: string;
@@ -27,7 +29,7 @@ interface NavItem {
   href?: string;
 }
 
-const NAV: NavItem[] = [
+const BASE_NAV: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, section: "dashboard" },
   { label: "Episódios", icon: Mic, section: "episodes" },
   { label: "Artistas", icon: Users, section: "artists" },
@@ -35,14 +37,21 @@ const NAV: NavItem[] = [
   { label: "Apoio", icon: HeartHandshake, section: "apoio" },
 ];
 
+const ACCESS_NAV: NavItem = { label: "Acessos", icon: ShieldCheck, section: "access" };
+
 export function AdminShell({
   email,
+  userId,
+  isAdmin,
   onSignOut,
 }: {
   email: string;
+  userId: string;
+  isAdmin: boolean;
   onSignOut: () => void;
 }) {
   const [active, setActive] = useState<SectionId>("dashboard");
+  const nav = isAdmin ? [...BASE_NAV, ACCESS_NAV] : BASE_NAV;
 
   return (
     <div className="flex min-h-screen w-full bg-background text-foreground">
@@ -52,7 +61,7 @@ export function AdminShell({
           <p className="truncate text-xs text-muted-foreground">{email}</p>
         </div>
         <nav className="flex-1 space-y-1 p-3">
-          {NAV.map((item) => {
+          {nav.map((item) => {
             const Icon = item.icon;
             const isActive = item.section && active === item.section;
             const base =
@@ -106,6 +115,7 @@ export function AdminShell({
               <option value="artists">Artistas</option>
               <option value="acervo">Acervo</option>
               <option value="apoio">Apoio</option>
+              {isAdmin ? <option value="access">Acessos</option> : null}
             </select>
             <Link
               to="/"
@@ -124,6 +134,7 @@ export function AdminShell({
           {active === "artists" ? <ArtistsAdmin /> : null}
           {active === "acervo" ? <AcervoAdmin /> : null}
           {active === "apoio" ? <ApoioAdmin /> : null}
+          {active === "access" && isAdmin ? <AccessAdmin currentUserId={userId} /> : null}
         </main>
       </div>
     </div>
