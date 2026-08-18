@@ -882,7 +882,36 @@
   }
 
   function findArtist(id) {
-    return artists().find((artist) => artist.id === id) || artistsDefault.find((artist) => artist.id === id) || artists()[0];
+    const key = String(id || "").trim();
+    if (!key) return undefined;
+    return (
+      artists().find((artist) => artist.id === key) ||
+      artists().find((artist) => artist.slug === key) ||
+      artistsDefault.find((artist) => artist.id === key)
+    );
+  }
+
+  /**
+   * EP00 é institucional (apresentação dos anfitriões): nunca resolve artista
+   * convidado. Mesma normalização de src/lib/episode-artist-link.ts.
+   */
+  function isEpisodeZeroLegacy(episode) {
+    if (!episode) return false;
+    const norm = (value) =>
+      String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_-]+/g, "");
+    const id = norm(episode.id);
+    const code = norm(episode.code);
+    if (id === "t01ep00" || code === "t01ep00") return true;
+    return id.endsWith("ep00") || code.endsWith("ep00");
+  }
+
+  /** Artista vinculado ao episódio, sem fallback para o primeiro da lista. */
+  function resolveEpisodeArtist(episode) {
+    if (!episode || isEpisodeZeroLegacy(episode)) return undefined;
+    return findArtist(episode.artistId);
   }
 
   function normalizeId(text) {
@@ -1232,8 +1261,9 @@
 
   function openArtist(id) {
     ensureArtistModal();
-    const artist = normalizeArtistAssets(findArtist(id));
-    if (!artist) return;
+    const found = findArtist(id);
+    if (!found) return; // sem fallback: id inválido não abre artista algum
+    const artist = normalizeArtistAssets(found);
     // Artista oculto não abre para visitante anônimo (falha segura).
     if (artist.published === false && !isOwnerEditing()) return;
     document.getElementById("artist-modal-title").textContent = artist.name;
@@ -1356,7 +1386,8 @@
       container.innerHTML = '<div class="empty-state">Nenhum episódio cadastrado ainda.</div>';
       return;
     }
-    const artist = findArtist(episode.artistId);
+    const artist = resolveEpisodeArtist(episode);
+    const isEp00 = isEpisodeZeroLegacy(episode);
     const embeds = episodeEmbeds()[episode.id] || {};
     document.title = `PQOQ Criamos - ${episode.code} - ${episode.title}`;
     container.innerHTML = `
@@ -1402,12 +1433,18 @@
       <div class="episode-artist-panel">
         <h2 class="lettered">${escapeHtml(episode.participantTitle || `Sobre ${artist?.name || episode.artist || ""}`)}</h2>
         ${episode.participantImage ? `<img class="episode-participant-photo" src="${escapeHtml(episode.participantImage)}" alt="${escapeHtml(artist?.name || episode.artist || "Participante")}" loading="lazy">` : ""}
-        <p data-rich data-episode-participant-about="${episode.id}">${episode.participantAbout || artist?.bio || "Informação editável sobre o participante deste episódio."}</p>
+        <p data-rich data-episode-participant-about="${episode.id}">${episode.participantAbout || (artist ? artist.bio : "") || "Informação editável sobre o participante deste episódio."}</p>
         ${episode.participantBio ? `<p class="episode-participant-bio">${episode.participantBio}</p>` : ""}
         ${tagChips(episode.participantTags)}
         ${customLinkChips(episode.participantLinks) ? `<div class="platform-row episode-participant-links">${customLinkChips(episode.participantLinks)}</div>` : ""}
         <div class="artist-actions">
-          <button class="button primary small" type="button" data-open-artist="${artist?.id || episode.artistId}">Abrir acervo do artista</button>
+          ${
+            isEp00
+              ? `<a class="button primary small" href="/sobre">Conhecer os anfitriões</a>`
+              : artist
+                ? `<button class="button primary small" type="button" data-open-artist="${escapeHtml(artist.id)}">Abrir acervo do artista</button>`
+                : ""
+          }
           <a class="button small" href="/artistas">Página Artistas</a>
         </div>
         <div class="platform-row episode-platform-row">${platformLinks(episode)}${customLinkChips(episode.links)}</div>
@@ -1425,7 +1462,7 @@
     ensureEpisodeModal();
     const episode = episodes().find((item) => item.id === id);
     if (!episode) return;
-    const artist = findArtist(episode.artistId);
+    const artist = resolveEpisodeArtist(episode);
     const embeds = episodeEmbeds()[id] || {};
     document.getElementById("episode-modal-title").textContent = `${episode.code} - ${episode.title}`;
     document.getElementById("episode-modal-body").innerHTML = `
@@ -1453,14 +1490,18 @@
               <input type="file" accept="audio/*" data-episode-file="${id}" data-file-field="mp3">
             </label>
           </div>
-          <div class="card" style="margin-top:16px">
+          ${
+            artist
+              ? `<div class="card" style="margin-top:16px">
             <h3>Biografia do artista</h3>
-            <p data-rich data-episode-artist-bio="${artist.id}">${artist.bio}</p>
+            <p data-rich data-episode-artist-bio="${escapeHtml(artist.id)}">${artist.bio || ""}</p>
             <div class="artist-actions">
-              <button class="button primary small" type="button" data-open-artist="${artist.id}">Ir para Acervo</button>
+              <button class="button primary small" type="button" data-open-artist="${escapeHtml(artist.id)}">Ir para Acervo</button>
               <a class="button small" href="/artistas">Página Artistas</a>
             </div>
-          </div>
+          </div>`
+              : ""
+          }
         </div>
       </div>
     `;
