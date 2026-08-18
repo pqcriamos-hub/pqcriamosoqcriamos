@@ -1261,8 +1261,9 @@
 
   function openArtist(id) {
     ensureArtistModal();
-    const artist = normalizeArtistAssets(findArtist(id));
-    if (!artist) return;
+    const found = findArtist(id);
+    if (!found) return; // sem fallback: id inválido não abre artista algum
+    const artist = normalizeArtistAssets(found);
     // Artista oculto não abre para visitante anônimo (falha segura).
     if (artist.published === false && !isOwnerEditing()) return;
     document.getElementById("artist-modal-title").textContent = artist.name;
