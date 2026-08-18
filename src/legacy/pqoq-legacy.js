@@ -469,7 +469,92 @@
     CONTROLLED_STYLE_PROPS.forEach((property) => {
       element.style[property] = "";
     });
+    stripInlineBackgrounds(element);
     saveTargetStyles(element);
+  }
+
+  // ---- Higiene de conteúdo colado / marcações do editor -------------------
+  // Remove destaques de fundo herdados de colagem (Word, Docs, editores web)
+  // e marcadores temporários do editor visual que nunca deveriam ser salvos.
+  const EDITOR_ONLY_CLASSES = ["style-editable", "is-style-selected"];
+
+  function cleanStyleAttribute(node) {
+    const style = node.getAttribute("style");
+    if (!style) return;
+    const kept = style
+      .split(";")
+      .map((part) => part.trim())
+      .filter((part) => part && !/^background(-color)?\s*:/i.test(part));
+    if (kept.length) node.setAttribute("style", `${kept.join("; ")};`);
+    else node.removeAttribute("style");
+  }
+
+  function cleanClassAttribute(node) {
+    if (!node.classList.length) return;
+    Array.from(node.classList).forEach((name) => {
+      if (EDITOR_ONLY_CLASSES.includes(name) || /^Mso/i.test(name)) node.classList.remove(name);
+    });
+    if (!node.classList.length) node.removeAttribute("class");
+  }
+
+  function cleanEditableNode(node) {
+    cleanStyleAttribute(node);
+    cleanClassAttribute(node);
+    node.removeAttribute("data-style-key");
+    node.removeAttribute("data-text-key");
+    node.removeAttribute("contenteditable");
+  }
+
+  // Remove qualquer fundo salvo dentro do HTML rico do elemento (spans/marks).
+  function stripInlineBackgrounds(element) {
+    if (!element) return;
+    let changed = false;
+    element.querySelectorAll('[style*="background"]').forEach((node) => {
+      cleanStyleAttribute(node);
+      changed = true;
+    });
+    element.querySelectorAll("mark").forEach((node) => {
+      const parent = node.parentNode;
+      if (!parent) return;
+      while (node.firstChild) parent.insertBefore(node.firstChild, node);
+      parent.removeChild(node);
+      changed = true;
+    });
+    if (changed && (element.dataset.editable || element.dataset.rich !== undefined)) {
+      saveEditableContent(element);
+    }
+  }
+
+  // Sanitiza um trecho de HTML antes de gravar/aplicar em campos editáveis.
+  function sanitizeEditableHtml(html) {
+    if (!html || typeof document === "undefined") return html || "";
+    if (!/background|Mso|style-editable|is-style-selected|<mark|data-style-key|contenteditable/i.test(html)) {
+      return html;
+    }
+    const holder = document.createElement("div");
+    holder.innerHTML = html;
+    holder.querySelectorAll("mark").forEach((node) => {
+      const parent = node.parentNode;
+      if (!parent) return;
+      while (node.firstChild) parent.insertBefore(node.firstChild, node);
+      parent.removeChild(node);
+    });
+    holder.querySelectorAll("*").forEach(cleanEditableNode);
+    return holder.innerHTML;
+  }
+
+  function handleEditablePaste(event) {
+    const target = event.target;
+    if (!target || typeof target.closest !== "function") return;
+    const field = target.closest("[data-rich], [data-editable], [data-artist-field], [data-artist-modal-field], [data-portfolio-field], [data-link-item-field]");
+    if (!field || field.getAttribute("contenteditable") !== "true") return;
+    const clipboard = event.clipboardData;
+    if (!clipboard) return;
+    const html = clipboard.getData("text/html");
+    const text = clipboard.getData("text/plain");
+    event.preventDefault();
+    const clean = html ? sanitizeEditableHtml(html) : escapeHtml(text).replace(/\n/g, "<br>");
+    document.execCommand("insertHTML", false, clean);
   }
 
   function colorToHex(value) {
@@ -561,6 +646,7 @@
           </div>
         </div>
         <div class="style-actions">
+          <button class="style-tool" type="button" data-style-clear-bg>Sem fundo</button>
           <button class="style-tool" type="button" data-style-reset>Limpar</button>
           <button class="style-tool" type="button" data-style-close>Fechar</button>
         </div>
@@ -699,6 +785,15 @@
     if (event.target.closest("[data-style-reset]")) {
       if (activeStyleTarget) {
         removeControlledStyles(activeStyleTarget);
+        syncStylePopover(activeStyleTarget);
+      }
+      return;
+    }
+    if (event.target.closest("[data-style-clear-bg]")) {
+      if (activeStyleTarget) {
+        activeStyleTarget.style.backgroundColor = "";
+        stripInlineBackgrounds(activeStyleTarget);
+        saveTargetStyles(activeStyleTarget);
         syncStylePopover(activeStyleTarget);
       }
       return;
@@ -1477,9 +1572,10 @@
     const key = target.dataset.textKey;
     if (!key) return;
     const data = getState("editable-content", {});
-    data[key] = target.innerHTML;
+    const html = sanitizeEditableHtml(target.innerHTML);
+    data[key] = html;
     const stable = stableTextKey(target);
-    if (stable) data[stable] = target.innerHTML;
+    if (stable) data[stable] = html;
     setState("editable-content", data);
   }
 
@@ -1490,7 +1586,7 @@
       const key = element.dataset.textKey;
       const stable = stableTextKey(element);
       const value = (stable && data[stable]) || (key && data[key]) || "";
-      if (value) element.innerHTML = value;
+      if (value) element.innerHTML = sanitizeEditableHtml(value);
     });
   }
 
@@ -1905,6 +2001,11 @@
     document.addEventListener("input", (event) => {
       handleStylePopoverInput(event);
       if (event.target.matches("[data-editable], [data-rich]")) saveEditableContent(event.target);
+    });
+
+    document.addEventListener("paste", handleEditablePaste, true);
+
+    document.addEventListener("input", (event) => {
       if (event.target.matches("[data-artist-field]")) updateArtistFromCard(event.target.closest(".artist-card"));
       if (event.target.matches("[data-artist-modal-field]")) updateArtistModalField(event.target);
       if (event.target.matches("[data-portfolio-field]")) updatePortfolioField(event.target);
