@@ -646,6 +646,7 @@
           </div>
         </div>
         <div class="style-actions">
+          <button class="style-tool" type="button" data-style-clear-bg>Sem fundo</button>
           <button class="style-tool" type="button" data-style-reset>Limpar</button>
           <button class="style-tool" type="button" data-style-close>Fechar</button>
         </div>
