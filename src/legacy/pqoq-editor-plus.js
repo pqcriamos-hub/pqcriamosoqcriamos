@@ -29,7 +29,6 @@
     });
   }
   const MODULAR_SELECTOR = [
-    "main .section",
     "main .card",
     "main .button",
     "main .page-title",
@@ -42,6 +41,12 @@
     "main .artist-avatar",
     "main .bio-photo",
     "main .episode-thumb",
+    "main .section > h2",
+    "main .section > h3",
+    "main .section > p",
+    "main .section > .meta",
+    "main .section-head",
+    "main .portfolio-tile",
     "header .nav a"
   ].join(", ");
 
