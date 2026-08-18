@@ -1585,16 +1585,44 @@
 
   function dragKey(element) {
     if (element.dataset.dragKey) return element.dataset.dragKey;
-    const own = element.dataset.editable || element.dataset.pagePhotoBox || element.dataset.linkEditable || element.dataset.galleryId || element.dataset.episodeId || element.dataset.page || element.getAttribute("href") || element.textContent.trim().slice(0, 24) || element.tagName.toLowerCase();
-    const key = `${currentPage()}:${element.tagName.toLowerCase()}:${own}:${Array.from(element.parentElement?.children || []).indexOf(element)}`;
+    // Stable identity: prefer explicit data ids, then a DOM path.
+    // Never derive from text content (editing the text moved the block).
+    const d = element.dataset;
+    const own = d.editable || d.pagePhotoBox || d.linkEditable || d.galleryId
+      || d.supportId || d.portfolioItem || d.episodeId || d.page
+      || element.getAttribute("href") || domPath(element);
+    const key = `${currentPage()}:${element.tagName.toLowerCase()}:${own}`;
     element.dataset.dragKey = key;
     return key;
   }
 
-  function applyLayoutState() {
+  // Legacy key (text-based) kept for reading positions saved before the fix.
+  function legacyDragKey(element) {
+    const d = element.dataset;
+    const own = d.editable || d.pagePhotoBox || d.linkEditable || d.galleryId || d.episodeId || d.page || element.getAttribute("href") || (element.textContent || "").trim().slice(0, 24) || element.tagName.toLowerCase();
+    return `${currentPage()}:${element.tagName.toLowerCase()}:${own}:${Array.from(element.parentElement?.children || []).indexOf(element)}`;
+  }
+
+  function domPath(element) {
+    const parts = [];
+    let node = element;
+    while (node && node !== document.body && parts.length < 8) {
+      const parent = node.parentElement;
+      if (!parent) break;
+      parts.unshift(`${node.tagName.toLowerCase()}#${Array.from(parent.children).indexOf(node)}`);
+      node = parent;
+    }
+    return parts.join(">");
+  }
+
+  function readDragPosition(element) {
     const state = layoutState();
+    return state[dragKey(element)] || state[legacyDragKey(element)] || null;
+  }
+
+  function applyLayoutState() {
     modularTargets().forEach((element) => {
-      const position = state[dragKey(element)];
+      const position = readDragPosition(element);
       element.style.translate = position ? `${position.x}px ${position.y}px` : "";
     });
   }
