@@ -789,6 +789,15 @@
       }
       return;
     }
+    if (event.target.closest("[data-style-clear-bg]")) {
+      if (activeStyleTarget) {
+        activeStyleTarget.style.backgroundColor = "";
+        stripInlineBackgrounds(activeStyleTarget);
+        saveTargetStyles(activeStyleTarget);
+        syncStylePopover(activeStyleTarget);
+      }
+      return;
+    }
     const toggleButton = event.target.closest("[data-style-toggle]");
     if (toggleButton) {
       toggleActiveStyle(toggleButton.dataset.styleToggle);
