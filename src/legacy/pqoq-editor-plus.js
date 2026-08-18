@@ -1411,13 +1411,15 @@
 
   function enhanceEpisodeThumbs() {
     const embeds = episodeEmbeds();
-    document.querySelectorAll(".episode-card[data-episode-id]").forEach((card) => {
+    document.querySelectorAll(".episode-card[data-episode-id], .home-episode[data-episode-id]").forEach((card) => {
       const episodeId = card.dataset.episodeId;
       const thumb = card.querySelector(".episode-thumb");
       if (!thumb || !episodeId) return;
       thumb.classList.add("episode-thumb-upload");
       const image = embeds[episodeId]?.thumbnail || "";
       thumb.style.backgroundImage = image ? `url("${image}")` : "";
+      thumb.classList.toggle("has-cover", Boolean(image));
+      if (image) thumb.classList.remove("lettered");
       if (!thumb.querySelector("[data-episode-thumb-input]")) {
         thumb.insertAdjacentHTML("beforeend", `<input class="admin-only" type="file" accept="image/*" data-episode-thumb-input="${episodeId}" aria-label="Trocar thumbnail do episodio ${episodeId}">`);
       }
