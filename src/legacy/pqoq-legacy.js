@@ -1385,7 +1385,8 @@
       container.innerHTML = '<div class="empty-state">Nenhum episódio cadastrado ainda.</div>';
       return;
     }
-    const artist = findArtist(episode.artistId);
+    const artist = resolveEpisodeArtist(episode);
+    const isEp00 = isEpisodeZeroLegacy(episode);
     const embeds = episodeEmbeds()[episode.id] || {};
     document.title = `PQOQ Criamos - ${episode.code} - ${episode.title}`;
     container.innerHTML = `
@@ -1431,12 +1432,18 @@
       <div class="episode-artist-panel">
         <h2 class="lettered">${escapeHtml(episode.participantTitle || `Sobre ${artist?.name || episode.artist || ""}`)}</h2>
         ${episode.participantImage ? `<img class="episode-participant-photo" src="${escapeHtml(episode.participantImage)}" alt="${escapeHtml(artist?.name || episode.artist || "Participante")}" loading="lazy">` : ""}
-        <p data-rich data-episode-participant-about="${episode.id}">${episode.participantAbout || artist?.bio || "Informação editável sobre o participante deste episódio."}</p>
+        <p data-rich data-episode-participant-about="${episode.id}">${episode.participantAbout || (artist ? artist.bio : "") || "Informação editável sobre o participante deste episódio."}</p>
         ${episode.participantBio ? `<p class="episode-participant-bio">${episode.participantBio}</p>` : ""}
         ${tagChips(episode.participantTags)}
         ${customLinkChips(episode.participantLinks) ? `<div class="platform-row episode-participant-links">${customLinkChips(episode.participantLinks)}</div>` : ""}
         <div class="artist-actions">
-          <button class="button primary small" type="button" data-open-artist="${artist?.id || episode.artistId}">Abrir acervo do artista</button>
+          ${
+            isEp00
+              ? `<a class="button primary small" href="/sobre">Conhecer os anfitriões</a>`
+              : artist
+                ? `<button class="button primary small" type="button" data-open-artist="${escapeHtml(artist.id)}">Abrir acervo do artista</button>`
+                : ""
+          }
           <a class="button small" href="/artistas">Página Artistas</a>
         </div>
         <div class="platform-row episode-platform-row">${platformLinks(episode)}${customLinkChips(episode.links)}</div>
