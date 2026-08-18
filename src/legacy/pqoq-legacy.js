@@ -882,7 +882,36 @@
   }
 
   function findArtist(id) {
-    return artists().find((artist) => artist.id === id) || artistsDefault.find((artist) => artist.id === id) || artists()[0];
+    const key = String(id || "").trim();
+    if (!key) return undefined;
+    return (
+      artists().find((artist) => artist.id === key) ||
+      artists().find((artist) => artist.slug === key) ||
+      artistsDefault.find((artist) => artist.id === key)
+    );
+  }
+
+  /**
+   * EP00 é institucional (apresentação dos anfitriões): nunca resolve artista
+   * convidado. Mesma normalização de src/lib/episode-artist-link.ts.
+   */
+  function isEpisodeZeroLegacy(episode) {
+    if (!episode) return false;
+    const norm = (value) =>
+      String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_-]+/g, "");
+    const id = norm(episode.id);
+    const code = norm(episode.code);
+    if (id === "t01ep00" || code === "t01ep00") return true;
+    return id.endsWith("ep00") || code.endsWith("ep00");
+  }
+
+  /** Artista vinculado ao episódio, sem fallback para o primeiro da lista. */
+  function resolveEpisodeArtist(episode) {
+    if (!episode || isEpisodeZeroLegacy(episode)) return undefined;
+    return findArtist(episode.artistId);
   }
 
   function normalizeId(text) {
