@@ -853,6 +853,27 @@ body.admin-mode .artist-avatar::after {
   display: none;
 }
 
+.portfolio-image { position: relative; }
+.portfolio-zoom {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 34px;
+  height: 34px;
+  border: var(--line);
+  border-radius: 999px;
+  background: var(--cream);
+  box-shadow: 3px 3px 0 var(--shadow);
+  cursor: zoom-in;
+}
+.portfolio-zoom::after {
+  content: "\2295";
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.portfolio-zoom:hover { background: var(--wheat, var(--cream)); }
+
 body.admin-mode .portfolio-image::after,
 body.admin-mode .link-image::after {
   content: "Clique para trocar imagem";
