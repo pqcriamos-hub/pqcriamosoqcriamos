@@ -1572,28 +1572,42 @@ body.public-preview .gallery-asset-image input[type="file"] { display: none; }
   display: flex;
   align-items: center;
   gap: 12px;
-  width: min(1100px, calc(100vw - 32px));
-  max-height: calc(100vh - 48px);
+  width: min(1500px, calc(100vw - 28px));
+  max-height: calc(100vh - 40px);
 }
 .lightbox-figure {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(240px, 1fr);
+  grid-template-columns: minmax(0, 2.2fr) minmax(230px, .85fr);
   gap: 0;
   margin: 0;
   width: 100%;
-  max-height: calc(100vh - 48px);
+  max-height: calc(100vh - 40px);
   border: var(--line);
   background: var(--paper-bright);
   box-shadow: 10px 10px 0 var(--shadow);
   overflow: hidden;
 }
 .lightbox-image {
-  min-height: 320px;
+  min-height: min(78vh, 720px);
   background-color: var(--terracotta);
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
 }
+
+/* Zoom: hide the copy column and let the image fill the viewport */
+.gallery-lightbox.is-zoomed .lightbox-panel { width: calc(100vw - 16px); }
+.gallery-lightbox.is-zoomed .lightbox-figure {
+  grid-template-columns: 1fr;
+  max-height: calc(100vh - 20px);
+  box-shadow: none;
+}
+.gallery-lightbox.is-zoomed .lightbox-copy { display: none; }
+.gallery-lightbox.is-zoomed .lightbox-image {
+  min-height: calc(100vh - 24px);
+  background-color: rgba(31,26,8,.92);
+}
+.lightbox-zoom { position: absolute; top: -16px; right: 46px; z-index: 2; }
 .lightbox-image.is-empty::after {
   content: "Sem imagem";
   display: grid;
