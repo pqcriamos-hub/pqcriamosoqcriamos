@@ -1758,6 +1758,19 @@
         openLightbox(openLb.dataset.galleryId, openLb.dataset.openLightbox);
         return;
       }
+      const openPortfolio = event.target.closest("[data-open-portfolio-lightbox]");
+      if (openPortfolio) {
+        event.preventDefault();
+        event.stopPropagation();
+        openPortfolioLightbox(openPortfolio);
+        return;
+      }
+      if (event.target.closest("[data-lightbox-zoom]")) {
+        const lb = document.getElementById("gallery-lightbox");
+        lb?.classList.toggle("is-zoomed");
+        renderLightbox();
+        return;
+      }
       const closeLb = event.target.closest("[data-close-lightbox]");
       if (closeLb || event.target.id === "gallery-lightbox") {
         closeLightbox();
