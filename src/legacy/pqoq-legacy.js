@@ -376,7 +376,13 @@
     return elements.filter((element) => (
       !element.closest(".style-popover") &&
       !element.closest(".editor-panel") &&
-      !element.classList.contains("admin-only")
+      !element.classList.contains("admin-only") &&
+      // Card containers (e.g. <article data-editable="about.almi">) would wrap
+      // every inner target with a second dashed outline and swallow clicks
+      // meant for a single paragraph. Style only the leaf fields.
+      !(element.tagName === "ARTICLE" && element.classList.contains("card")) &&
+      !element.classList.contains("tag-list") &&
+      !element.closest(".tag-list")
     ));
   }
 
