@@ -1987,7 +1987,7 @@
       const target = event.target.closest(MODULAR_SELECTOR);
       if (!target || target.closest(".modal, .style-popover, .layout-dock, .editor-panel")) return;
       event.preventDefault();
-      const current = layoutState()[dragKey(target)] || { x: 0, y: 0 };
+      const current = readDragPosition(target) || { x: 0, y: 0 };
       activeDrag = {
         element: target,
         startX: event.clientX,
