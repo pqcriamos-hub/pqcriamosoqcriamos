@@ -2124,6 +2124,18 @@ body.public-preview [data-gallery-item-field] {
     font-size: 18px;
   }
 
+  /* setas sobrepostas à imagem para não roubar largura útil */
+  .lightbox-nav {
+    position: absolute;
+    top: 50%;
+    z-index: 3;
+    transform: translateY(-50%);
+    box-shadow: 2px 2px 0 var(--shadow);
+  }
+
+  .lightbox-prev { left: 6px; }
+  .lightbox-next { right: 6px; }
+
   .lightbox-close {
     top: -12px;
     right: -4px;
