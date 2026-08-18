@@ -1572,9 +1572,10 @@
     const key = target.dataset.textKey;
     if (!key) return;
     const data = getState("editable-content", {});
-    data[key] = target.innerHTML;
+    const html = sanitizeEditableHtml(target.innerHTML);
+    data[key] = html;
     const stable = stableTextKey(target);
-    if (stable) data[stable] = target.innerHTML;
+    if (stable) data[stable] = html;
     setState("editable-content", data);
   }
 
@@ -1585,7 +1586,7 @@
       const key = element.dataset.textKey;
       const stable = stableTextKey(element);
       const value = (stable && data[stable]) || (key && data[key]) || "";
-      if (value) element.innerHTML = value;
+      if (value) element.innerHTML = sanitizeEditableHtml(value);
     });
   }
 
