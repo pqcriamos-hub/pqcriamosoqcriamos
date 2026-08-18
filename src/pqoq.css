@@ -224,6 +224,13 @@ p { margin-top: 0; }
   background-position: center;
 }
 
+/* Capa real do episodio: imagem cobre a area e o rotulo lettered nao aparece. */
+.episode-thumb.has-cover {
+  background-color: var(--ink);
+  color: transparent;
+  font-size: 0;
+}
+
 .episode-feature h3,
 .home-episode h3 {
   font-size: clamp(28px, 3.2vw, 42px);

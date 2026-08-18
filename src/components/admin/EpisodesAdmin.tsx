@@ -750,9 +750,17 @@ function EpisodeEditor({
               onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0], "thumbnail")}
             />
             {embed.thumbnail ? (
-              <span className="text-xs text-muted-foreground">
-                {isBase64(embed.thumbnail) ? "base64 legado" : "imagem enviada"}
-              </span>
+              <div className="flex items-center gap-2">
+                <img
+                  src={embed.thumbnail}
+                  alt="Capa atual do episódio"
+                  className="h-16 w-16 rounded border object-cover"
+                  loading="lazy"
+                />
+                <span className="text-xs text-muted-foreground">
+                  {isBase64(embed.thumbnail) ? "base64 legado" : "imagem enviada"}
+                </span>
+              </div>
             ) : null}
           </Field>
           <Field label="Áudio MP3 (upload)">

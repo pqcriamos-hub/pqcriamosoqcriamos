@@ -847,6 +847,16 @@
     return thumbnail ? ` style="background-image:url('${thumbnail}')"` : "";
   }
 
+  /** Thumb do episodio: capa oficial (episode-embeds[id].thumbnail) ou fallback lettered. */
+  function episodeThumbMarkup(episode) {
+    const thumbnail = episodeEmbeds()[episode.id]?.thumbnail;
+    if (thumbnail) {
+      const safe = String(thumbnail).replace(/"/g, "%22").replace(/'/g, "%27");
+      return `<div class="episode-thumb has-cover" style="background-image:url('${safe}')" role="img" aria-label="Capa do episodio ${escapeHtml(episode.code || episode.id)}"></div>`;
+    }
+    return `<div class="episode-thumb lettered">${thumbLabel(episode)}</div>`;
+  }
+
   function renderHomeEpisodes() {
     const container = document.querySelector("[data-render-home-episodes]");
     if (!container) return;
@@ -856,7 +866,7 @@
       .slice(0, 2);
     container.innerHTML = items.map((episode) => `
       <article class="home-episode" data-episode-id="${episode.id}" data-episode-link="${episodeHref(episode.id)}">
-        <div class="episode-thumb lettered">${thumbLabel(episode)}</div>
+        ${episodeThumbMarkup(episode)}
         <div>
           <div class="meta">${episode.code} - ${episode.artist}</div>
           <h3>${episode.title}</h3>
@@ -878,7 +888,7 @@
       .filter((episode) => isOwnerEditing() || episode.published !== false)
       .map((episode) => `
       <article class="card episode-card" data-episode-id="${episode.id}" data-editable="episode.${episode.id}" data-episode-link="${episodeHref(episode.id)}">
-        <div class="episode-thumb lettered">${thumbLabel(episode)}</div>
+        ${episodeThumbMarkup(episode)}
         <div>
           <div class="meta">${episode.code} · ${episode.date} · ${episode.duration}</div>
           <h3>${episode.code} - ${episode.title}, com ${episode.artist}</h3>
