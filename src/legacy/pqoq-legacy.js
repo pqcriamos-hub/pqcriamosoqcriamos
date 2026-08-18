@@ -1461,7 +1461,7 @@
     ensureEpisodeModal();
     const episode = episodes().find((item) => item.id === id);
     if (!episode) return;
-    const artist = findArtist(episode.artistId);
+    const artist = resolveEpisodeArtist(episode);
     const embeds = episodeEmbeds()[id] || {};
     document.getElementById("episode-modal-title").textContent = `${episode.code} - ${episode.title}`;
     document.getElementById("episode-modal-body").innerHTML = `
@@ -1489,14 +1489,18 @@
               <input type="file" accept="audio/*" data-episode-file="${id}" data-file-field="mp3">
             </label>
           </div>
-          <div class="card" style="margin-top:16px">
+          ${
+            artist
+              ? `<div class="card" style="margin-top:16px">
             <h3>Biografia do artista</h3>
-            <p data-rich data-episode-artist-bio="${artist.id}">${artist.bio}</p>
+            <p data-rich data-episode-artist-bio="${escapeHtml(artist.id)}">${artist.bio || ""}</p>
             <div class="artist-actions">
-              <button class="button primary small" type="button" data-open-artist="${artist.id}">Ir para Acervo</button>
+              <button class="button primary small" type="button" data-open-artist="${escapeHtml(artist.id)}">Ir para Acervo</button>
               <a class="button small" href="/artistas">Página Artistas</a>
             </div>
-          </div>
+          </div>`
+              : ""
+          }
         </div>
       </div>
     `;
