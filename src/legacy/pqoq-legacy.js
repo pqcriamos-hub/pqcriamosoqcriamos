@@ -2001,6 +2001,11 @@
     document.addEventListener("input", (event) => {
       handleStylePopoverInput(event);
       if (event.target.matches("[data-editable], [data-rich]")) saveEditableContent(event.target);
+    });
+
+    document.addEventListener("paste", handleEditablePaste, true);
+
+    document.addEventListener("input", (event) => {
       if (event.target.matches("[data-artist-field]")) updateArtistFromCard(event.target.closest(".artist-card"));
       if (event.target.matches("[data-artist-modal-field]")) updateArtistModalField(event.target);
       if (event.target.matches("[data-portfolio-field]")) updatePortfolioField(event.target);
