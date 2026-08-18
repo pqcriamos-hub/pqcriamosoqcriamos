@@ -1659,9 +1659,34 @@
   }
 
   function applyLayoutState() {
+    // BLOCO 30 (P1): offsets salvos vêm do desktop. Em telas estreitas eles
+    // colidem com o fluxo natural, então não são aplicados — os dados salvos
+    // em localStorage/Supabase permanecem intactos.
+    const narrow =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 779px)").matches;
     modularTargets().forEach((element) => {
+      if (narrow) {
+        element.style.translate = "";
+        return;
+      }
       const position = readDragPosition(element);
       element.style.translate = position ? `${position.x}px ${position.y}px` : "";
+    });
+  }
+
+  if (typeof window !== "undefined") {
+    let layoutResizeTimer = null;
+    window.addEventListener("resize", () => {
+      window.clearTimeout(layoutResizeTimer);
+      layoutResizeTimer = window.setTimeout(() => {
+        try {
+          applyLayoutState();
+        } catch (error) {
+          /* noop */
+        }
+      }, 180);
     });
   }
 
