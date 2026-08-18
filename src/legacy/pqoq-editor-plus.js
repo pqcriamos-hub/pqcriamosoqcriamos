@@ -770,6 +770,7 @@
       <div class="modal gallery-lightbox" id="gallery-lightbox" aria-hidden="true">
         <div class="lightbox-panel">
           <button class="close-modal lightbox-close" type="button" data-close-lightbox aria-label="Fechar">&times;</button>
+          <button class="button small lightbox-zoom" type="button" data-lightbox-zoom>Ampliar</button>
           <button class="lightbox-nav lightbox-prev" type="button" data-lightbox-prev aria-label="Anterior">&#8249;</button>
           <figure class="lightbox-figure">
             <div class="lightbox-image" data-lightbox-image></div>
@@ -815,6 +816,10 @@
     const single = lightboxState.items.length <= 1;
     lb.querySelector("[data-lightbox-prev]").style.display = single ? "none" : "";
     lb.querySelector("[data-lightbox-next]").style.display = single ? "none" : "";
+    const shareBtn = lb.querySelector("[data-lightbox-share]");
+    if (shareBtn) shareBtn.style.display = lightboxState.cardId ? "" : "none";
+    const zoomBtn = lb.querySelector("[data-lightbox-zoom]");
+    if (zoomBtn) zoomBtn.textContent = lb.classList.contains("is-zoomed") ? "Reduzir" : "Ampliar";
   }
 
   function openLightbox(cardId, itemId) {
@@ -824,11 +829,43 @@
     const items = visibleItems(card);
     const index = items.findIndex((i) => i.id === itemId);
     if (index < 0) return;
-    lightboxState = { cardId, items, index };
-    renderLightbox();
+    showLightbox({ cardId, items, index });
+  }
+
+  function showLightbox(state) {
+    ensureLightbox();
+    lightboxState = state;
     const lb = document.getElementById("gallery-lightbox");
+    lb?.classList.remove("is-zoomed");
+    renderLightbox();
     lb?.classList.add("is-open");
     lb?.setAttribute("aria-hidden", "false");
+  }
+
+  // Portfolio lightbox: items are read from the rendered tiles so it works for
+  // any artist without duplicating the artists data source.
+  function openPortfolioLightbox(trigger) {
+    const scope = trigger.closest(".portfolio-masonry") || document;
+    const tiles = Array.from(scope.querySelectorAll(".portfolio-tile"));
+    const items = tiles.map((tile) => {
+      const box = tile.querySelector(".portfolio-image");
+      const bg = box ? box.style.backgroundImage : "";
+      const match = /url\(["']?(.*?)["']?\)/.exec(bg || "");
+      return {
+        id: tile.dataset.portfolioItem || "",
+        image: match ? match[1] : "",
+        title: (tile.querySelector("[data-portfolio-field='title']")?.textContent || "").trim(),
+        caption: (tile.querySelector("[data-portfolio-field='caption']")?.textContent || "").trim(),
+        description: "",
+        credit: "Portfolio",
+        tags: []
+      };
+    }).filter((item) => item.image);
+    if (!items.length) return;
+    const activeId = trigger.dataset.openPortfolioLightbox
+      || trigger.closest(".portfolio-tile")?.dataset.portfolioItem;
+    const index = Math.max(0, items.findIndex((item) => item.id === activeId));
+    showLightbox({ cardId: "", items, index });
   }
 
   function moveLightbox(delta) {
@@ -841,6 +878,7 @@
   function closeLightbox() {
     const lb = document.getElementById("gallery-lightbox");
     lb?.classList.remove("is-open");
+    lb?.classList.remove("is-zoomed");
     lb?.setAttribute("aria-hidden", "true");
     lightboxState = null;
   }
