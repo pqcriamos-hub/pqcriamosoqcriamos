@@ -1127,6 +1127,7 @@
         <label class="portfolio-image"${imageStyle}>
           <span>${item.image ? "" : "Imagem"}</span>
           <input class="admin-only" type="file" accept="image/*" data-portfolio-image="${artist.id}" data-item-id="${item.id}" aria-label="Enviar imagem de ${escapeHtml(title)}">
+          <button class="portfolio-zoom" type="button" data-open-portfolio-lightbox="${item.id}" data-artist-id="${artist.id}" aria-label="Ampliar ${escapeHtml(title)}"></button>
         </label>
         <div class="portfolio-copy">
           <h3 data-portfolio-field="title" data-artist-id="${artist.id}" data-item-id="${item.id}">${escapeHtml(title)}</h3>

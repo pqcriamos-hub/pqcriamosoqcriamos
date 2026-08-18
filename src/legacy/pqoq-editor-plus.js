@@ -29,7 +29,6 @@
     });
   }
   const MODULAR_SELECTOR = [
-    "main .section",
     "main .card",
     "main .button",
     "main .page-title",
@@ -42,6 +41,12 @@
     "main .artist-avatar",
     "main .bio-photo",
     "main .episode-thumb",
+    "main .section > h2",
+    "main .section > h3",
+    "main .section > p",
+    "main .section > .meta",
+    "main .section-head",
+    "main .portfolio-tile",
     "header .nav a"
   ].join(", ");
 
@@ -765,6 +770,7 @@
       <div class="modal gallery-lightbox" id="gallery-lightbox" aria-hidden="true">
         <div class="lightbox-panel">
           <button class="close-modal lightbox-close" type="button" data-close-lightbox aria-label="Fechar">&times;</button>
+          <button class="button small lightbox-zoom" type="button" data-lightbox-zoom>Ampliar</button>
           <button class="lightbox-nav lightbox-prev" type="button" data-lightbox-prev aria-label="Anterior">&#8249;</button>
           <figure class="lightbox-figure">
             <div class="lightbox-image" data-lightbox-image></div>
@@ -810,6 +816,10 @@
     const single = lightboxState.items.length <= 1;
     lb.querySelector("[data-lightbox-prev]").style.display = single ? "none" : "";
     lb.querySelector("[data-lightbox-next]").style.display = single ? "none" : "";
+    const shareBtn = lb.querySelector("[data-lightbox-share]");
+    if (shareBtn) shareBtn.style.display = lightboxState.cardId ? "" : "none";
+    const zoomBtn = lb.querySelector("[data-lightbox-zoom]");
+    if (zoomBtn) zoomBtn.textContent = lb.classList.contains("is-zoomed") ? "Reduzir" : "Ampliar";
   }
 
   function openLightbox(cardId, itemId) {
@@ -819,11 +829,43 @@
     const items = visibleItems(card);
     const index = items.findIndex((i) => i.id === itemId);
     if (index < 0) return;
-    lightboxState = { cardId, items, index };
-    renderLightbox();
+    showLightbox({ cardId, items, index });
+  }
+
+  function showLightbox(state) {
+    ensureLightbox();
+    lightboxState = state;
     const lb = document.getElementById("gallery-lightbox");
+    lb?.classList.remove("is-zoomed");
+    renderLightbox();
     lb?.classList.add("is-open");
     lb?.setAttribute("aria-hidden", "false");
+  }
+
+  // Portfolio lightbox: items are read from the rendered tiles so it works for
+  // any artist without duplicating the artists data source.
+  function openPortfolioLightbox(trigger) {
+    const scope = trigger.closest(".portfolio-masonry") || document;
+    const tiles = Array.from(scope.querySelectorAll(".portfolio-tile"));
+    const items = tiles.map((tile) => {
+      const box = tile.querySelector(".portfolio-image");
+      const bg = box ? box.style.backgroundImage : "";
+      const match = /url\(["']?(.*?)["']?\)/.exec(bg || "");
+      return {
+        id: tile.dataset.portfolioItem || "",
+        image: match ? match[1] : "",
+        title: (tile.querySelector("[data-portfolio-field='title']")?.textContent || "").trim(),
+        caption: (tile.querySelector("[data-portfolio-field='caption']")?.textContent || "").trim(),
+        description: "",
+        credit: "Portfolio",
+        tags: []
+      };
+    }).filter((item) => item.image);
+    if (!items.length) return;
+    const activeId = trigger.dataset.openPortfolioLightbox
+      || trigger.closest(".portfolio-tile")?.dataset.portfolioItem;
+    const index = Math.max(0, items.findIndex((item) => item.id === activeId));
+    showLightbox({ cardId: "", items, index });
   }
 
   function moveLightbox(delta) {
@@ -836,6 +878,7 @@
   function closeLightbox() {
     const lb = document.getElementById("gallery-lightbox");
     lb?.classList.remove("is-open");
+    lb?.classList.remove("is-zoomed");
     lb?.setAttribute("aria-hidden", "true");
     lightboxState = null;
   }
@@ -1580,16 +1623,44 @@
 
   function dragKey(element) {
     if (element.dataset.dragKey) return element.dataset.dragKey;
-    const own = element.dataset.editable || element.dataset.pagePhotoBox || element.dataset.linkEditable || element.dataset.galleryId || element.dataset.episodeId || element.dataset.page || element.getAttribute("href") || element.textContent.trim().slice(0, 24) || element.tagName.toLowerCase();
-    const key = `${currentPage()}:${element.tagName.toLowerCase()}:${own}:${Array.from(element.parentElement?.children || []).indexOf(element)}`;
+    // Stable identity: prefer explicit data ids, then a DOM path.
+    // Never derive from text content (editing the text moved the block).
+    const d = element.dataset;
+    const own = d.editable || d.pagePhotoBox || d.linkEditable || d.galleryId
+      || d.supportId || d.portfolioItem || d.episodeId || d.page
+      || element.getAttribute("href") || domPath(element);
+    const key = `${currentPage()}:${element.tagName.toLowerCase()}:${own}`;
     element.dataset.dragKey = key;
     return key;
   }
 
-  function applyLayoutState() {
+  // Legacy key (text-based) kept for reading positions saved before the fix.
+  function legacyDragKey(element) {
+    const d = element.dataset;
+    const own = d.editable || d.pagePhotoBox || d.linkEditable || d.galleryId || d.episodeId || d.page || element.getAttribute("href") || (element.textContent || "").trim().slice(0, 24) || element.tagName.toLowerCase();
+    return `${currentPage()}:${element.tagName.toLowerCase()}:${own}:${Array.from(element.parentElement?.children || []).indexOf(element)}`;
+  }
+
+  function domPath(element) {
+    const parts = [];
+    let node = element;
+    while (node && node !== document.body && parts.length < 8) {
+      const parent = node.parentElement;
+      if (!parent) break;
+      parts.unshift(`${node.tagName.toLowerCase()}#${Array.from(parent.children).indexOf(node)}`);
+      node = parent;
+    }
+    return parts.join(">");
+  }
+
+  function readDragPosition(element) {
     const state = layoutState();
+    return state[dragKey(element)] || state[legacyDragKey(element)] || null;
+  }
+
+  function applyLayoutState() {
     modularTargets().forEach((element) => {
-      const position = state[dragKey(element)];
+      const position = readDragPosition(element);
       element.style.translate = position ? `${position.x}px ${position.y}px` : "";
     });
   }
@@ -1685,6 +1756,19 @@
       if (openLb) {
         event.preventDefault();
         openLightbox(openLb.dataset.galleryId, openLb.dataset.openLightbox);
+        return;
+      }
+      const openPortfolio = event.target.closest("[data-open-portfolio-lightbox]");
+      if (openPortfolio) {
+        event.preventDefault();
+        event.stopPropagation();
+        openPortfolioLightbox(openPortfolio);
+        return;
+      }
+      if (event.target.closest("[data-lightbox-zoom]")) {
+        const lb = document.getElementById("gallery-lightbox");
+        lb?.classList.toggle("is-zoomed");
+        renderLightbox();
         return;
       }
       const closeLb = event.target.closest("[data-close-lightbox]");
@@ -1954,7 +2038,7 @@
       const target = event.target.closest(MODULAR_SELECTOR);
       if (!target || target.closest(".modal, .style-popover, .layout-dock, .editor-panel")) return;
       event.preventDefault();
-      const current = layoutState()[dragKey(target)] || { x: 0, y: 0 };
+      const current = readDragPosition(target) || { x: 0, y: 0 };
       activeDrag = {
         element: target,
         startX: event.clientX,
