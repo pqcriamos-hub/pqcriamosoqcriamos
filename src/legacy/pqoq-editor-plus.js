@@ -1363,16 +1363,46 @@
     return Array.from(document.querySelectorAll(".about-layout .tag-list"));
   }
 
+  // Tag values must never carry the editor's own control glyphs (up/down/remove)
+  // nor an entire wrapper's textContent. sanitizeStaticTag() is the single
+  // gate used on every read so corrupted values cannot be persisted again.
+  const TAG_CONTROL_CHARS = /[\u2191\u2193\u00d7\u2715\u2716\u274c]/g;
+
+  function sanitizeStaticTag(value) {
+    return String(value || "")
+      .replace(TAG_CONTROL_CHARS, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 40);
+  }
+
+  function sanitizeStaticTagList(list) {
+    const seen = new Set();
+    const out = [];
+    (Array.isArray(list) ? list : []).forEach((entry) => {
+      const tag = sanitizeStaticTag(entry);
+      if (!tag) return;
+      const dedupeKey = tag.toLocaleLowerCase();
+      if (seen.has(dedupeKey)) return;
+      seen.add(dedupeKey);
+      out.push(tag);
+    });
+    return out;
+  }
+
   function renderStaticTags() {
     const store = staticTagStore();
     staticTagLists().forEach((list) => {
       const key = staticTagKey(list);
-      let tags = store[key];
-      if (!Array.isArray(tags)) {
-        tags = Array.from(list.querySelectorAll("span:not(.tag-edit-btn):not(.tag-empty)"))
-          .map((s) => s.textContent.trim())
-          .filter(Boolean);
-      }
+      let tags = Array.isArray(store[key])
+        ? sanitizeStaticTagList(store[key])
+        : sanitizeStaticTagList(
+            Array.from(
+              list.querySelectorAll(
+                "[data-static-tag-text], span:not(.tag-edit):not(.tag-edit-btn):not(.tag-empty)",
+              ),
+            ).map((s) => s.textContent),
+          );
       if (isAdmin()) {
         list.classList.add("tag-list-editing");
         const html = tags
@@ -1395,18 +1425,41 @@
 
   function readStaticTags(key) {
     const store = staticTagStore();
-    if (Array.isArray(store[key])) return store[key].slice();
+    if (Array.isArray(store[key])) return sanitizeStaticTagList(store[key]);
     const list = staticTagLists().find((l) => l.dataset.tagKey === key);
     if (!list) return [];
-    return Array.from(list.querySelectorAll(".tag-edit-text, span:not(.tag-edit-btn)"))
-      .map((s) => s.textContent.trim())
-      .filter(Boolean);
+    // Only the dedicated text nodes: the ".tag-edit" wrapper also matches
+    // "span" and its textContent includes the control buttons' glyphs.
+    const nodes = list.querySelectorAll("[data-static-tag-text]").length
+      ? list.querySelectorAll("[data-static-tag-text]")
+      : list.querySelectorAll("span:not(.tag-edit):not(.tag-edit-btn):not(.tag-empty)");
+    return sanitizeStaticTagList(Array.from(nodes).map((s) => s.textContent));
   }
 
   function writeStaticTags(key, tags) {
     const store = staticTagStore();
-    store[key] = tags;
+    store[key] = sanitizeStaticTagList(tags);
     saveStaticTags(store);
+  }
+
+  // Typing in a tag used to trigger a full DOM re-read plus a remote upsert on
+  // every keystroke, which froze long pages such as /sobre. Writes are now
+  // debounced and applied to a single index.
+  const staticTagWriteTimers = new Map();
+
+  function queueStaticTagWrite(key, index, value) {
+    const pending = staticTagWriteTimers.get(key);
+    if (pending) window.clearTimeout(pending);
+    staticTagWriteTimers.set(
+      key,
+      window.setTimeout(() => {
+        staticTagWriteTimers.delete(key);
+        const store = staticTagStore();
+        const tags = Array.isArray(store[key]) ? store[key].slice() : readStaticTags(key);
+        tags[index] = value;
+        writeStaticTags(key, tags);
+      }, 500),
+    );
   }
 
   function enhanceEpisodeThumbs() {
@@ -1825,10 +1878,11 @@
       // Static tag text
       const stTagText = event.target.closest("[data-static-tag-text]");
       if (stTagText && isAdmin()) {
-        const key = stTagText.dataset.tagKey;
-        const tags = readStaticTags(key);
-        tags[Number(stTagText.dataset.tagIndex)] = stTagText.textContent.trim();
-        writeStaticTags(key, tags);
+        queueStaticTagWrite(
+          stTagText.dataset.tagKey,
+          Number(stTagText.dataset.tagIndex),
+          sanitizeStaticTag(stTagText.textContent),
+        );
       }
     });
 
