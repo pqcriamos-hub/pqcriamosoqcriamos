@@ -1675,7 +1675,9 @@
     document.body.insertAdjacentHTML("beforeend", `
       <div class="layout-dock admin-only" id="layout-dock">
         <span class="layout-dock-label">Modo modular</span>
+        <span class="layout-dock-target" id="layout-dock-target"></span>
         <button class="button small" type="button" data-grid-toggle>Ativar grade</button>
+        <button class="button small" type="button" data-grid-reset-item hidden>Resetar item</button>
       </div>
       <div class="layout-grid-overlay" aria-hidden="true"></div>
     `);
@@ -1689,20 +1691,33 @@
         setGridMode(!gridMode);
       });
     }
+    const resetItem = document.querySelector("[data-grid-reset-item]");
+    if (resetItem && !resetItem.dataset.gridBound) {
+      resetItem.dataset.gridBound = "true";
+      resetItem.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!isAdmin() || !selectedModular) return;
+        const state = layoutState();
+        delete state[dragKey(selectedModular)];
+        delete state[legacyDragKey(selectedModular)];
+        saveLayoutState(state);
+        selectedModular.style.translate = "";
+      });
+    }
   }
 
   function syncLayoutDock() {
     const button = document.querySelector("[data-grid-toggle]");
     if (button) button.textContent = gridMode ? "Desativar grade e salvar" : "Ativar grade";
+    const label = document.getElementById("layout-dock-target");
+    if (label) label.textContent = gridMode && selectedModular ? `Movendo: ${modularLabel(selectedModular)}` : "";
+    const reset = document.querySelector("[data-grid-reset-item]");
+    if (reset) reset.hidden = !(gridMode && selectedModular);
   }
 
   function modularTargets() {
-    return Array.from(document.querySelectorAll(MODULAR_SELECTOR)).filter((element) => (
-      !element.closest(".editor-panel") &&
-      !element.closest(".style-popover") &&
-      !element.closest(".layout-dock") &&
-      !element.closest(".modal")
-    ));
+    return Array.from(document.querySelectorAll(MODULAR_SELECTOR)).filter(isModularCandidate);
   }
 
   function dragKey(element) {
@@ -1710,8 +1725,13 @@
     // Stable identity: prefer explicit data ids, then a DOM path.
     // Never derive from text content (editing the text moved the block).
     const d = element.dataset;
+    if (d.layoutKey) {
+      element.dataset.dragKey = `layout:${d.layoutKey}`;
+      return element.dataset.dragKey;
+    }
     const own = d.editable || d.pagePhotoBox || d.linkEditable || d.galleryId
-      || d.supportId || d.portfolioItem || d.episodeId || d.page
+      || d.photoKey || d.artistId || d.supportId || d.portfolioItem || d.episodeId || d.page
+      || element.id
       || element.getAttribute("href") || domPath(element);
     const key = `${currentPage()}:${element.tagName.toLowerCase()}:${own}`;
     element.dataset.dragKey = key;
