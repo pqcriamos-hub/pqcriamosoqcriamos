@@ -45,10 +45,94 @@
     "main .section > h3",
     "main .section > p",
     "main .section > .meta",
-    "main .section-head",
     "main .portfolio-tile",
+    "main [data-layout-key]",
+    "main .card > h2",
+    "main .card > h3",
+    "main .card > p",
+    "main .card > .meta",
+    "main .card > .tag-list",
+    "main .card > [data-rich]",
+    "main .card > [data-editable]",
+    "main .section-head h1",
+    "main .section-head p",
+    "main .gallery-thumb",
+    "main .gallery-asset",
+    "main .gallery-asset-image",
+    "main .support-card-thumb",
+    "main .episode-participant-photo",
+    "main .lettered",
     "header .nav a"
   ].join(", ");
+
+  // Containers que NUNCA devem ser arrastados diretamente (grupos grandes).
+  const MODULAR_BLOCKED_SELECTOR = [
+    "main",
+    "main .section",
+    ".page",
+    ".grid",
+    ".about-layout",
+    ".support-grid",
+    ".episode-grid",
+    ".artist-grid",
+    ".section-head",
+    ".modal",
+    ".modal-panel",
+    ".style-popover",
+    ".layout-dock",
+    ".owner-bar",
+    ".editor-panel"
+  ].join(", ");
+
+  // Controles que não podem iniciar arraste acidental.
+  const MODULAR_IGNORE_SELECTOR =
+    "input, textarea, select, .tag-edit-btn, .gallery-admin-controls, .admin-row, .admin-only, .close-modal, .gallery-more-toggle";
+
+  let selectedModular = null;
+
+  function isModularCandidate(element) {
+    if (!element || element.nodeType !== 1) return false;
+    if (!element.matches(MODULAR_SELECTOR)) return false;
+    if (element.matches(MODULAR_BLOCKED_SELECTOR)) return false;
+    if (element.closest(".modal, .style-popover, .layout-dock, .editor-panel, .owner-bar")) return false;
+    return true;
+  }
+
+  // Regra principal: o alvo é o MENOR elemento modular válido sob o cursor.
+  function resolveModularTarget(node) {
+    let current = node && node.nodeType === 3 ? node.parentElement : node;
+    while (current && current !== document.body) {
+      if (isModularCandidate(current)) return current;
+      current = current.parentElement;
+    }
+    return null;
+  }
+
+  function modularLabel(element) {
+    if (!element) return "";
+    const key = element.dataset.layoutKey;
+    if (key) return key;
+    if (element.matches(".bio-photo, .artist-avatar, .episode-thumb, .gallery-thumb, .support-card-thumb, .gallery-asset-image, img")) return "imagem";
+    if (element.matches("h1, h2, h3, .page-title")) return `título “${(element.textContent || "").trim().slice(0, 28)}”`;
+    if (element.matches(".button, a")) return "botão";
+    if (element.matches(".tag-list")) return "tags";
+    if (element.matches(".card")) return "card";
+    return "texto";
+  }
+
+  function clearModularSelection() {
+    if (selectedModular) selectedModular.classList.remove("is-modular-selected");
+    selectedModular = null;
+    syncLayoutDock();
+  }
+
+  function selectModular(element) {
+    if (selectedModular === element) return;
+    if (selectedModular) selectedModular.classList.remove("is-modular-selected");
+    selectedModular = element;
+    if (element) element.classList.add("is-modular-selected");
+    syncLayoutDock();
+  }
 
   const galleryDefaults = [
     {
