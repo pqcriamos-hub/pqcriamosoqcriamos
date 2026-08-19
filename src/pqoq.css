@@ -1766,13 +1766,29 @@ body.layout-grid-mode [data-drag-key] {
   cursor: grab !important;
 }
 
+/* Bloco 31: no modo modular só o item selecionado recebe destaque. */
 body.layout-grid-mode [data-editable],
 body.layout-grid-mode [data-rich],
 body.layout-grid-mode [data-gallery-field],
 body.layout-grid-mode [data-gallery-modal-field],
 body.layout-grid-mode [data-gallery-item-field] {
-  outline-style: solid;
-  outline-color: rgba(29,140,255,.58);
+  outline: 0 !important;
+}
+
+body.layout-grid-mode .is-modular-selected {
+  outline: 2px solid rgba(29,140,255,.72) !important;
+  outline-offset: 3px;
+  cursor: grabbing !important;
+}
+
+.layout-dock-target {
+  max-width: 220px;
+  overflow: hidden;
+  color: var(--terracotta-dark);
+  font-size: 11px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 body.admin-mode [data-gallery-field],

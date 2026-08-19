@@ -45,10 +45,104 @@
     "main .section > h3",
     "main .section > p",
     "main .section > .meta",
-    "main .section-head",
     "main .portfolio-tile",
+    "main [data-layout-key]",
+    "main .card > h2",
+    "main .card > h3",
+    "main .card > p",
+    "main .card > .meta",
+    "main .card > .tag-list",
+    "main .card > [data-rich]",
+    "main .card > [data-editable]",
+    "main .section-head h1",
+    "main .section-head p",
+    "main .gallery-thumb",
+    "main .gallery-asset",
+    "main .gallery-asset-image",
+    "main .support-card-thumb",
+    "main .episode-participant-photo",
+    "main .lettered",
     "header .nav a"
   ].join(", ");
+
+  // Containers que NUNCA devem ser arrastados diretamente (grupos grandes).
+  const MODULAR_BLOCKED_SELECTOR = [
+    "main",
+    "main .section",
+    ".page",
+    ".grid",
+    ".about-layout",
+    ".support-grid",
+    ".episode-grid",
+    ".artist-grid",
+    ".section-head",
+    ".modal",
+    ".modal-panel",
+    ".style-popover",
+    ".layout-dock",
+    ".owner-bar",
+    ".editor-panel"
+  ].join(", ");
+
+  // Controles que não podem iniciar arraste acidental.
+  // Inputs de arquivo ficam de fora: eles cobrem fotos/thumbs editoriais e o
+  // arraste precisa funcionar sobre a imagem (o preventDefault evita o upload).
+  const MODULAR_IGNORE_SELECTOR = [
+    "input:not([type='file'])",
+    "textarea",
+    "select",
+    ".tag-edit-btn",
+    ".gallery-admin-controls",
+    ".admin-row",
+    ".close-modal",
+    ".gallery-more-toggle"
+  ].join(", ");
+
+  let selectedModular = null;
+
+  function isModularCandidate(element) {
+    if (!element || element.nodeType !== 1) return false;
+    if (!element.matches(MODULAR_SELECTOR)) return false;
+    if (element.matches(MODULAR_BLOCKED_SELECTOR)) return false;
+    if (element.closest(".modal, .style-popover, .layout-dock, .editor-panel, .owner-bar")) return false;
+    return true;
+  }
+
+  // Regra principal: o alvo é o MENOR elemento modular válido sob o cursor.
+  function resolveModularTarget(node) {
+    let current = node && node.nodeType === 3 ? node.parentElement : node;
+    while (current && current !== document.body) {
+      if (isModularCandidate(current)) return current;
+      current = current.parentElement;
+    }
+    return null;
+  }
+
+  function modularLabel(element) {
+    if (!element) return "";
+    const key = element.dataset.layoutKey;
+    if (key) return key;
+    if (element.matches(".bio-photo, .artist-avatar, .episode-thumb, .gallery-thumb, .support-card-thumb, .gallery-asset-image, img")) return "imagem";
+    if (element.matches("h1, h2, h3, .page-title")) return `título “${(element.textContent || "").trim().slice(0, 28)}”`;
+    if (element.matches(".button, a")) return "botão";
+    if (element.matches(".tag-list")) return "tags";
+    if (element.matches(".card")) return "card";
+    return "texto";
+  }
+
+  function clearModularSelection() {
+    if (selectedModular) selectedModular.classList.remove("is-modular-selected");
+    selectedModular = null;
+    syncLayoutDock();
+  }
+
+  function selectModular(element) {
+    if (selectedModular === element) return;
+    if (selectedModular) selectedModular.classList.remove("is-modular-selected");
+    selectedModular = element;
+    if (element) element.classList.add("is-modular-selected");
+    syncLayoutDock();
+  }
 
   const galleryDefaults = [
     {
@@ -408,13 +502,13 @@
     const unpub = card.published ? "" : " is-unpublished";
     return `
       <article class="card gallery-card gallery-card-plus${unpub}" data-gallery-id="${card.id}">
-        <button class="gallery-thumb gallery-card-open" type="button" data-open-gallery="${card.id}"${coverStyle}></button>
+        <button class="gallery-thumb gallery-card-open" type="button" data-open-gallery="${card.id}" data-layout-key="gallery.${card.id}.cover"${coverStyle}></button>
         <span class="gallery-status admin-only">${card.published ? "Publicada" : "Rascunho"}</span>
-        <div class="meta" data-gallery-field="meta">${escapeHtml(card.meta)}</div>
-        <h3 data-gallery-field="title">${escapeHtml(card.title)}</h3>
-        <p data-gallery-field="description">${escapeHtml(card.description)}</p>
+        <div class="meta" data-gallery-field="meta" data-layout-key="gallery.${card.id}.meta">${escapeHtml(card.meta)}</div>
+        <h3 data-gallery-field="title" data-layout-key="gallery.${card.id}.title">${escapeHtml(card.title)}</h3>
+        <p data-gallery-field="description" data-layout-key="gallery.${card.id}.description">${escapeHtml(card.description)}</p>
         <div class="artist-actions gallery-card-actions">
-          <button class="button primary small" type="button" data-open-gallery="${card.id}">Abrir galeria</button>
+          <button class="button primary small" type="button" data-open-gallery="${card.id}" data-layout-key="gallery.${card.id}.button">Abrir galeria</button>
         </div>
         <div class="admin-only admin-row compact gallery-card-admin">
           <div class="gallery-admin-controls">
@@ -1036,15 +1130,15 @@
       : "";
     return `
       <article class="card support-card${unpub}" data-support-section="${section}" data-support-id="${card.id}">
-        <button class="support-card-thumb${card.image ? "" : " is-empty"}" type="button" data-open-support="${card.id}" data-support-section="${section}"${imageStyle} aria-label="Abrir ${escapeHtml(card.title)}"></button>
+        <button class="support-card-thumb${card.image ? "" : " is-empty"}" type="button" data-open-support="${card.id}" data-support-section="${section}" data-layout-key="support.${section}.${card.id}.image"${imageStyle} aria-label="Abrir ${escapeHtml(card.title)}"></button>
         <span class="gallery-status admin-only">${card.published ? "Publicado" : "Rascunho"}</span>
-        <div class="meta">${escapeHtml(card.meta)}</div>
-        <h3>${escapeHtml(card.title)}</h3>
+        <div class="meta" data-layout-key="support.${section}.${card.id}.meta">${escapeHtml(card.meta)}</div>
+        <h3 data-layout-key="support.${section}.${card.id}.title">${escapeHtml(card.title)}</h3>
         ${card.subtitle ? `<div class="support-card-subtitle">${escapeHtml(card.subtitle)}</div>` : ""}
-        <p>${escapeHtml(card.description)}</p>
+        <p data-layout-key="support.${section}.${card.id}.description">${escapeHtml(card.description)}</p>
         ${tagsHtml}
         <div class="artist-actions">
-          <button class="button primary small" type="button" data-open-support="${card.id}" data-support-section="${section}">Abrir</button>
+          <button class="button primary small" type="button" data-open-support="${card.id}" data-support-section="${section}" data-layout-key="support.${section}.${card.id}.button">Abrir</button>
         </div>
         <div class="admin-only admin-row compact">
           <div class="gallery-admin-controls">
@@ -1591,7 +1685,9 @@
     document.body.insertAdjacentHTML("beforeend", `
       <div class="layout-dock admin-only" id="layout-dock">
         <span class="layout-dock-label">Modo modular</span>
+        <span class="layout-dock-target" id="layout-dock-target"></span>
         <button class="button small" type="button" data-grid-toggle>Ativar grade</button>
+        <button class="button small" type="button" data-grid-reset-item hidden>Resetar item</button>
       </div>
       <div class="layout-grid-overlay" aria-hidden="true"></div>
     `);
@@ -1605,20 +1701,33 @@
         setGridMode(!gridMode);
       });
     }
+    const resetItem = document.querySelector("[data-grid-reset-item]");
+    if (resetItem && !resetItem.dataset.gridBound) {
+      resetItem.dataset.gridBound = "true";
+      resetItem.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!isAdmin() || !selectedModular) return;
+        const state = layoutState();
+        delete state[dragKey(selectedModular)];
+        delete state[legacyDragKey(selectedModular)];
+        saveLayoutState(state);
+        selectedModular.style.translate = "";
+      });
+    }
   }
 
   function syncLayoutDock() {
     const button = document.querySelector("[data-grid-toggle]");
     if (button) button.textContent = gridMode ? "Desativar grade e salvar" : "Ativar grade";
+    const label = document.getElementById("layout-dock-target");
+    if (label) label.textContent = gridMode && selectedModular ? `Movendo: ${modularLabel(selectedModular)}` : "";
+    const reset = document.querySelector("[data-grid-reset-item]");
+    if (reset) reset.hidden = !(gridMode && selectedModular);
   }
 
   function modularTargets() {
-    return Array.from(document.querySelectorAll(MODULAR_SELECTOR)).filter((element) => (
-      !element.closest(".editor-panel") &&
-      !element.closest(".style-popover") &&
-      !element.closest(".layout-dock") &&
-      !element.closest(".modal")
-    ));
+    return Array.from(document.querySelectorAll(MODULAR_SELECTOR)).filter(isModularCandidate);
   }
 
   function dragKey(element) {
@@ -1626,8 +1735,13 @@
     // Stable identity: prefer explicit data ids, then a DOM path.
     // Never derive from text content (editing the text moved the block).
     const d = element.dataset;
+    if (d.layoutKey) {
+      element.dataset.dragKey = `layout:${d.layoutKey}`;
+      return element.dataset.dragKey;
+    }
     const own = d.editable || d.pagePhotoBox || d.linkEditable || d.galleryId
-      || d.supportId || d.portfolioItem || d.episodeId || d.page
+      || d.photoKey || d.artistId || d.supportId || d.portfolioItem || d.episodeId || d.page
+      || element.id
       || element.getAttribute("href") || domPath(element);
     const key = `${currentPage()}:${element.tagName.toLowerCase()}:${own}`;
     element.dataset.dragKey = key;
@@ -1693,6 +1807,7 @@
   function setGridMode(enabled) {
     gridMode = enabled;
     document.body.classList.toggle("layout-grid-mode", enabled);
+    if (!enabled) clearModularSelection();
     syncLayoutDock();
     document.querySelectorAll("[contenteditable='true']").forEach((element) => {
       if (enabled) {
@@ -2005,6 +2120,9 @@
     window.addEventListener("resize", queueEnhance);
 
     document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && selectedModular) {
+        clearModularSelection();
+      }
       const lb = document.getElementById("gallery-lightbox");
       if (lb && lb.classList.contains("is-open")) {
         if (event.key === "Escape") { closeLightbox(); return; }
@@ -2059,10 +2177,19 @@
     });
 
     document.addEventListener("pointerdown", (event) => {
-      if (!gridMode || !isAdmin()) return;
-      const target = event.target.closest(MODULAR_SELECTOR);
-      if (!target || target.closest(".modal, .style-popover, .layout-dock, .editor-panel")) return;
+      if (!gridMode || !isAdmin()) {
+        if (selectedModular) clearModularSelection();
+        return;
+      }
+      if (event.target && typeof event.target.closest === "function"
+        && event.target.closest(MODULAR_IGNORE_SELECTOR)) return;
+      const target = resolveModularTarget(event.target);
+      if (!target) {
+        clearModularSelection();
+        return;
+      }
       event.preventDefault();
+      selectModular(target);
       const current = readDragPosition(target) || { x: 0, y: 0 };
       activeDrag = {
         element: target,
