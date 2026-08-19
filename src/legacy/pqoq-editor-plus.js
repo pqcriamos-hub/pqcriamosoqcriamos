@@ -1797,6 +1797,7 @@
   function setGridMode(enabled) {
     gridMode = enabled;
     document.body.classList.toggle("layout-grid-mode", enabled);
+    if (!enabled) clearModularSelection();
     syncLayoutDock();
     document.querySelectorAll("[contenteditable='true']").forEach((element) => {
       if (enabled) {
