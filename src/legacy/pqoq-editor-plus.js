@@ -85,8 +85,18 @@
   ].join(", ");
 
   // Controles que não podem iniciar arraste acidental.
-  const MODULAR_IGNORE_SELECTOR =
-    "input, textarea, select, .tag-edit-btn, .gallery-admin-controls, .admin-row, .admin-only, .close-modal, .gallery-more-toggle";
+  // Inputs de arquivo ficam de fora: eles cobrem fotos/thumbs editoriais e o
+  // arraste precisa funcionar sobre a imagem (o preventDefault evita o upload).
+  const MODULAR_IGNORE_SELECTOR = [
+    "input:not([type='file'])",
+    "textarea",
+    "select",
+    ".tag-edit-btn",
+    ".gallery-admin-controls",
+    ".admin-row",
+    ".close-modal",
+    ".gallery-more-toggle"
+  ].join(", ");
 
   let selectedModular = null;
 
