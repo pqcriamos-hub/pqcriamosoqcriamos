@@ -2109,6 +2109,9 @@
     window.addEventListener("resize", queueEnhance);
 
     document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && selectedModular) {
+        clearModularSelection();
+      }
       const lb = document.getElementById("gallery-lightbox");
       if (lb && lb.classList.contains("is-open")) {
         if (event.key === "Escape") { closeLightbox(); return; }
