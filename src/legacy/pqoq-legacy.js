@@ -982,9 +982,9 @@
     const thumbnail = episodeEmbeds()[episode.id]?.thumbnail;
     if (thumbnail) {
       const safe = String(thumbnail).replace(/"/g, "%22").replace(/'/g, "%27");
-      return `<div class="episode-thumb has-cover" style="background-image:url('${safe}')" role="img" aria-label="Capa do episodio ${escapeHtml(episode.code || episode.id)}"></div>`;
+      return `<div class="episode-thumb has-cover" data-layout-key="episode.${episode.id}.thumbnail" style="background-image:url('${safe}')" role="img" aria-label="Capa do episodio ${escapeHtml(episode.code || episode.id)}"></div>`;
     }
-    return `<div class="episode-thumb lettered">${thumbLabel(episode)}</div>`;
+    return `<div class="episode-thumb lettered" data-layout-key="episode.${episode.id}.thumbnail">${thumbLabel(episode)}</div>`;
   }
 
   function renderHomeEpisodes() {
@@ -1020,11 +1020,11 @@
       <article class="card episode-card" data-episode-id="${episode.id}" data-editable="episode.${episode.id}" data-episode-link="${episodeHref(episode.id)}">
         ${episodeThumbMarkup(episode)}
         <div>
-          <div class="meta">${episode.code} · ${episode.date} · ${episode.duration}</div>
-          <h3>${episode.code} - ${episode.title}, com ${episode.artist}</h3>
-          <p>${episode.description}</p>
+          <div class="meta" data-layout-key="episode.${episode.id}.meta">${episode.code} · ${episode.date} · ${episode.duration}</div>
+          <h3 data-layout-key="episode.${episode.id}.title">${episode.code} - ${episode.title}, com ${episode.artist}</h3>
+          <p data-layout-key="episode.${episode.id}.description">${episode.description}</p>
           <div class="artist-actions">
-            <a class="button primary small" href="${episodeHref(episode.id)}">Abrir episódio</a>
+            <a class="button primary small" href="${episodeHref(episode.id)}" data-layout-key="episode.${episode.id}.button">Abrir episódio</a>
             <button class="button small admin-only" type="button" data-remove-episode="${episode.id}">Remover</button>
           </div>
         </div>
@@ -1037,15 +1037,15 @@
     const imageStyle = artist.image ? ` style="background-image:url('${artist.image}')"` : "";
     return `
       <article class="card artist-card" data-artist-id="${artist.id}" data-editable="artist.${artist.id}">
-        <label class="artist-avatar"${imageStyle}>
+        <label class="artist-avatar" data-layout-key="artist.${artist.id}.photo"${imageStyle}>
           <span>${artist.image ? "" : "Foto"}</span>
           <input class="admin-only" type="file" accept="image/*" data-artist-image="${artist.id}" aria-label="Enviar foto de ${artist.name}">
         </label>
-        <div class="meta" data-artist-field="meta">${artist.meta}</div>
-        <h3 data-artist-field="name">${artist.name}</h3>
-        <p data-artist-field="description">${artist.description}</p>
+        <div class="meta" data-artist-field="meta" data-layout-key="artist.${artist.id}.meta">${artist.meta}</div>
+        <h3 data-artist-field="name" data-layout-key="artist.${artist.id}.name">${artist.name}</h3>
+        <p data-artist-field="description" data-layout-key="artist.${artist.id}.description">${artist.description}</p>
         <div class="artist-actions">
-          <button class="button primary small" type="button" data-open-artist="${artist.id}">Ver acervo</button>
+          <button class="button primary small" type="button" data-open-artist="${artist.id}" data-layout-key="artist.${artist.id}.button">Ver acervo</button>
           <button class="button small admin-only" type="button" data-remove-artist="${artist.id}">Remover</button>
         </div>
       </article>
