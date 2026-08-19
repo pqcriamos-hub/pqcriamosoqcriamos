@@ -2163,10 +2163,19 @@
     });
 
     document.addEventListener("pointerdown", (event) => {
-      if (!gridMode || !isAdmin()) return;
-      const target = event.target.closest(MODULAR_SELECTOR);
-      if (!target || target.closest(".modal, .style-popover, .layout-dock, .editor-panel")) return;
+      if (!gridMode || !isAdmin()) {
+        if (selectedModular) clearModularSelection();
+        return;
+      }
+      if (event.target && typeof event.target.closest === "function"
+        && event.target.closest(MODULAR_IGNORE_SELECTOR)) return;
+      const target = resolveModularTarget(event.target);
+      if (!target) {
+        clearModularSelection();
+        return;
+      }
       event.preventDefault();
+      selectModular(target);
       const current = readDragPosition(target) || { x: 0, y: 0 };
       activeDrag = {
         element: target,
