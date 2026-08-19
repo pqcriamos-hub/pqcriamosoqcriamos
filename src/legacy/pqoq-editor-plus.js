@@ -492,13 +492,13 @@
     const unpub = card.published ? "" : " is-unpublished";
     return `
       <article class="card gallery-card gallery-card-plus${unpub}" data-gallery-id="${card.id}">
-        <button class="gallery-thumb gallery-card-open" type="button" data-open-gallery="${card.id}"${coverStyle}></button>
+        <button class="gallery-thumb gallery-card-open" type="button" data-open-gallery="${card.id}" data-layout-key="gallery.${card.id}.cover"${coverStyle}></button>
         <span class="gallery-status admin-only">${card.published ? "Publicada" : "Rascunho"}</span>
-        <div class="meta" data-gallery-field="meta">${escapeHtml(card.meta)}</div>
-        <h3 data-gallery-field="title">${escapeHtml(card.title)}</h3>
-        <p data-gallery-field="description">${escapeHtml(card.description)}</p>
+        <div class="meta" data-gallery-field="meta" data-layout-key="gallery.${card.id}.meta">${escapeHtml(card.meta)}</div>
+        <h3 data-gallery-field="title" data-layout-key="gallery.${card.id}.title">${escapeHtml(card.title)}</h3>
+        <p data-gallery-field="description" data-layout-key="gallery.${card.id}.description">${escapeHtml(card.description)}</p>
         <div class="artist-actions gallery-card-actions">
-          <button class="button primary small" type="button" data-open-gallery="${card.id}">Abrir galeria</button>
+          <button class="button primary small" type="button" data-open-gallery="${card.id}" data-layout-key="gallery.${card.id}.button">Abrir galeria</button>
         </div>
         <div class="admin-only admin-row compact gallery-card-admin">
           <div class="gallery-admin-controls">
@@ -1120,15 +1120,15 @@
       : "";
     return `
       <article class="card support-card${unpub}" data-support-section="${section}" data-support-id="${card.id}">
-        <button class="support-card-thumb${card.image ? "" : " is-empty"}" type="button" data-open-support="${card.id}" data-support-section="${section}"${imageStyle} aria-label="Abrir ${escapeHtml(card.title)}"></button>
+        <button class="support-card-thumb${card.image ? "" : " is-empty"}" type="button" data-open-support="${card.id}" data-support-section="${section}" data-layout-key="support.${section}.${card.id}.image"${imageStyle} aria-label="Abrir ${escapeHtml(card.title)}"></button>
         <span class="gallery-status admin-only">${card.published ? "Publicado" : "Rascunho"}</span>
-        <div class="meta">${escapeHtml(card.meta)}</div>
-        <h3>${escapeHtml(card.title)}</h3>
+        <div class="meta" data-layout-key="support.${section}.${card.id}.meta">${escapeHtml(card.meta)}</div>
+        <h3 data-layout-key="support.${section}.${card.id}.title">${escapeHtml(card.title)}</h3>
         ${card.subtitle ? `<div class="support-card-subtitle">${escapeHtml(card.subtitle)}</div>` : ""}
-        <p>${escapeHtml(card.description)}</p>
+        <p data-layout-key="support.${section}.${card.id}.description">${escapeHtml(card.description)}</p>
         ${tagsHtml}
         <div class="artist-actions">
-          <button class="button primary small" type="button" data-open-support="${card.id}" data-support-section="${section}">Abrir</button>
+          <button class="button primary small" type="button" data-open-support="${card.id}" data-support-section="${section}" data-layout-key="support.${section}.${card.id}.button">Abrir</button>
         </div>
         <div class="admin-only admin-row compact">
           <div class="gallery-admin-controls">
