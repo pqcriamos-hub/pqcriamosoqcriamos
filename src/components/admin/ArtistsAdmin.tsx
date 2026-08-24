@@ -509,7 +509,11 @@ export function ArtistsAdmin() {
 function ArtistEditor({
   value,
   uploading,
-  relatedEpisodes,
+  saving,
+  errorMsg,
+  episodes,
+  linkedIds,
+  onToggleLink,
   onChange,
   onUpload,
   onUploadItem,
@@ -518,7 +522,11 @@ function ArtistEditor({
 }: {
   value: ArtistItem;
   uploading: boolean;
-  relatedEpisodes: EpisodeItem[];
+  saving: boolean;
+  errorMsg: string;
+  episodes: EpisodeItem[];
+  linkedIds: string[];
+  onToggleLink: (id: string, on: boolean) => void;
   onChange: (a: ArtistItem) => void;
   onUpload: (file: File) => void;
   onUploadItem: (kind: "portfolioItems" | "linkItems", itemId: string, file: File) => void;
@@ -531,327 +539,400 @@ function ArtistEditor({
   const contactInfo = value.contactInfo || {};
   const setPortfolio = (next: ArtistPortfolioItem[]) => set({ portfolioItems: next });
   const setLinkItems = (next: ArtistLinkItem[]) => set({ linkItems: next });
+  const linkableEpisodes = episodes.filter((ep) => !isEpisodeZero(ep));
+
   return (
-    <Card>
-      <CardContent className="space-y-4 p-6">
-        <h3 className="text-base font-semibold">
-          {value.name ? `Editar: ${value.name}` : "Novo artista"}
-        </h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Nome">
-            <Input value={value.name || ""} onChange={(e) => set({ name: e.target.value })} />
-          </Field>
-          <Field label="Slug">
-            <Input value={value.slug || ""} onChange={(e) => set({ slug: e.target.value })} />
-          </Field>
-          <Field label="Formação / atuação">
-            <Input value={value.meta || ""} onChange={(e) => set({ meta: e.target.value })} />
-          </Field>
-          <Field label="Tags (vírgula)">
-            <Input
-              value={(value.tags || []).join(", ")}
-              onChange={(e) =>
-                set({
-                  tags: e.target.value
-                    .split(",")
-                    .map((t) => t.trim())
-                    .filter(Boolean),
-                })
-              }
-            />
-          </Field>
-        </div>
-        <Field label="Bio curta">
-          <Textarea
-            value={value.description || ""}
-            onChange={(e) => set({ description: e.target.value })}
-          />
-        </Field>
-        <Field label="Bio expandida">
-          <Textarea value={value.bio || ""} onChange={(e) => set({ bio: e.target.value })} />
-        </Field>
-        <Field label="Portfólio / acervo">
-          <Textarea
-            value={value.portfolio || ""}
-            onChange={(e) => set({ portfolio: e.target.value })}
-          />
-        </Field>
-        <Field label="Links / redes">
-          <Textarea value={value.links || ""} onChange={(e) => set({ links: e.target.value })} />
-        </Field>
-        <Field label="Contato profissional">
-          <Textarea
-            value={value.contact || ""}
-            onChange={(e) => set({ contact: e.target.value })}
-          />
-        </Field>
+    <Dialog open onOpenChange={(o) => !o && onCancel()}>
+      <DialogContent className="max-h-[92vh] max-w-5xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{value.name ? "Editar artista" : "Novo artista"}</DialogTitle>
+          <DialogDescription>
+            Dados individuais deste artista. As alterações são salvas no Supabase ao clicar em
+            “Salvar alterações”.
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="space-y-3 rounded-md border p-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold">Portfólio (obras do modal)</h4>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                setPortfolio([
-                  ...portfolioItems,
-                  { id: genId("portfolio"), title: "", caption: "", link: "", image: "" },
-                ])
-              }
-            >
-              <Plus className="mr-1 h-3 w-3" /> Adicionar obra
-            </Button>
-          </div>
-          {portfolioItems.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Nenhuma obra cadastrada.</p>
-          ) : (
-            portfolioItems.map((item) => (
-              <div key={item.id} className="space-y-2 rounded border p-3">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Título">
-                    <Input
-                      value={item.title || ""}
-                      onChange={(e) =>
-                        setPortfolio(
-                          portfolioItems.map((p) =>
-                            p.id === item.id ? { ...p, title: e.target.value } : p,
-                          ),
-                        )
-                      }
-                    />
-                  </Field>
-                  <Field label="Link">
-                    <Input
-                      value={item.link || ""}
-                      onChange={(e) =>
-                        setPortfolio(
-                          portfolioItems.map((p) =>
-                            p.id === item.id ? { ...p, link: e.target.value } : p,
-                          ),
-                        )
-                      }
-                    />
-                  </Field>
+        {errorMsg ? <p className="text-sm text-destructive">{errorMsg}</p> : null}
+
+        <div className="grid gap-6 md:grid-cols-[220px_1fr]">
+          {/* Coluna da foto */}
+          <div className="space-y-3">
+            <div className="overflow-hidden rounded-md border bg-muted/30">
+              {value.image ? (
+                <img
+                  src={value.image}
+                  alt={value.name ? `Foto de ${value.name}` : "Foto do artista"}
+                  className="aspect-square w-full object-cover"
+                />
+              ) : (
+                <div className="flex aspect-square w-full items-center justify-center text-xs text-muted-foreground">
+                  Sem foto
                 </div>
-                <Field label="Legenda">
-                  <Textarea
-                    value={item.caption || ""}
-                    onChange={(e) =>
-                      setPortfolio(
-                        portfolioItems.map((p) =>
-                          p.id === item.id ? { ...p, caption: e.target.value } : p,
-                        ),
-                      )
-                    }
-                  />
-                </Field>
-                <div className="flex flex-wrap items-center gap-3">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    disabled={uploading}
-                    onChange={(e) =>
-                      e.target.files?.[0] &&
-                      onUploadItem("portfolioItems", item.id, e.target.files[0])
-                    }
-                  />
-                  {item.image ? (
-                    <span className="text-xs text-muted-foreground">
-                      {isBase64(item.image) ? "base64 legado" : "imagem enviada"}
-                    </span>
-                  ) : null}
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs" htmlFor="artist-photo">
+                Foto do artista
+              </Label>
+              <Input
+                id="artist-photo"
+                type="file"
+                accept="image/*"
+                disabled={uploading || saving}
+                onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
+              />
+              {isBase64(value.image) ? (
+                <p className="text-xs text-amber-600">Foto base64 legado — reenvie para o Storage.</p>
+              ) : null}
+              {value.image ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => set({ image: "" })}
+                  disabled={saving}
+                >
+                  <X className="mr-1 h-3 w-3" /> Remover foto
+                </Button>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Coluna dos dados */}
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Nome">
+                <Input value={value.name || ""} onChange={(e) => set({ name: e.target.value })} />
+              </Field>
+              <Field label="Slug">
+                <div className="flex gap-2">
+                  <Input value={value.slug || ""} onChange={(e) => set({ slug: e.target.value })} />
                   <Button
                     size="icon"
-                    variant="ghost"
-                    onClick={() => setPortfolio(portfolioItems.filter((p) => p.id !== item.id))}
-                    title="Remover obra"
+                    variant="outline"
+                    title="Gerar slug pelo nome"
+                    aria-label="Gerar slug pelo nome"
+                    onClick={() => set({ slug: slugify(value.name || value.id) })}
                   >
-                    <Trash2 className="h-4 w-4 text-destructive" />
+                    <Wand2 className="h-4 w-4" />
                   </Button>
                 </div>
+              </Field>
+              <Field label="Formação / atuação">
+                <Input value={value.meta || ""} onChange={(e) => set({ meta: e.target.value })} />
+              </Field>
+              <Field label="Tags (vírgula)">
+                <Input
+                  value={(value.tags || []).join(", ")}
+                  onChange={(e) =>
+                    set({
+                      tags: e.target.value
+                        .split(",")
+                        .map((t) => t.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                />
+              </Field>
+            </div>
+
+            <Field label="Bio curta">
+              <Textarea
+                value={value.description || ""}
+                onChange={(e) => set({ description: e.target.value })}
+              />
+            </Field>
+            <Field label="Bio expandida">
+              <Textarea value={value.bio || ""} onChange={(e) => set({ bio: e.target.value })} />
+            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Portfólio / acervo (texto)">
+                <Textarea
+                  value={value.portfolio || ""}
+                  onChange={(e) => set({ portfolio: e.target.value })}
+                />
+              </Field>
+              <Field label="Links / redes (texto)">
+                <Textarea
+                  value={value.links || ""}
+                  onChange={(e) => set({ links: e.target.value })}
+                />
+              </Field>
+            </div>
+            <Field label="Contato profissional (texto)">
+              <Textarea
+                value={value.contact || ""}
+                onChange={(e) => set({ contact: e.target.value })}
+              />
+            </Field>
+
+            <div className="space-y-3 rounded-md border p-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold">Portfólio (obras do modal)</h4>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setPortfolio([
+                      ...portfolioItems,
+                      { id: genId("portfolio"), title: "", caption: "", link: "", image: "" },
+                    ])
+                  }
+                >
+                  <Plus className="mr-1 h-3 w-3" /> Adicionar obra
+                </Button>
               </div>
-            ))
-          )}
+              {portfolioItems.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Nenhuma obra cadastrada.</p>
+              ) : (
+                portfolioItems.map((item) => (
+                  <div key={item.id} className="space-y-2 rounded border p-3">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field label="Título">
+                        <Input
+                          value={item.title || ""}
+                          onChange={(e) =>
+                            setPortfolio(
+                              portfolioItems.map((p) =>
+                                p.id === item.id ? { ...p, title: e.target.value } : p,
+                              ),
+                            )
+                          }
+                        />
+                      </Field>
+                      <Field label="Link">
+                        <Input
+                          value={item.link || ""}
+                          onChange={(e) =>
+                            setPortfolio(
+                              portfolioItems.map((p) =>
+                                p.id === item.id ? { ...p, link: e.target.value } : p,
+                              ),
+                            )
+                          }
+                        />
+                      </Field>
+                    </div>
+                    <Field label="Legenda">
+                      <Textarea
+                        value={item.caption || ""}
+                        onChange={(e) =>
+                          setPortfolio(
+                            portfolioItems.map((p) =>
+                              p.id === item.id ? { ...p, caption: e.target.value } : p,
+                            ),
+                          )
+                        }
+                      />
+                    </Field>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        className="max-w-xs"
+                        disabled={uploading || saving}
+                        onChange={(e) =>
+                          e.target.files?.[0] &&
+                          onUploadItem("portfolioItems", item.id, e.target.files[0])
+                        }
+                      />
+                      {item.image ? (
+                        <span className="text-xs text-muted-foreground">
+                          {isBase64(item.image) ? "base64 legado" : "imagem enviada"}
+                        </span>
+                      ) : null}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label="Remover obra"
+                        onClick={() =>
+                          setPortfolio(portfolioItems.filter((p) => p.id !== item.id))
+                        }
+                        title="Remover obra"
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="space-y-3 rounded-md border p-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold">Redes &amp; links (aba do modal)</h4>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setLinkItems([
+                      ...linkItems,
+                      { id: genId("link"), title: "", caption: "", href: "", image: "" },
+                    ])
+                  }
+                >
+                  <Plus className="mr-1 h-3 w-3" /> Adicionar link
+                </Button>
+              </div>
+              {linkItems.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Nenhuma rede cadastrada.</p>
+              ) : (
+                linkItems.map((item) => (
+                  <div key={item.id} className="space-y-2 rounded border p-3">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field label="Título">
+                        <Input
+                          value={item.title || ""}
+                          onChange={(e) =>
+                            setLinkItems(
+                              linkItems.map((l) =>
+                                l.id === item.id ? { ...l, title: e.target.value } : l,
+                              ),
+                            )
+                          }
+                        />
+                      </Field>
+                      <Field label="URL">
+                        <Input
+                          value={item.href || ""}
+                          onChange={(e) =>
+                            setLinkItems(
+                              linkItems.map((l) =>
+                                l.id === item.id ? { ...l, href: e.target.value } : l,
+                              ),
+                            )
+                          }
+                        />
+                      </Field>
+                    </div>
+                    <Field label="Legenda">
+                      <Input
+                        value={item.caption || ""}
+                        onChange={(e) =>
+                          setLinkItems(
+                            linkItems.map((l) =>
+                              l.id === item.id ? { ...l, caption: e.target.value } : l,
+                            ),
+                          )
+                        }
+                      />
+                    </Field>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        className="max-w-xs"
+                        disabled={uploading || saving}
+                        onChange={(e) =>
+                          e.target.files?.[0] &&
+                          onUploadItem("linkItems", item.id, e.target.files[0])
+                        }
+                      />
+                      {item.image ? (
+                        <span className="text-xs text-muted-foreground">imagem enviada</span>
+                      ) : null}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label="Remover link"
+                        onClick={() => setLinkItems(linkItems.filter((l) => l.id !== item.id))}
+                        title="Remover link"
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="grid gap-4 rounded-md border p-4 sm:grid-cols-3">
+              <Field label="Contato — e-mail">
+                <Input
+                  type="email"
+                  value={contactInfo.email || ""}
+                  onChange={(e) => set({ contactInfo: { ...contactInfo, email: e.target.value } })}
+                />
+              </Field>
+              <Field label="Contato — telefone/WhatsApp">
+                <Input
+                  value={contactInfo.phone || ""}
+                  onChange={(e) => set({ contactInfo: { ...contactInfo, phone: e.target.value } })}
+                />
+              </Field>
+              <Field label="Contato — link principal">
+                <Input
+                  value={contactInfo.link || ""}
+                  onChange={(e) => set({ contactInfo: { ...contactInfo, link: e.target.value } })}
+                />
+              </Field>
+            </div>
+
+            <div className="space-y-2 rounded-md border p-4">
+              <h4 className="text-sm font-semibold">Episódios relacionados</h4>
+              <p className="text-xs text-muted-foreground">
+                O EP00 (institucional) não entra nesta relação.
+              </p>
+              {linkableEpisodes.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Nenhum episódio disponível.</p>
+              ) : (
+                <ul className="max-h-52 space-y-1 overflow-y-auto pr-1">
+                  {linkableEpisodes.map((ep) => {
+                    const checked = linkedIds.includes(ep.id);
+                    return (
+                      <li key={ep.id} className="flex flex-wrap items-center gap-2 text-sm">
+                        <Checkbox
+                          id={`ep-link-${ep.id}`}
+                          checked={checked}
+                          onCheckedChange={(v) => onToggleLink(ep.id, v === true)}
+                        />
+                        <Label htmlFor={`ep-link-${ep.id}`} className="cursor-pointer font-normal">
+                          {ep.code ? `${ep.code} — ` : ""}
+                          {ep.title || ep.id}
+                        </Label>
+                        <Badge variant={isItemVisible(ep) ? "default" : "secondary"}>
+                          {isItemVisible(ep) ? "Publicado" : "Oculto"}
+                        </Badge>
+                        <a
+                          className="text-xs underline"
+                          href={`/episodio?id=${ep.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          abrir episódio
+                        </a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              {linkedIds.length === 0 ? (
+                <p className="text-xs text-amber-600">
+                  Este artista não possui episódios vinculados.
+                </p>
+              ) : null}
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-3 rounded-md border p-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold">Redes &amp; links (aba do modal)</h4>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                setLinkItems([
-                  ...linkItems,
-                  { id: genId("link"), title: "", caption: "", href: "", image: "" },
-                ])
-              }
-            >
-              <Plus className="mr-1 h-3 w-3" /> Adicionar link
+        <DialogFooter className="flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox
+              checked={value.published !== false}
+              onCheckedChange={(v) => set({ published: v === true })}
+            />
+            Publicado
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={onCancel} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button onClick={onApply} disabled={uploading || saving}>
+              {saving ? "Salvando…" : "Salvar alterações"}
             </Button>
           </div>
-          {linkItems.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Nenhuma rede cadastrada.</p>
-          ) : (
-            linkItems.map((item) => (
-              <div key={item.id} className="space-y-2 rounded border p-3">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Título">
-                    <Input
-                      value={item.title || ""}
-                      onChange={(e) =>
-                        setLinkItems(
-                          linkItems.map((l) =>
-                            l.id === item.id ? { ...l, title: e.target.value } : l,
-                          ),
-                        )
-                      }
-                    />
-                  </Field>
-                  <Field label="URL">
-                    <Input
-                      value={item.href || ""}
-                      onChange={(e) =>
-                        setLinkItems(
-                          linkItems.map((l) =>
-                            l.id === item.id ? { ...l, href: e.target.value } : l,
-                          ),
-                        )
-                      }
-                    />
-                  </Field>
-                </div>
-                <Field label="Legenda">
-                  <Input
-                    value={item.caption || ""}
-                    onChange={(e) =>
-                      setLinkItems(
-                        linkItems.map((l) =>
-                          l.id === item.id ? { ...l, caption: e.target.value } : l,
-                        ),
-                      )
-                    }
-                  />
-                </Field>
-                <div className="flex flex-wrap items-center gap-3">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    disabled={uploading}
-                    onChange={(e) =>
-                      e.target.files?.[0] && onUploadItem("linkItems", item.id, e.target.files[0])
-                    }
-                  />
-                  {item.image ? (
-                    <span className="text-xs text-muted-foreground">imagem enviada</span>
-                  ) : null}
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => setLinkItems(linkItems.filter((l) => l.id !== item.id))}
-                    title="Remover link"
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="grid gap-4 rounded-md border p-4 sm:grid-cols-3">
-          <Field label="Contato — e-mail">
-            <Input
-              value={contactInfo.email || ""}
-              onChange={(e) => set({ contactInfo: { ...contactInfo, email: e.target.value } })}
-            />
-          </Field>
-          <Field label="Contato — telefone/WhatsApp">
-            <Input
-              value={contactInfo.phone || ""}
-              onChange={(e) => set({ contactInfo: { ...contactInfo, phone: e.target.value } })}
-            />
-          </Field>
-          <Field label="Contato — link principal">
-            <Input
-              value={contactInfo.link || ""}
-              onChange={(e) => set({ contactInfo: { ...contactInfo, link: e.target.value } })}
-            />
-          </Field>
-        </div>
-
-        <Field label="Foto (upload)">
-          <input
-            type="file"
-            accept="image/*"
-            disabled={uploading}
-            onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
-          />
-          {value.image ? (
-            <span className="text-xs text-muted-foreground">
-              {isBase64(value.image) ? "base64 legado" : "imagem enviada"}
-            </span>
-          ) : null}
-        </Field>
-        <div className="space-y-2 rounded-md border p-4">
-          <h4 className="text-sm font-semibold">Episódios relacionados</h4>
-          <p className="text-xs text-muted-foreground">
-            O EP00 (institucional) não entra nesta relação.
-          </p>
-          {relatedEpisodes.length === 0 ? (
-            <p className="text-xs text-amber-600">
-              Este artista não possui episódios vinculados.
-              {value.published !== false
-                ? " Ele está publicado no catálogo mesmo sem episódio publicado."
-                : ""}
-            </p>
-          ) : (
-            <ul className="space-y-1 text-sm">
-              {relatedEpisodes.map((ep) => (
-                <li key={ep.id} className="flex flex-wrap items-center gap-2">
-                  <span>
-                    {ep.code ? `${ep.code} — ` : ""}
-                    {ep.title || ep.id}
-                  </span>
-                  <Badge variant={isItemVisible(ep) ? "default" : "secondary"}>
-                    {isItemVisible(ep) ? "Publicado" : "Oculto"}
-                  </Badge>
-                  <a
-                    className="text-xs underline"
-                    href={`/episodio?id=${ep.id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    abrir episódio
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )}
-          {relatedEpisodes.length > 0 && relatedEpisodes.every((ep) => !isItemVisible(ep)) ? (
-            <p className="text-xs text-amber-600">
-              Nenhum episódio publicado vinculado a este artista.
-            </p>
-          ) : null}
-        </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={value.published !== false}
-            onChange={(e) => set({ published: e.target.checked })}
-          />
-          Publicado
-        </label>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onCancel}>
-            Cancelar
-          </Button>
-          <Button onClick={onApply} disabled={uploading}>
-            Aplicar
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
