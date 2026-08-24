@@ -178,16 +178,65 @@ export function ArtistsAdmin() {
     setConfirmId(null);
   };
 
-  const applyEditor = () => {
+  /** Salva o artista (e os vínculos de episódio) diretamente no Supabase. */
+  const saveEditor = async () => {
     if (!editing) return;
-    const item: ArtistItem = {
-      ...editing,
-      slug: editing.slug?.trim() || slugify(editing.name || editing.id),
-    };
+    const name = String(editing.name || "").trim();
+    if (!name) {
+      setModalError("Informe o nome do artista.");
+      return;
+    }
+    const slug = (editing.slug?.trim() || slugify(name)).toLowerCase();
+    if (artists.some((a) => a.id !== editing.id && (a.slug || "").toLowerCase() === slug)) {
+      setModalError("Já existe outro artista com este slug.");
+      return;
+    }
+    const badUrl = [
+      editing.contactInfo?.link,
+      ...(editing.linkItems || []).map((l) => l.href),
+      ...(editing.portfolioItems || []).map((p) => p.link),
+    ].find((u) => !isValidUrl(u));
+    if (badUrl) {
+      setModalError(`Link inválido: ${badUrl}`);
+      return;
+    }
+
+    const item: ArtistItem = { ...editing, name, slug };
     const exists = artists.some((a) => a.id === item.id);
-    const next = exists ? artists.map((a) => (a.id === item.id ? item : a)) : [...artists, item];
-    markDirty(next);
-    setEditing(null);
+    const nextArtists = exists
+      ? artists.map((a) => (a.id === item.id ? item : a))
+      : [...artists, item];
+
+    const linkSet = new Set(linkedIds);
+    const prevSet = new Set(originalLinkedIds);
+    const episodesChanged = episodes.some(
+      (ep) => !isEpisodeZero(ep) && linkSet.has(ep.id) !== prevSet.has(ep.id),
+    );
+    const nextEpisodes = episodesChanged
+      ? episodes.map((ep) => {
+          if (isEpisodeZero(ep)) return ep;
+          if (linkSet.has(ep.id)) return { ...ep, artistId: item.id, artist: item.name };
+          if (prevSet.has(ep.id)) return { ...ep, artistId: "" };
+          return ep;
+        })
+      : episodes;
+
+    setModalSaving(true);
+    setModalError("");
+    try {
+      await saveContentValue("artists", nextArtists);
+      if (episodesChanged) await saveContentValue("episodes", nextEpisodes);
+      setArtists(nextArtists);
+      setEpisodes(nextEpisodes);
+      setDirty(false);
+      setSaveState("saved");
+      closeEditor();
+      void refetch();
+    } catch (err) {
+      setModalError(err instanceof Error ? err.message : "Erro ao salvar.");
+    } finally {
+      setModalSaving(false);
+    }
   };
 
   const onUpload = async (file: File) => {
