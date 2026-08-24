@@ -13,12 +13,18 @@ import {
   type ArtistLinkItem,
   genId,
 } from "@/lib/admin-content";
-import { artistEpisodeStats, isItemVisible } from "@/lib/episode-artist-link";
+import {
+  artistEpisodeStats,
+  isItemVisible,
+  isEpisodeZero,
+  getEpisodesForArtist,
+} from "@/lib/episode-artist-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -45,7 +51,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowDown, ArrowUp, ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ExternalLink, Pencil, Plus, Trash2, Wand2, X } from "lucide-react";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
