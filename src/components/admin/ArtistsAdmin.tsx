@@ -455,14 +455,35 @@ export function ArtistsAdmin() {
         <ArtistEditor
           value={editing}
           uploading={uploading}
-          relatedEpisodes={artistEpisodeStats(editing, episodes).linked}
+          saving={modalSaving}
+          errorMsg={modalError}
+          episodes={episodes}
+          linkedIds={linkedIds}
+          onToggleLink={(id, on) =>
+            setLinkedIds((prev) => (on ? [...new Set([...prev, id])] : prev.filter((x) => x !== id)))
+          }
           onChange={setEditing}
           onUpload={onUpload}
           onUploadItem={onUploadItem}
-          onCancel={() => setEditing(null)}
-          onApply={applyEditor}
+          onCancel={requestClose}
+          onApply={() => void saveEditor()}
         />
       ) : null}
+
+      <AlertDialog open={confirmDiscard} onOpenChange={(o) => !o && setConfirmDiscard(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Descartar alterações?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Há alterações não salvas neste artista. Se fechar agora, elas serão perdidas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar editando</AlertDialogCancel>
+            <AlertDialogAction onClick={closeEditor}>Descartar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmId !== null} onOpenChange={(o) => !o && setConfirmId(null)}>
         <AlertDialogContent>
