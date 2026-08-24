@@ -579,7 +579,7 @@ function EpisodeEditor({
   onChange,
   onChangeEmbed,
   onUpload,
-  onUploadParticipant,
+  onUploadParticipantImages,
   onCancel,
   onApply,
 }: {
@@ -591,7 +591,8 @@ function EpisodeEditor({
   onChange: (e: EpisodeItem) => void;
   onChangeEmbed: (e: EpisodeEmbeds[string]) => void;
   onUpload: (file: File, field: "thumbnail" | "mp3") => void;
-  onUploadParticipant: (file: File) => void;
+  onUploadParticipantImages: (files: File[]) => void;
+
   onCancel: () => void;
   onApply: () => void;
 }) {
