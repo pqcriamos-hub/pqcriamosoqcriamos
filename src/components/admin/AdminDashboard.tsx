@@ -10,7 +10,9 @@ import {
   healthChecks,
   moduleMetrics,
   type ContentDiagRow,
+  type HealthModule,
 } from "@/lib/admin-diagnostics";
+import { ContentHealth } from "./ContentHealth";
 import { MediaMaintenance } from "./MediaMaintenance";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +49,15 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
   );
 }
 
-export function AdminDashboard({ email, isAdmin }: { email?: string; isAdmin?: boolean }) {
+export function AdminDashboard({
+  email,
+  isAdmin,
+  onNavigate,
+}: {
+  email?: string;
+  isAdmin?: boolean;
+  onNavigate?: (module: HealthModule) => void;
+}) {
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["admin", "diagnostic-rows"],
     queryFn: fetchDiagnosticRows,
@@ -113,36 +123,12 @@ export function AdminDashboard({ email, isAdmin }: { email?: string; isAdmin?: b
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Saúde do conteúdo</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">Verificando…</p>
-          ) : (
-            <ul className="space-y-2">
-              {checks.map((c) => (
-                <li key={c.id} className="flex flex-wrap items-start gap-2 text-sm">
-                  <Badge
-                    variant={
-                      c.level === "warn"
-                        ? "destructive"
-                        : c.level === "info"
-                          ? "secondary"
-                          : "default"
-                    }
-                  >
-                    {c.level === "warn" ? "Atenção" : c.level === "info" ? "Revisar" : "OK"}
-                  </Badge>
-                  <span className="font-medium">{c.label}:</span>
-                  <span className="text-muted-foreground">{c.message}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      <ContentHealth
+        checks={checks}
+        loading={isLoading}
+        onNavigate={onNavigate}
+        onRefresh={() => void refetch()}
+      />
 
       <Card>
         <CardHeader>

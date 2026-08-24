@@ -2,25 +2,29 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PQOQRoute } from "../components/PQOQRoute";
 import { GalleryPage } from "../pages";
 
-// Public alias for /galeria: the section is branded as ACERVO. Both routes
-// render the same page and read the same "gallery-cards" content.
+// Public alias for /galeria: the section is branded as ACERVO. /acervo is the
+// canonical route; /galeria stays as a legacy alias pointing here.
+const TITLE = "Acervo — PQOQ";
+const DESCRIPTION =
+  "Imagens, bastidores, obras e registros visuais do projeto Por que criamos o que criamos.";
+const SOCIAL_IMAGE =
+  "https://storage.googleapis.com/gpt-engineer-file-uploads/XWqZyB5aTyeH2fMJCJwuPlYI8Ah1/social-images/social-1781919685917-ChatGPT_Image_16_de_jun._de_2026,_21_34_50.webp";
+
 export const Route = createFileRoute("/acervo")({
   component: AcervoRoute,
   head: () => ({
     meta: [
-      { title: "ACERVO — PQOQ Criamos" },
-      {
-        name: "description",
-        content:
-          "Acervo de imagens, bastidores, capas e registros de gravação do projeto PQOQ e dos artistas convidados.",
-      },
-      { property: "og:title", content: "ACERVO — PQOQ Criamos" },
-      {
-        property: "og:description",
-        content: "Imagens, bastidores, capas e registros de gravação do projeto PQOQ.",
-      },
+      { title: TITLE },
+      { name: "description", content: DESCRIPTION },
+      { property: "og:title", content: TITLE },
+      { property: "og:description", content: DESCRIPTION },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://pqoqcriamos.lovable.app/acervo" },
+      { property: "og:image", content: SOCIAL_IMAGE },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: TITLE },
+      { name: "twitter:description", content: DESCRIPTION },
+      { name: "twitter:image", content: SOCIAL_IMAGE },
     ],
     links: [{ rel: "canonical", href: "https://pqoqcriamos.lovable.app/acervo" }],
   }),

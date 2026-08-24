@@ -84,12 +84,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "PQOQ Criamos" },
       { property: "og:description", content: "Acervo vivo de artistas, processos criativos e memória cultural do extremo sul da Bahia." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { property: "og:site_name", content: "PQOQ Criamos" },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@pqcriamos" },
-      { name: "twitter:title", content: "PQOQ Criamos" },
-      { name: "twitter:description", content: "Acervo vivo de artistas, processos criativos e memória cultural do extremo sul da Bahia." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/XWqZyB5aTyeH2fMJCJwuPlYI8Ah1/social-images/social-1781919685917-ChatGPT_Image_16_de_jun._de_2026,_21_34_50.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/XWqZyB5aTyeH2fMJCJwuPlYI8Ah1/social-images/social-1781919685917-ChatGPT_Image_16_de_jun._de_2026,_21_34_50.webp" },
+      // og:image / twitter:image live on leaf routes only: a root-level image
+      // would override every page's own social preview.
     ],
     links: [
       {

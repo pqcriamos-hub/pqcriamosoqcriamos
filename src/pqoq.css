@@ -291,6 +291,7 @@ p { margin-top: 0; }
   padding: 18px;
 }
 
+.card h2,
 .card h3 {
   font-size: 30px;
   line-height: 1;
@@ -641,6 +642,7 @@ body.admin-mode .artist-avatar::after {
   transform: translateX(-50%);
 }
 
+.artist-card h2,
 .artist-card h3 {
   font-size: 30px;
 }
@@ -697,6 +699,7 @@ body.admin-mode .artist-avatar::after {
   transform: translateX(-50%);
 }
 
+.about-layout > .card h2,
 .about-layout > .card h3 {
   font-family: var(--display);
   font-size: clamp(28px, 2.7vw, 34px);

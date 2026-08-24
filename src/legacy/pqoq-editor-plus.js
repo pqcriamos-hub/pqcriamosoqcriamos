@@ -505,7 +505,7 @@
         <button class="gallery-thumb gallery-card-open" type="button" data-open-gallery="${card.id}" data-layout-key="gallery.${card.id}.cover"${coverStyle}></button>
         <span class="gallery-status admin-only">${card.published ? "Publicada" : "Rascunho"}</span>
         <div class="meta" data-gallery-field="meta" data-layout-key="gallery.${card.id}.meta">${escapeHtml(card.meta)}</div>
-        <h3 data-gallery-field="title" data-layout-key="gallery.${card.id}.title">${escapeHtml(card.title)}</h3>
+        <h2 data-gallery-field="title" data-layout-key="gallery.${card.id}.title">${escapeHtml(card.title)}</h2>
         <p data-gallery-field="description" data-layout-key="gallery.${card.id}.description">${escapeHtml(card.description)}</p>
         <div class="artist-actions gallery-card-actions">
           <button class="button primary small" type="button" data-open-gallery="${card.id}" data-layout-key="gallery.${card.id}.button">Abrir galeria</button>
@@ -515,7 +515,7 @@
             <button class="button small" type="button" data-gallery-move="up" data-gallery-id="${card.id}" aria-label="Subir galeria">&uarr;</button>
             <button class="button small" type="button" data-gallery-move="down" data-gallery-id="${card.id}" aria-label="Descer galeria">&darr;</button>
             <button class="button small" type="button" data-toggle-gallery-publish="${card.id}">${card.published ? "Despublicar" : "Publicar"}</button>
-            <button class="button small" type="button" data-remove-gallery="${card.id}">Remover</button>
+            <button class="button small" type="button" data-remove-gallery="${card.id}" aria-label="Remover acervo ${escapeHtml(card.title || card.id)}">Remover</button>
           </div>
         </div>
       </article>
@@ -538,7 +538,7 @@
         <div class="modal-panel gallery-modal-panel">
           <div class="modal-head">
             <h2 id="gallery-modal-title">ACERVO</h2>
-            <button class="close-modal" type="button" data-close-modal>&times;</button>
+            <button class="close-modal" type="button" data-close-modal aria-label="Fechar modal" title="Fechar modal">&times;</button>
           </div>
           <div class="modal-body" id="gallery-modal-body"></div>
         </div>
@@ -863,9 +863,9 @@
     document.body.insertAdjacentHTML("beforeend", `
       <div class="modal gallery-lightbox" id="gallery-lightbox" aria-hidden="true">
         <div class="lightbox-panel">
-          <button class="close-modal lightbox-close" type="button" data-close-lightbox aria-label="Fechar">&times;</button>
-          <button class="button small lightbox-zoom" type="button" data-lightbox-zoom>Ampliar</button>
-          <button class="lightbox-nav lightbox-prev" type="button" data-lightbox-prev aria-label="Anterior">&#8249;</button>
+          <button class="close-modal lightbox-close" type="button" data-close-lightbox aria-label="Fechar lightbox" title="Fechar lightbox">&times;</button>
+          <button class="button small lightbox-zoom" type="button" data-lightbox-zoom aria-label="Ampliar imagem" title="Ampliar imagem">Ampliar</button>
+          <button class="lightbox-nav lightbox-prev" type="button" data-lightbox-prev aria-label="Imagem anterior" title="Imagem anterior">&#8249;</button>
           <figure class="lightbox-figure">
             <div class="lightbox-image" data-lightbox-image></div>
             <figcaption class="lightbox-copy">
@@ -878,7 +878,7 @@
               <button class="button small gallery-share" type="button" data-lightbox-share>Compartilhar</button>
             </figcaption>
           </figure>
-          <button class="lightbox-nav lightbox-next" type="button" data-lightbox-next aria-label="Proximo">&#8250;</button>
+          <button class="lightbox-nav lightbox-next" type="button" data-lightbox-next aria-label="Próxima imagem" title="Próxima imagem">&#8250;</button>
         </div>
       </div>
     `);
@@ -1176,7 +1176,7 @@
         <div class="modal-panel support-modal-panel">
           <div class="modal-head">
             <h2 id="support-modal-title">Apoio</h2>
-            <button class="close-modal" type="button" data-close-support>&times;</button>
+            <button class="close-modal" type="button" data-close-support aria-label="Fechar modal" title="Fechar modal">&times;</button>
           </div>
           <div class="modal-body" id="support-modal-body"></div>
         </div>

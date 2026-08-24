@@ -1021,7 +1021,7 @@
         ${episodeThumbMarkup(episode)}
         <div>
           <div class="meta" data-layout-key="episode.${episode.id}.meta">${episode.code} · ${episode.date} · ${episode.duration}</div>
-          <h3 data-layout-key="episode.${episode.id}.title">${episode.code} - ${episode.title}, com ${episode.artist}</h3>
+          <h2 data-layout-key="episode.${episode.id}.title">${episode.code} - ${episode.title}, com ${episode.artist}</h2>
           <p data-layout-key="episode.${episode.id}.description">${episode.description}</p>
           <div class="artist-actions">
             <a class="button primary small" href="${episodeHref(episode.id)}" data-layout-key="episode.${episode.id}.button">Abrir episódio</a>
@@ -1042,7 +1042,7 @@
           <input class="admin-only" type="file" accept="image/*" data-artist-image="${artist.id}" aria-label="Enviar foto de ${artist.name}">
         </label>
         <div class="meta" data-artist-field="meta" data-layout-key="artist.${artist.id}.meta">${artist.meta}</div>
-        <h3 data-artist-field="name" data-layout-key="artist.${artist.id}.name">${artist.name}</h3>
+        <h2 data-artist-field="name" data-layout-key="artist.${artist.id}.name">${artist.name}</h2>
         <p data-artist-field="description" data-layout-key="artist.${artist.id}.description">${artist.description}</p>
         <div class="artist-actions">
           <button class="button primary small" type="button" data-open-artist="${artist.id}" data-layout-key="artist.${artist.id}.button">Ver acervo</button>
@@ -1070,7 +1070,7 @@
         <div class="modal-panel">
           <div class="modal-head">
             <h2 id="artist-modal-title">Artista</h2>
-            <button class="close-modal" type="button" data-close-modal>×</button>
+            <button class="close-modal" type="button" data-close-modal aria-label="Fechar modal" title="Fechar modal">×</button>
           </div>
           <div class="modal-body">
             <div class="tabs" role="tablist">
@@ -1096,7 +1096,7 @@
         <div class="modal-panel">
           <div class="modal-head">
             <h2 id="episode-modal-title">Episódio</h2>
-            <button class="close-modal" type="button" data-close-modal>×</button>
+            <button class="close-modal" type="button" data-close-modal aria-label="Fechar modal" title="Fechar modal">×</button>
           </div>
           <div class="modal-body" id="episode-modal-body"></div>
         </div>
