@@ -251,6 +251,29 @@ export async function uploadAdminMedia(
 // Domain types & helpers for Episodes and Artists.
 // ---------------------------------------------------------------------------
 
+/**
+ * Foto do participante/artista DESTE episódio. Nunca compartilhada com o
+ * catálogo de artistas, com a capa do episódio ou com o Acervo.
+ */
+export interface ParticipantImage {
+  id: string;
+  url: string;
+  name: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  storagePath: string;
+  uploadedAt: string;
+  alt: string;
+  caption: string;
+  credit: string;
+  sortOrder: number;
+  published: boolean;
+}
+
+/** Limite editorial de fotos por episódio no bloco do participante. */
+export const MAX_PARTICIPANT_IMAGES = 3;
+
 export interface EpisodeItem {
   id: string;
   slug?: string;
@@ -267,7 +290,10 @@ export interface EpisodeItem {
   /** Campos individuais do participante deste episódio (nunca compartilhados). */
   participantTitle?: string;
   participantBio?: string;
+  /** Campo legado (foto única). Mantido como fallback; nunca apagado. */
   participantImage?: string;
+  /** Galeria de até 3 fotos do participante deste episódio. */
+  participantImages?: ParticipantImage[];
   participantLinks?: LinkPair[];
   participantTags?: string[];
   /** Links próprios do episódio (rótulo + URL). */
@@ -276,6 +302,40 @@ export interface EpisodeItem {
   published?: boolean;
   latest?: boolean;
 }
+
+/** Normaliza um item da galeria do participante, preenchendo campos ausentes. */
+export function normalizeParticipantImage(
+  raw: Partial<ParticipantImage> & { url?: string },
+  index = 0,
+): ParticipantImage {
+  const url = String(raw?.url || "");
+  const originalName = String(raw?.originalName || raw?.name || "");
+  return {
+    id: String(raw?.id || genId("participant-image")),
+    url,
+    name: String(raw?.name || originalName || url.split("/").pop() || "imagem"),
+    originalName,
+    mimeType: String(raw?.mimeType || ""),
+    size: Number.isFinite(raw?.size) ? Number(raw?.size) : 0,
+    storagePath: String(raw?.storagePath || ""),
+    uploadedAt: String(raw?.uploadedAt || ""),
+    alt: String(raw?.alt || ""),
+    caption: String(raw?.caption || ""),
+    credit: String(raw?.credit || ""),
+    sortOrder: Number.isFinite(raw?.sortOrder) ? Number(raw?.sortOrder) : index,
+    published: raw?.published !== false,
+  };
+}
+
+/** Sempre devolve um array normalizado (nunca apaga itens excedentes). */
+export function normalizeParticipantImages(raw: unknown): ParticipantImage[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((item) => item && typeof item === "object")
+    .map((item, index) => normalizeParticipantImage(item as ParticipantImage, index))
+    .map((item, index) => ({ ...item, sortOrder: index }));
+}
+
 
 export interface EpisodeEmbed {
   thumbnail?: string;
