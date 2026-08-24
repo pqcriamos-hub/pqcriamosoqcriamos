@@ -14,6 +14,7 @@ import {
   isBase64,
   isValidUrl,
   saveContentValue,
+  slugify,
   uploadAdminMedia,
   type AdminContentKey,
   type ArtistItem,
@@ -340,11 +341,32 @@ export async function migrateBase64Finding(
 
 export type HealthLevel = "ok" | "warn" | "info";
 
+export type HealthModule = "episodes" | "artists" | "acervo" | "apoio" | "pages" | "dashboard";
+
+export type HealthFixKind = "slugs" | "broken-artist-link" | "base64";
+
+export interface HealthItem {
+  /** Identificador do registro (id do episódio/artista/card). */
+  id: string;
+  label: string;
+  detail?: string;
+}
+
 export interface HealthCheck {
   id: string;
   label: string;
   level: HealthLevel;
   message: string;
+  /** Onde resolver: módulo do /pqoqadmin. */
+  module?: HealthModule;
+  /** Por que o alerta apareceu. */
+  cause?: string;
+  /** O que fazer para resolver. */
+  recommendation?: string;
+  /** Registros afetados, um por linha. */
+  items?: HealthItem[];
+  /** Correção assistida disponível. */
+  fix?: HealthFixKind;
 }
 
 const LARGE_KEY_BYTES = 512 * 1024;
@@ -358,7 +380,17 @@ export function healthChecks(rows: ContentDiagRow[], base64: Base64Finding[]): H
           id: "base64",
           label: "Mídia em base64",
           level: "warn",
-          message: `${base64.length} campo(s) ainda guardam a imagem/áudio dentro do conteúdo. Migre em "Manutenção de mídia".`,
+          message: `${base64.length} campo(s) ainda guardam a imagem/áudio dentro do conteúdo.`,
+          module: "dashboard",
+          cause: "Mídia colada/enviada antes do Storage, salva como base64 dentro do JSON.",
+          recommendation:
+            'Use "Manutenção de mídia" logo abaixo para migrar cada arquivo para o Storage.',
+          fix: "base64",
+          items: base64.map((f) => ({
+            id: f.id,
+            label: f.itemLabel,
+            detail: `${f.pathLabel} · ${Math.round(f.bytes / 1024)} KB`,
+          })),
         }
       : {
           id: "base64",
@@ -409,8 +441,13 @@ export function healthChecks(rows: ContentDiagRow[], base64: Base64Finding[]): H
     label: "Episódios sem capa",
     level: noThumb.length ? "info" : "ok",
     message: noThumb.length
-      ? noThumb.map((ep) => ep.title || ep.id).join(", ")
+      ? `${noThumb.length} episódio(s) sem capa cadastrada.`
       : "Todos os episódios têm capa.",
+    module: "episodes",
+    cause: "O episódio não tem thumbnail em episode-embeds.",
+    recommendation:
+      "Abra Episódios, selecione o registro e envie a capa (1200 × 1200 px, proporção 1:1).",
+    items: noThumb.map((ep) => ({ id: ep.id, label: ep.title || ep.id, detail: ep.code })),
   });
 
   const artists = (editorValue(rows, "artists") ?? []) as ArtistItem[];
@@ -420,8 +457,12 @@ export function healthChecks(rows: ContentDiagRow[], base64: Base64Finding[]): H
     label: "Artistas sem foto",
     level: noPhoto.length ? "info" : "ok",
     message: noPhoto.length
-      ? noPhoto.map((a) => a.name || a.id).join(", ")
+      ? `${noPhoto.length} artista(s) sem foto.`
       : "Todos os artistas têm foto.",
+    module: "artists",
+    cause: "O campo de imagem do artista está vazio.",
+    recommendation: "Abra Artistas e envie a foto do perfil.",
+    items: noPhoto.map((a) => ({ id: a.id, label: a.name || a.id })),
   });
 
   const cards = (editorValue(rows, "gallery-cards") ?? []) as GalleryCard[];
@@ -431,24 +472,32 @@ export function healthChecks(rows: ContentDiagRow[], base64: Base64Finding[]): H
     label: "Acervo sem capa",
     level: noCover.length ? "info" : "ok",
     message: noCover.length
-      ? noCover.map((c) => c.title || c.id).join(", ")
+      ? `${noCover.length} card(s) do acervo sem capa.`
       : "Todos os cards do acervo têm capa.",
+    module: "acervo",
+    cause: "O card não tem imagem de capa definida.",
+    recommendation: "Abra Acervo e envie a capa do card.",
+    items: noCover.map((c) => ({ id: c.id, label: c.title || c.id })),
   });
 
-  const noSlug = [
-    ...(Array.isArray(episodes) ? episodes : [])
-      .filter((e) => !e?.slug)
-      .map((e) => `episódio ${e.id}`),
-    ...(Array.isArray(artists) ? artists : [])
-      .filter((a) => !a?.slug)
-      .map((a) => `artista ${a.id}`),
-    ...(Array.isArray(cards) ? cards : []).filter((c) => !c?.slug).map((c) => `acervo ${c.id}`),
-  ];
+  const noSlug = missingSlugPlan(episodes, artists, cards);
   checks.push({
     id: "slugs",
     label: "Itens sem slug",
     level: noSlug.length ? "info" : "ok",
-    message: noSlug.length ? noSlug.join(", ") : "Todos os itens têm slug.",
+    message: noSlug.length
+      ? `${noSlug.length} registro(s) sem slug (URL amigável).`
+      : "Todos os itens têm slug.",
+    module: "pages",
+    cause: "O registro foi criado sem slug, então o link público usa apenas o id.",
+    recommendation:
+      'Use "Gerar slugs faltantes" para criar o slug a partir do título; nada existente é sobrescrito.',
+    fix: "slugs",
+    items: noSlug.map((s) => ({
+      id: `${s.scope}:${s.id}`,
+      label: `${s.scopeLabel}: ${s.label}`,
+      detail: `slug sugerido: ${s.slug}`,
+    })),
   });
 
   const badLinks: string[] = [];
@@ -475,7 +524,12 @@ export function healthChecks(rows: ContentDiagRow[], base64: Base64Finding[]): H
     id: "links",
     label: "Links inválidos",
     level: badLinks.length ? "warn" : "ok",
-    message: badLinks.length ? badLinks.join(" · ") : "Nenhum link inválido encontrado.",
+    message: badLinks.length
+      ? `${badLinks.length} link(s) fora do padrão http(s):// ou /rota.`
+      : "Nenhum link inválido encontrado.",
+    cause: "Endereço digitado sem protocolo ou com texto inválido.",
+    recommendation: "Edite o registro citado e corrija o endereço para https://… ou /rota-interna.",
+    items: badLinks.map((l, i) => ({ id: `link-${i}`, label: l })),
   });
 
   checks.push(...relationChecks(episodes, artists));
@@ -500,8 +554,12 @@ export function relationChecks(
     label: "Artistas publicados sem episódio publicado",
     level: publishedNoEpisodes.length ? "info" : "ok",
     message: publishedNoEpisodes.length
-      ? publishedNoEpisodes.map((a) => a.name || a.id).join(", ")
+      ? `${publishedNoEpisodes.length} artista(s) visíveis sem episódio publicado.`
       : "Todos os artistas publicados têm episódio publicado.",
+    module: "artists",
+    cause: "O artista está publicado, mas nenhum episódio vinculado está publicado (EP00 não conta).",
+    recommendation: "Publique o episódio correspondente em Episódios ou oculte o artista.",
+    items: publishedNoEpisodes.map((a) => ({ id: a.id, label: a.name || a.id })),
   });
 
   const hiddenWithEpisodes = artists.filter(
@@ -512,8 +570,12 @@ export function relationChecks(
     label: "Artistas ocultos com episódios publicados",
     level: hiddenWithEpisodes.length ? "warn" : "ok",
     message: hiddenWithEpisodes.length
-      ? hiddenWithEpisodes.map((a) => a.name || a.id).join(", ")
+      ? `${hiddenWithEpisodes.length} artista(s) ocultos com episódio publicado.`
       : "Nenhuma inconsistência.",
+    module: "artists",
+    cause: "O episódio está no ar, mas a página do artista está oculta.",
+    recommendation: "Publique o artista em Artistas ou oculte o episódio vinculado.",
+    items: hiddenWithEpisodes.map((a) => ({ id: a.id, label: a.name || a.id })),
   });
 
   const relational = episodes.filter((ep) => !isEpisodeZero(ep));
@@ -523,8 +585,12 @@ export function relationChecks(
     label: "Episódios publicados sem artista vinculado",
     level: noArtist.length ? "info" : "ok",
     message: noArtist.length
-      ? noArtist.map((ep) => ep.code || ep.title || ep.id).join(", ")
+      ? `${noArtist.length} episódio(s) publicados sem artista vinculado.`
       : "Todos os episódios publicados têm artista vinculado.",
+    module: "episodes",
+    cause: "O campo de artista do episódio está vazio (o EP00 é exceção institucional).",
+    recommendation: "Abra Episódios e selecione o artista convidado no registro.",
+    items: noArtist.map((ep) => ({ id: ep.id, label: ep.code || ep.title || ep.id })),
   });
 
   const brokenLink = relational.filter(
@@ -535,8 +601,18 @@ export function relationChecks(
     label: "Episódios com artistId inexistente",
     level: brokenLink.length ? "warn" : "ok",
     message: brokenLink.length
-      ? brokenLink.map((ep) => `${ep.code || ep.id} → ${ep.artistId}`).join(", ")
+      ? `${brokenLink.length} episódio(s) apontam para um artista que não existe mais.`
       : "Nenhum vínculo quebrado.",
+    module: "episodes",
+    cause: "O artista referenciado foi renomeado/excluído e o artistId ficou órfão.",
+    recommendation:
+      'Use "Limpar vínculos órfãos" para apagar apenas o artistId inválido e depois selecione o artista correto.',
+    fix: "broken-artist-link",
+    items: brokenLink.map((ep) => ({
+      id: ep.id,
+      label: ep.code || ep.title || ep.id,
+      detail: `artistId: ${ep.artistId}`,
+    })),
   });
 
   const ep00 = episodes.filter(isEpisodeZero);
@@ -550,6 +626,126 @@ export function relationChecks(
   });
 
   return checks;
+}
+
+// ---------------------------------------------------------------------------
+// Correções assistidas
+// ---------------------------------------------------------------------------
+
+export interface SlugPlanEntry {
+  scope: "episodes" | "artists" | "gallery-cards";
+  scopeLabel: string;
+  id: string;
+  label: string;
+  slug: string;
+}
+
+function uniqueSlug(base: string, taken: Set<string>, fallback: string): string {
+  const seed = slugify(base) || slugify(fallback) || "item";
+  let candidate = seed;
+  let n = 2;
+  while (taken.has(candidate)) {
+    candidate = `${seed}-${n}`;
+    n += 1;
+  }
+  taken.add(candidate);
+  return candidate;
+}
+
+/** Slugs que faltam, com sugestão já desduplicada. Não altera nada. */
+export function missingSlugPlan(
+  episodesInput: unknown,
+  artistsInput: unknown,
+  cardsInput: unknown,
+): SlugPlanEntry[] {
+  const out: SlugPlanEntry[] = [];
+  const groups: {
+    scope: SlugPlanEntry["scope"];
+    scopeLabel: string;
+    list: { id?: string; slug?: string; title?: string; name?: string }[];
+  }[] = [
+    {
+      scope: "episodes",
+      scopeLabel: "Episódio",
+      list: Array.isArray(episodesInput) ? (episodesInput as EpisodeItem[]) : [],
+    },
+    {
+      scope: "artists",
+      scopeLabel: "Artista",
+      list: Array.isArray(artistsInput) ? (artistsInput as ArtistItem[]) : [],
+    },
+    {
+      scope: "gallery-cards",
+      scopeLabel: "Acervo",
+      list: Array.isArray(cardsInput) ? (cardsInput as GalleryCard[]) : [],
+    },
+  ];
+  for (const group of groups) {
+    const taken = new Set(
+      group.list.map((item) => String(item?.slug || "").trim()).filter(Boolean),
+    );
+    for (const item of group.list) {
+      if (!item?.id || String(item.slug || "").trim()) continue;
+      const label = item.title || item.name || item.id;
+      out.push({
+        scope: group.scope,
+        scopeLabel: group.scopeLabel,
+        id: item.id,
+        label,
+        slug: uniqueSlug(label, taken, item.id),
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * Grava os slugs faltantes lendo o valor atual do Supabase. Nunca sobrescreve
+ * slug existente e não altera nenhum outro campo.
+ */
+export async function applyMissingSlugs(): Promise<number> {
+  let applied = 0;
+  const scopes: SlugPlanEntry["scope"][] = ["episodes", "artists", "gallery-cards"];
+  for (const scope of scopes) {
+    const current = await fetchContentValue<unknown[]>(scope as AdminContentKey, []);
+    const list = Array.isArray(current) ? current : [];
+    const plan = missingSlugPlan(
+      scope === "episodes" ? list : [],
+      scope === "artists" ? list : [],
+      scope === "gallery-cards" ? list : [],
+    );
+    if (!plan.length) continue;
+    const bySlug = new Map(plan.map((p) => [p.id, p.slug]));
+    const next = list.map((item) => {
+      const rec = item as { id?: string; slug?: string };
+      const slug = rec?.id ? bySlug.get(rec.id) : undefined;
+      if (!slug || String(rec?.slug || "").trim()) return item;
+      applied += 1;
+      return { ...(rec as object), slug };
+    });
+    await saveContentValue(scope as AdminContentKey, next);
+  }
+  return applied;
+}
+
+/**
+ * Remove apenas o artistId órfão dos episódios (o registro e os demais campos
+ * permanecem intactos). EP00 nunca é alterado.
+ */
+export async function clearBrokenArtistLinks(): Promise<number> {
+  const episodes = await fetchContentValue<EpisodeItem[]>("episodes", []);
+  const artists = await fetchContentValue<ArtistItem[]>("artists", []);
+  const list = Array.isArray(episodes) ? episodes : [];
+  let cleared = 0;
+  const next = list.map((ep) => {
+    if (!ep || isEpisodeZero(ep)) return ep;
+    if (!String(ep.artistId || "").trim()) return ep;
+    if (getEpisodeArtist(ep, Array.isArray(artists) ? artists : [])) return ep;
+    cleared += 1;
+    return { ...ep, artistId: "" };
+  });
+  if (cleared) await saveContentValue("episodes", next);
+  return cleared;
 }
 
 // ---------------------------------------------------------------------------

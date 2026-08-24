@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /pqoqadmin
+
+Sitemap: https://pqoqcriamos.lovable.app/sitemap.xml

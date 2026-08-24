@@ -2,24 +2,27 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PQOQRoute } from "../components/PQOQRoute";
 import { HomePage } from "../pages";
 
+const TITLE = "PQOQ — Por que criamos o que criamos";
+const DESCRIPTION =
+  "Podcast, videocast e acervo cultural dedicado aos processos criativos de artistas do extremo sul da Bahia.";
+const SOCIAL_IMAGE =
+  "https://storage.googleapis.com/gpt-engineer-file-uploads/XWqZyB5aTyeH2fMJCJwuPlYI8Ah1/social-images/social-1781919685917-ChatGPT_Image_16_de_jun._de_2026,_21_34_50.webp";
+
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "PQOQ Criamos — Acervo de Processos Criativos do Sul da Bahia" },
-      {
-        name: "description",
-        content:
-          "Acervo vivo de artistas, processos criativos e memória cultural do extremo sul da Bahia. Podcast e videocast com novos episódios a cada quinze dias.",
-      },
-      { property: "og:title", content: "PQOQ Criamos — Acervo de Processos Criativos" },
-      {
-        property: "og:description",
-        content:
-          "Acervo vivo de artistas, processos criativos e memória cultural do extremo sul da Bahia.",
-      },
+      { title: TITLE },
+      { name: "description", content: DESCRIPTION },
+      { property: "og:title", content: TITLE },
+      { property: "og:description", content: DESCRIPTION },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://pqoqcriamos.lovable.app/" },
+      { property: "og:image", content: SOCIAL_IMAGE },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: TITLE },
+      { name: "twitter:description", content: DESCRIPTION },
+      { name: "twitter:image", content: SOCIAL_IMAGE },
     ],
     links: [{ rel: "canonical", href: "https://pqoqcriamos.lovable.app/" }],
     scripts: [
@@ -30,8 +33,7 @@ export const Route = createFileRoute("/")({
           "@type": "WebSite",
           name: "PQOQ Criamos",
           url: "https://pqoqcriamos.lovable.app/",
-          description:
-            "Acervo vivo de artistas, processos criativos e memória cultural do extremo sul da Bahia.",
+          description: DESCRIPTION,
           publisher: {
             "@type": "Organization",
             name: "PQOQ Criamos",

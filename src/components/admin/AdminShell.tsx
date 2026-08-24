@@ -127,7 +127,15 @@ export function AdminShell({
           </div>
         </header>
         <main className="flex-1 p-6">
-          {active === "dashboard" ? <AdminDashboard email={email} isAdmin={isAdmin} /> : null}
+          {active === "dashboard" ? (
+            <AdminDashboard
+              email={email}
+              isAdmin={isAdmin}
+              onNavigate={(module) => {
+                if (module !== "dashboard") setActive(module);
+              }}
+            />
+          ) : null}
           {active === "pages" ? <PagesAdmin /> : null}
           {active === "episodes" ? <EpisodesAdmin /> : null}
           {active === "artists" ? <ArtistsAdmin /> : null}

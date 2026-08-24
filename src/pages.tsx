@@ -124,7 +124,7 @@ export function GalleryPage() {
             <article className="card gallery-card">
               <div className="gallery-thumb" />
               <div className="meta">Carregando</div>
-              <h3>ACERVO</h3>
+              <h2>ACERVO</h2>
               <p>Preparando cards da galeria...</p>
             </article>
           </div>
@@ -148,7 +148,7 @@ export function AboutPage() {
           </div>
           <div className="about-layout">
             <article className="card" data-editable="about.project">
-              <h3 data-editable="about.project.title">O projeto</h3>
+              <h2 data-editable="about.project.title">O projeto</h2>
               <p data-rich data-editable="about.project.p1">O <strong>Por que criamos o que criamos</strong> é um projeto de extensão, escuta e produção audiovisual dedicado a registrar processos criativos de artistas do extremo sul da Bahia.</p>
               <p data-rich data-editable="about.project.p2">Criado em 2021 no formato podcast, o PQOQ chega a uma nova etapa ampliando sua linguagem para o videocast, com gravações presenciais no Campus Paulo Freire da UFSB.</p>
               <p data-rich data-editable="about.project.p3">A proposta reúne entrevistas, imagens, trajetórias e materiais de arquivo para fortalecer a memória cultural da região e aproximar universidade, artistas e comunidade.</p>
@@ -160,7 +160,7 @@ export function AboutPage() {
                 <span>Foto</span>
                 <input className="admin-only" type="file" accept="image/*" data-page-photo="about.almi" aria-label="Enviar foto de Almi Junior" />
               </label>
-              <h3 data-editable="about.almi.title">Almi Junior</h3>
+              <h2 data-editable="about.almi.title">Almi Junior</h2>
               <p data-rich data-editable="about.almi.p1">Almi Junior é poeta, professor e pesquisador. Possui mestrado em Letras e desenvolve doutorado na mesma área, investigando relações entre poesia e artes visuais na obra de Manoel de Barros.</p>
               <p data-rich data-editable="about.almi.p2">Natural de Teixeira de Freitas - BA, ajudou a organizar saraus e encontros de artistas, como o Sarau MamÁfrica e o Sarau dos Mal Amados, em parceria com o coletivo Éramos 7.</p>
               <p data-rich data-editable="about.almi.p3">Integra o Mapa da Palavra da Bahia, possui poemas publicados em revistas e coletâneas, atua como ilustrador e compõe o Fluxo Artístico.</p>
@@ -171,7 +171,7 @@ export function AboutPage() {
                 <span>Foto</span>
                 <input className="admin-only" type="file" accept="image/*" data-page-photo="about.joao" aria-label="Enviar foto de João Lucas Monti" />
               </label>
-              <h3 data-editable="about.joao.title">João Lucas Monti</h3>
+              <h2 data-editable="about.joao.title">João Lucas Monti</h2>
               <p data-rich data-editable="about.joao.p1">João Lucas de Oliveira Monti, também conhecido como Don, é natural de Teixeira de Freitas - BA. Cursou Licenciatura em História pela UNEB X e atualmente cursa Design de Interiores pela UNIP.</p>
               <p data-rich data-editable="about.joao.p2">É artista visual nas áreas de ilustração tradicional, ilustração digital, design gráfico e tatuagem. Fundou o Coletivo Fluxo Artístico e o projeto Fluxo nas Escolas.</p>
               <p data-rich data-editable="about.joao.p3">Também atua no Coletivo das Artes Motirô, é cofundador e host do PQOQ e desenvolve obras em arte tradicional, arte digital, fotocolagem e aquarela.</p>
