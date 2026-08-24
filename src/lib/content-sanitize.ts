@@ -40,8 +40,17 @@ export function isItemPublished(item: unknown): boolean {
 
 export function sanitizeEpisodesForPublic(episodes: unknown): unknown {
   if (!Array.isArray(episodes)) return episodes;
-  return episodes.filter(isItemPublished);
+  return episodes.filter(isItemPublished).map((ep) => {
+    if (!ep || typeof ep !== "object") return ep;
+    const e = { ...(ep as Record<string, unknown>) };
+    // Fotos do participante em rascunho não vão para o payload público.
+    if (Array.isArray(e.participantImages)) {
+      e.participantImages = (e.participantImages as unknown[]).filter(isItemPublished);
+    }
+    return e;
+  });
 }
+
 
 function publishedEpisodeIdSet(episodes: unknown): Set<string> {
   const ids = new Set<string>();

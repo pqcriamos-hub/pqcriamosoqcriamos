@@ -345,6 +345,33 @@
     return list.map((artist) => normalizeArtistAssets({ ...artist }));
   }
 
+  // Galeria de fotos do participante deste episódio (1..3). Sem fotos novas,
+  // cai no campo legado participantImage.
+  function participantPhotosMarkup(episode, artist) {
+    const fallbackAlt = artist?.name || episode.artist || "Participante";
+    const list = Array.isArray(episode.participantImages) ? episode.participantImages : [];
+    if (!list.length) {
+      return episode.participantImage
+        ? `<img class="episode-participant-photo" src="${escapeHtml(episode.participantImage)}" alt="${escapeHtml(fallbackAlt)}" loading="lazy">`
+        : "";
+    }
+    const tiles = list
+      .slice(0, 3)
+      .map((img, index) => {
+        const alt = img.alt || `${fallbackAlt} - foto ${index + 1}`;
+        const caption = img.caption || "";
+        const credit = img.credit || "";
+        return `
+        <figure class="episode-participant-figure" data-participant-photo="${escapeHtml(img.id || String(index))}">
+          <img class="episode-participant-photo" src="${escapeHtml(img.url)}" alt="${escapeHtml(alt)}" loading="lazy" data-caption="${escapeHtml(caption)}" data-credit="${escapeHtml(credit)}">
+          <button class="participant-photo-zoom" type="button" data-open-participant-lightbox="${escapeHtml(img.id || String(index))}" aria-label="Ampliar ${escapeHtml(alt)}" title="Ampliar imagem"></button>
+          ${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ""}
+        </figure>`;
+      })
+      .join("");
+    return `<div class="episode-participant-gallery" data-count="${Math.min(list.length, 3)}">${tiles}</div>`;
+  }
+
   function normalizeEpisodes(list) {
     const defaults = new Map(episodesDefault.map((episode) => [episode.id, episode]));
     return list.map((episode) => {
@@ -357,6 +384,13 @@
       merged.participantTitle = merged.participantTitle || "";
       merged.participantBio = merged.participantBio || "";
       merged.participantImage = merged.participantImage || "";
+      // Galeria de até 3 fotos do participante DESTE episódio. Campo legado
+      // participantImage segue como fallback e nunca é apagado.
+      merged.participantImages = Array.isArray(merged.participantImages)
+        ? merged.participantImages
+            .filter((img) => img && typeof img === "object" && img.url && img.published !== false)
+            .slice(0, 3)
+        : [];
       return merged;
     });
   }
@@ -1432,7 +1466,7 @@
 
       <div class="episode-artist-panel">
         <h2 class="lettered">${escapeHtml(episode.participantTitle || `Sobre ${artist?.name || episode.artist || ""}`)}</h2>
-        ${episode.participantImage ? `<img class="episode-participant-photo" src="${escapeHtml(episode.participantImage)}" alt="${escapeHtml(artist?.name || episode.artist || "Participante")}" loading="lazy">` : ""}
+        ${participantPhotosMarkup(episode, artist)}
         <p data-rich data-episode-participant-about="${episode.id}">${episode.participantAbout || (artist ? artist.bio : "") || "Informação editável sobre o participante deste episódio."}</p>
         ${episode.participantBio ? `<p class="episode-participant-bio">${episode.participantBio}</p>` : ""}
         ${tagChips(episode.participantTags)}

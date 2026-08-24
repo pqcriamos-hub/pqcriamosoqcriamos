@@ -962,6 +962,32 @@
     showLightbox({ cardId: "", items, index });
   }
 
+  // Lightbox das fotos do participante do episódio: itens lidos do DOM, então
+  // funciona para qualquer episódio sem duplicar a fonte de dados.
+  function openParticipantLightbox(trigger) {
+    const scope = trigger.closest(".episode-participant-gallery") || document;
+    const figures = Array.from(scope.querySelectorAll(".episode-participant-figure"));
+    const items = figures
+      .map((fig) => {
+        const img = fig.querySelector("img");
+        return {
+          id: fig.dataset.participantPhoto || "",
+          image: img?.getAttribute("src") || "",
+          title: "",
+          caption: img?.dataset.caption || "",
+          description: "",
+          credit: img?.dataset.credit || "",
+          tags: []
+        };
+      })
+      .filter((item) => item.image);
+    if (!items.length) return;
+    const activeId = trigger.dataset.openParticipantLightbox
+      || trigger.closest(".episode-participant-figure")?.dataset.participantPhoto;
+    const index = Math.max(0, items.findIndex((item) => item.id === activeId));
+    showLightbox({ cardId: "", items, index });
+  }
+
   function moveLightbox(delta) {
     if (!lightboxState || lightboxState.items.length <= 1) return;
     const n = lightboxState.items.length;
@@ -1896,6 +1922,13 @@
       if (openLb) {
         event.preventDefault();
         openLightbox(openLb.dataset.galleryId, openLb.dataset.openLightbox);
+        return;
+      }
+      const openParticipant = event.target.closest("[data-open-participant-lightbox]");
+      if (openParticipant) {
+        event.preventDefault();
+        event.stopPropagation();
+        openParticipantLightbox(openParticipant);
         return;
       }
       const openPortfolio = event.target.closest("[data-open-portfolio-lightbox]");
