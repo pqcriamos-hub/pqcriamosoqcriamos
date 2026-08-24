@@ -492,7 +492,7 @@ export function EpisodesAdmin() {
           onChange={setEditing}
           onChangeEmbed={setEditingEmbed}
           onUpload={onUpload}
-          onUploadParticipant={onUploadParticipant}
+          onUploadParticipantImages={onUploadParticipantImages}
           onCancel={() => setEditing(null)}
           onApply={applyEditor}
         />
