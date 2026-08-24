@@ -343,7 +343,7 @@ export function ArtistsAdmin() {
             <SelectItem value="no-episodes">Sem episódios publicados</SelectItem>
           </SelectContent>
         </Select>
-        <Button size="sm" onClick={() => setEditing(emptyArtist())}>
+        <Button size="sm" onClick={() => openEditor(emptyArtist(), true)}>
           <Plus className="mr-1 h-4 w-4" /> Novo artista
         </Button>
       </div>
@@ -426,7 +426,7 @@ export function ArtistsAdmin() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            onClick={() => setEditing({ ...a })}
+                            onClick={() => openEditor(a)}
                             title="Editar"
                           >
                             <Pencil className="h-4 w-4" />
