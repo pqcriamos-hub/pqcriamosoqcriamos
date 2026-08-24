@@ -92,8 +92,42 @@ export function ArtistsAdmin() {
     "all",
   );
   const [editing, setEditing] = useState<ArtistItem | null>(null);
+  const [original, setOriginal] = useState<ArtistItem | null>(null);
+  const [linkedIds, setLinkedIds] = useState<string[]>([]);
+  const [originalLinkedIds, setOriginalLinkedIds] = useState<string[]>([]);
+  const [modalSaving, setModalSaving] = useState(false);
+  const [modalError, setModalError] = useState("");
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  const openEditor = (artist: ArtistItem, isNew = false) => {
+    const ids = isNew ? [] : getEpisodesForArtist(artist.id, episodes, artist).map((ep) => ep.id);
+    setEditing({ ...artist });
+    setOriginal({ ...artist });
+    setLinkedIds(ids);
+    setOriginalLinkedIds(ids);
+    setModalError("");
+  };
+
+  const closeEditor = () => {
+    setEditing(null);
+    setOriginal(null);
+    setLinkedIds([]);
+    setOriginalLinkedIds([]);
+    setModalError("");
+    setConfirmDiscard(false);
+  };
+
+  const modalDirty =
+    !!editing &&
+    (JSON.stringify(editing) !== JSON.stringify(original) ||
+      JSON.stringify([...linkedIds].sort()) !== JSON.stringify([...originalLinkedIds].sort()));
+
+  const requestClose = () => {
+    if (modalDirty) setConfirmDiscard(true);
+    else closeEditor();
+  };
 
   useEffect(() => {
     if (data) {
