@@ -737,19 +737,15 @@ function EpisodeEditor({
               placeholder="Só aparece se preenchido. Fallback: bio do artista."
             />
           </Field>
-          <Field label="Foto do participante (upload)">
-            <input
-              type="file"
-              accept="image/*"
-              disabled={uploading}
-              onChange={(e) => e.target.files?.[0] && onUploadParticipant(e.target.files[0])}
-            />
-            {value.participantImage ? (
-              <span className="text-xs text-muted-foreground">
-                {isBase64(value.participantImage) ? "base64 legado" : "imagem enviada"}
-              </span>
-            ) : null}
-          </Field>
+          <ParticipantImagesEditor
+            episodeId={value.id}
+            legacyImage={value.participantImage}
+            images={normalizeParticipantImages(value.participantImages)}
+            uploading={uploading}
+            onUploadFiles={onUploadParticipantImages}
+            onChange={(next) => set({ participantImages: next })}
+          />
+
           <LinkPairEditor
             title="Links do participante"
             pairs={value.participantLinks || []}
