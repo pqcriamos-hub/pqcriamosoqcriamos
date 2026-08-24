@@ -557,7 +557,8 @@ export function relationChecks(
       ? `${publishedNoEpisodes.length} artista(s) visíveis sem episódio publicado.`
       : "Todos os artistas publicados têm episódio publicado.",
     module: "artists",
-    cause: "O artista está publicado, mas nenhum episódio vinculado está publicado (EP00 não conta).",
+    cause:
+      "O artista está publicado, mas nenhum episódio vinculado está publicado (EP00 não conta).",
     recommendation: "Publique o episódio correspondente em Episódios ou oculte o artista.",
     items: publishedNoEpisodes.map((a) => ({ id: a.id, label: a.name || a.id })),
   });
