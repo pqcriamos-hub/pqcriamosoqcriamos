@@ -213,19 +213,64 @@ export function EpisodesAdmin() {
     }
   };
 
-  const onUploadParticipant = async (file: File) => {
-    if (!editing) return;
+  /**
+   * Upload de 1..3 fotos do participante DESTE episódio. O caminho no Storage
+   * é sempre escopado por episódio, então nunca há reaproveitamento entre
+   * episódios, artistas, capas ou Acervo.
+   */
+  const onUploadParticipantImages = async (files: File[]) => {
+    if (!editing || !files.length) return;
+    const current = normalizeParticipantImages(editing.participantImages);
+    const free = MAX_PARTICIPANT_IMAGES - current.length;
+    if (free <= 0) {
+      setErrorMsg(`Limite de ${MAX_PARTICIPANT_IMAGES} fotos por episódio atingido.`);
+      return;
+    }
+    const accepted = files.slice(0, free);
     setUploading(true);
     setErrorMsg("");
     try {
-      const { url } = await uploadAdminMedia(file, `episodes/${editing.id}/participant`);
-      setEditing((prev) => (prev ? { ...prev, participantImage: url } : prev));
+      const uploaded: ParticipantImage[] = [];
+      for (const file of accepted) {
+        const { url, path } = await uploadAdminMedia(
+          file,
+          `episodes/${editing.id}/participant-images`,
+        );
+        uploaded.push({
+          id: genId("participant-image"),
+          url,
+          name: file.name,
+          originalName: file.name,
+          mimeType: file.type,
+          size: file.size,
+          storagePath: path,
+          uploadedAt: new Date().toISOString(),
+          alt: "",
+          caption: "",
+          credit: "",
+          sortOrder: 0,
+          published: true,
+        });
+      }
+      setEditing((prev) => {
+        if (!prev) return prev;
+        const next = [...normalizeParticipantImages(prev.participantImages), ...uploaded].map(
+          (item, index) => ({ ...item, sortOrder: index }),
+        );
+        return { ...prev, participantImages: next };
+      });
+      if (files.length > accepted.length) {
+        setErrorMsg(
+          `Apenas ${accepted.length} foto(s) enviada(s): o limite é ${MAX_PARTICIPANT_IMAGES} por episódio.`,
+        );
+      }
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Falha no upload.");
     } finally {
       setUploading(false);
     }
   };
+
 
   const persist = async (nextEpisodes: EpisodeItem[], nextArtists: ArtistItem[]) => {
     setSaveState("saving");
