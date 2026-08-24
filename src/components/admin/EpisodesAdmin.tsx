@@ -840,7 +840,163 @@ function EpisodeEditor({
   );
 }
 
+/**
+ * Galeria (1..3) de fotos do participante deste episódio. Reordena, edita
+ * legenda/alt/crédito, publica/despublica e remove — sempre escopado ao
+ * episódio, sem tocar em artistas, capa ou Acervo.
+ */
+function ParticipantImagesEditor({
+  episodeId,
+  legacyImage,
+  images,
+  uploading,
+  onUploadFiles,
+  onChange,
+}: {
+  episodeId: string;
+  legacyImage?: string;
+  images: ParticipantImage[];
+  uploading: boolean;
+  onUploadFiles: (files: File[]) => void;
+  onChange: (next: ParticipantImage[]) => void;
+}) {
+  const reindex = (list: ParticipantImage[]) =>
+    list.map((item, index) => ({ ...item, sortOrder: index }));
+  const patch = (id: string, data: Partial<ParticipantImage>) =>
+    onChange(reindex(images.map((img) => (img.id === id ? { ...img, ...data } : img))));
+  const move = (index: number, delta: number) => {
+    const target = index + delta;
+    if (target < 0 || target >= images.length) return;
+    const next = [...images];
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(reindex(next));
+  };
+  const remove = (id: string) => onChange(reindex(images.filter((img) => img.id !== id)));
+  const full = images.length >= MAX_PARTICIPANT_IMAGES;
+
+  return (
+    <div className="space-y-3 rounded-md border p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Label>Fotos do participante (até {MAX_PARTICIPANT_IMAGES})</Label>
+        <span className="text-xs text-muted-foreground">
+          {images.length}/{MAX_PARTICIPANT_IMAGES} — episódio {episodeId}
+        </span>
+      </div>
+      <input
+        type="file"
+        accept="image/*"
+        multiple
+        disabled={uploading || full}
+        onChange={(e) => {
+          const files = Array.from(e.target.files || []);
+          e.target.value = "";
+          if (files.length) onUploadFiles(files);
+        }}
+      />
+      {full ? (
+        <p className="text-xs text-muted-foreground">
+          Limite atingido. Remova uma foto para enviar outra.
+        </p>
+      ) : null}
+
+      {legacyImage && !images.length ? (
+        <p className="text-xs text-muted-foreground">
+          Foto legada em uso ({isBase64(legacyImage) ? "base64 legado" : "imagem enviada"}). Ela
+          continua aparecendo no site como fallback até você enviar fotos nesta galeria.
+        </p>
+      ) : null}
+
+      {images.length ? (
+        <ul className="space-y-3">
+          {images.map((img, index) => (
+            <li key={img.id} className="flex flex-col gap-3 rounded border p-2 sm:flex-row">
+              <img
+                src={img.url}
+                alt={img.alt || `Foto ${index + 1} do participante`}
+                className="h-20 w-20 shrink-0 rounded border object-cover"
+                loading="lazy"
+              />
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="truncate text-xs text-muted-foreground">
+                  {img.name}
+                  {img.size ? ` · ${formatBytes(img.size)}` : ""}
+                  {img.uploadedAt ? ` · ${new Date(img.uploadedAt).toLocaleDateString("pt-BR")}` : ""}
+                </div>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <Input
+                    value={img.caption}
+                    onChange={(e) => patch(img.id, { caption: e.target.value })}
+                    placeholder="Legenda"
+                  />
+                  <Input
+                    value={img.alt}
+                    onChange={(e) => patch(img.id, { alt: e.target.value })}
+                    placeholder="Texto alternativo"
+                  />
+                  <Input
+                    value={img.credit}
+                    onChange={(e) => patch(img.id, { credit: e.target.value })}
+                    placeholder="Crédito"
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => move(index, -1)}
+                    disabled={index === 0}
+                    aria-label="Mover foto para cima"
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => move(index, 1)}
+                    disabled={index === images.length - 1}
+                    aria-label="Mover foto para baixo"
+                  >
+                    <ArrowDown className="h-4 w-4" />
+                  </Button>
+                  <a
+                    className="text-xs underline"
+                    href={img.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Ver imagem
+                  </a>
+                  <label className="flex items-center gap-1 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={img.published !== false}
+                      onChange={(e) => patch(img.id, { published: e.target.checked })}
+                    />
+                    Publicada
+                  </label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => remove(img.id)}
+                    aria-label="Remover foto do participante"
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+
   return (
     <div className="space-y-1.5">
       <Label className="text-xs">{label}</Label>
