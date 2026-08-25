@@ -333,6 +333,8 @@ export function ApoioAdmin() {
         />
       ) : null}
 
+      <DonationAdmin />
+
       <AlertDialog open={confirmId !== null} onOpenChange={(o) => !o && setConfirmId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -348,6 +350,168 @@ export function ApoioAdmin() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+/**
+ * BLOCO 38D — Doação / Apoio flutuante.
+ * Chave pública `donation-widget`: todo o conteúdo é público por natureza, logo
+ * não existe contraparte "-admin". A chave Pix só aparece no site quando
+ * "Mostrar Pix" está ligado.
+ */
+function DonationAdmin() {
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["admin", "donation-widget"],
+    queryFn: () => fetchContentValue<DonationWidget>("donation-widget", DONATION_DEFAULTS),
+  });
+
+  const [value, setValue] = useState<DonationWidget>(DONATION_DEFAULTS);
+  const [dirty, setDirty] = useState(false);
+  const [state, setState] = useState<SaveState>("idle");
+  const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    if (data) {
+      setValue({ ...DONATION_DEFAULTS, ...data });
+      setDirty(false);
+    }
+  }, [data]);
+
+  const set = (patch: Partial<DonationWidget>) => {
+    setValue((prev) => ({ ...prev, ...patch }));
+    setDirty(true);
+    setState("idle");
+  };
+
+  const uploadQr = async (file: File) => {
+    setUploading(true);
+    setError("");
+    try {
+      const { url } = await uploadAdminMedia(file, "donation/qr");
+      set({ qrImage: url });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha no upload.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const save = async () => {
+    setState("saving");
+    setError("");
+    try {
+      await saveContentValue("donation-widget", value);
+      setState("saved");
+      setDirty(false);
+      void refetch();
+    } catch (err) {
+      setState("error");
+      setError(err instanceof Error ? err.message : "Erro ao salvar.");
+    }
+  };
+
+  if (isLoading) return null;
+
+  return (
+    <Card>
+      <CardContent className="space-y-5 p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-base font-semibold">Doação / Apoio flutuante</h3>
+            <p className="text-xs text-muted-foreground">
+              Botão fixo no site público com modal de apoio. Oculto no modo edição, na grade
+              modular e no /pqoqadmin.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {dirty ? <span className="text-xs text-amber-600">Alterações não salvas</span> : null}
+            {state === "saving" ? <span className="text-xs text-muted-foreground">Salvando…</span> : null}
+            {state === "saved" ? <span className="text-xs text-green-600">Salvo</span> : null}
+            <Button size="sm" onClick={() => void save()} disabled={!dirty || state === "saving"}>
+              Salvar doação
+            </Button>
+          </div>
+        </div>
+
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={value.enabled}
+            onChange={(e) => set({ enabled: e.target.checked })} />
+          Exibir o botão flutuante no site
+        </label>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Rótulo do botão flutuante">
+            <Input value={value.label} onChange={(e) => set({ label: e.target.value })} />
+          </Field>
+          <Field label="Título do modal">
+            <Input value={value.title} onChange={(e) => set({ title: e.target.value })} />
+          </Field>
+          <Field label="Subtítulo">
+            <Input value={value.subtitle} onChange={(e) => set({ subtitle: e.target.value })} />
+          </Field>
+          <Field label="Rótulo do botão de ação">
+            <Input value={value.buttonLabel} onChange={(e) => set({ buttonLabel: e.target.value })} />
+          </Field>
+        </div>
+
+        <Field label="Texto do modal">
+          <Textarea value={value.text} onChange={(e) => set({ text: e.target.value })} rows={4} />
+        </Field>
+
+        <Field label="Link do botão de ação (https://…)">
+          <Input value={value.buttonHref} onChange={(e) => set({ buttonHref: e.target.value })}
+            className={isValidUrl(value.buttonHref) ? "" : "border-destructive"} />
+          {isValidUrl(value.buttonHref) ? null : (
+            <span className="text-xs text-destructive">URL inválida (use http/https).</span>
+          )}
+        </Field>
+
+        <div className="space-y-3 border-t border-border pt-4">
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={value.showPix}
+              onChange={(e) => set({ showPix: e.target.checked })} />
+            Mostrar chave Pix e QR Code no modal
+          </label>
+          <Field label="Chave Pix (opcional)">
+            <Input value={value.pixKey} onChange={(e) => set({ pixKey: e.target.value })} />
+          </Field>
+          <Field label="QR Code (upload de imagem)">
+            <input type="file" accept="image/*" disabled={uploading}
+              onChange={(e) => e.target.files?.[0] && void uploadQr(e.target.files[0])} />
+            {value.qrImage ? (
+              <div className="mt-2 flex items-center gap-2">
+                <img src={value.qrImage} alt="" className="h-24 w-24 rounded object-contain" />
+                <Button size="sm" variant="outline" onClick={() => set({ qrImage: "" })}>Remover</Button>
+              </div>
+            ) : null}
+          </Field>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Texto de compartilhamento">
+            <Input value={value.shareText} onChange={(e) => set({ shareText: e.target.value })} />
+          </Field>
+          <Field label="Posição na tela">
+            <Select value={value.position} onValueChange={(v) => set({ position: v as "left" | "right" })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="left">Inferior esquerdo (recomendado)</SelectItem>
+                <SelectItem value="right">Inferior direito</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+        </div>
+
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={value.animate}
+            onChange={(e) => set({ animate: e.target.checked })} />
+          Animação de pulsação (desligada automaticamente para quem prefere menos movimento)
+        </label>
+      </CardContent>
+    </Card>
   );
 }
 
