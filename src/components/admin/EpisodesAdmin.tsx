@@ -102,6 +102,8 @@ export function EpisodesAdmin() {
   const [statusFilter, setStatusFilter] = useState<"all" | "published" | "draft">("all");
   const [editing, setEditing] = useState<EpisodeItem | null>(null);
   const [editingEmbed, setEditingEmbed] = useState<EpisodeEmbeds[string]>({});
+  const [editorSnapshot, setEditorSnapshot] = useState("");
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
