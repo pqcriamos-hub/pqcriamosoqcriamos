@@ -2033,6 +2033,175 @@
     popover.style.top = `${stored.top}px`;
   }
 
+  // =========================================================================
+  // BLOCO 38D — WIDGET FLUTUANTE DE DOAÇÃO ("donation-widget")
+  // Conteúdo 100% público (sem chave "-admin"): a visibilidade é controlada por
+  // `enabled` + published da linha. Oculto no modo edição, na grade modular, em
+  // /pqoqadmin e enquanto qualquer modal/lightbox estiver aberto.
+  // =========================================================================
+  const DONATION_KEY = "donation-widget";
+  const donationDefaults = {
+    enabled: false,
+    label: "Apoie o PQOQ",
+    title: "Apoie o PQOQ",
+    subtitle: "",
+    text: "",
+    buttonLabel: "",
+    buttonHref: "",
+    pixKey: "",
+    showPix: false,
+    qrImage: "",
+    shareText: "",
+    position: "left",
+    animate: true
+  };
+
+  function safeHttpUrl(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    return /^https?:\/\//i.test(raw) ? raw : "";
+  }
+
+  function donationConfig() {
+    const raw = getState(DONATION_KEY, donationDefaults) || {};
+    const str = (v) => String(v ?? "").trim();
+    return {
+      enabled: raw.enabled === true,
+      label: str(raw.label) || "Apoie o PQOQ",
+      title: str(raw.title) || "Apoie o PQOQ",
+      subtitle: str(raw.subtitle),
+      text: str(raw.text),
+      buttonLabel: str(raw.buttonLabel),
+      buttonHref: safeHttpUrl(raw.buttonHref),
+      pixKey: str(raw.pixKey),
+      showPix: raw.showPix === true,
+      qrImage: str(raw.qrImage),
+      shareText: str(raw.shareText),
+      position: raw.position === "right" ? "right" : "left",
+      animate: raw.animate !== false
+    };
+  }
+
+  function donationHidden() {
+    if (isAdmin()) return true;
+    if (document.body.classList.contains("admin-mode")) return true;
+    if (document.body.classList.contains("layout-grid-mode")) return true;
+    if (gridMode) return true;
+    try {
+      if (window.location.pathname.startsWith("/pqoqadmin")) return true;
+    } catch {
+      /* ignore */
+    }
+    return false;
+  }
+
+  function ensureDonationWidget() {
+    const config = donationConfig();
+    let button = document.getElementById("donation-fab");
+    let modal = document.getElementById("donation-modal");
+
+    if (!config.enabled || donationHidden()) {
+      if (button) button.remove();
+      if (modal) modal.remove();
+      return;
+    }
+
+    if (!button) {
+      document.body.insertAdjacentHTML("beforeend", `
+        <button class="donation-fab" id="donation-fab" type="button" data-open-donation aria-label="Apoie o PQOQ">
+          <span class="donation-fab-icon" aria-hidden="true">&#9829;</span>
+          <span class="donation-fab-label"></span>
+        </button>
+      `);
+      button = document.getElementById("donation-fab");
+    }
+    if (!modal) {
+      document.body.insertAdjacentHTML("beforeend", `
+        <div class="modal donation-modal" id="donation-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="donation-modal-title">
+          <div class="modal-panel donation-modal-panel">
+            <div class="modal-head">
+              <h2 id="donation-modal-title">Apoie o PQOQ</h2>
+              <button class="close-modal" type="button" data-close-donation aria-label="Fechar modal" title="Fechar modal">&times;</button>
+            </div>
+            <div class="modal-body" id="donation-modal-body"></div>
+          </div>
+        </div>
+      `);
+      modal = document.getElementById("donation-modal");
+    }
+
+    if (button) {
+      button.dataset.position = config.position;
+      button.classList.toggle("is-animated", config.animate);
+      const label = button.querySelector(".donation-fab-label");
+      if (label && label.textContent !== config.label) label.textContent = config.label;
+      button.setAttribute("aria-label", config.label);
+    }
+
+    const title = document.getElementById("donation-modal-title");
+    if (title && title.textContent !== config.title) title.textContent = config.title;
+
+    const body = document.getElementById("donation-modal-body");
+    if (!body) return;
+    const html = `
+      ${config.subtitle ? `<p class="donation-subtitle">${escapeHtml(config.subtitle)}</p>` : ""}
+      ${config.text ? `<div class="donation-text">${escapeHtml(config.text).replace(/\n/g, "<br>")}</div>` : ""}
+      ${config.buttonHref && config.buttonLabel
+        ? `<p class="donation-actions"><a class="button primary" href="${escapeHtml(config.buttonHref)}" target="_blank" rel="noopener noreferrer">${escapeHtml(config.buttonLabel)}</a></p>`
+        : ""}
+      ${config.showPix && config.pixKey
+        ? `<div class="donation-pix">
+             <span class="donation-pix-label">Chave Pix</span>
+             <code class="donation-pix-key">${escapeHtml(config.pixKey)}</code>
+             <button class="button small" type="button" data-copy-pix>Copiar chave</button>
+           </div>`
+        : ""}
+      ${config.showPix && config.qrImage
+        ? `<div class="donation-qr"><img src="${escapeHtml(config.qrImage)}" alt="QR Code para doação via Pix" loading="lazy"></div>`
+        : ""}
+      <p class="donation-share">
+        <button class="button small" type="button" data-share-donation>Compartilhar</button>
+      </p>
+    `;
+    if (body.dataset.renderedHtml !== html) {
+      body.dataset.renderedHtml = html;
+      body.innerHTML = html;
+    }
+  }
+
+  function openDonation() {
+    ensureDonationWidget();
+    const modal = document.getElementById("donation-modal");
+    if (!modal) return;
+    modal.classList.add("is-open");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("donation-open");
+  }
+
+  function closeDonation() {
+    const modal = document.getElementById("donation-modal");
+    if (!modal) return;
+    modal.classList.remove("is-open");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("donation-open");
+  }
+
+  async function copyPixKey() {
+    const config = donationConfig();
+    if (!config.showPix || !config.pixKey) return;
+    try {
+      await navigator.clipboard.writeText(config.pixKey);
+      galleryToast("Chave Pix copiada");
+    } catch {
+      galleryToast("Nao foi possivel copiar a chave");
+    }
+  }
+
+  function shareDonation() {
+    const config = donationConfig();
+    shareContent(`${config.title} - PQOQ`, config.shareText || config.subtitle || "", "");
+  }
+
   function enhancePage() {
     ensureStylePopoverLinkField();
     syncStylePopoverLinkField();
