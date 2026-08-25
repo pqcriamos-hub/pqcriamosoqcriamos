@@ -163,6 +163,7 @@
 
   function modularLabel(element) {
     if (!element) return "";
+    if (element.matches(".episode-participant-figure")) return "foto do participante";
     const key = element.dataset.layoutKey;
     if (key) return key;
     if (element.matches(".bio-photo, .artist-avatar, .episode-thumb, .gallery-thumb, .support-card-thumb, .gallery-asset-image, img")) return "imagem";
