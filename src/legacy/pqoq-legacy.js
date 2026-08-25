@@ -351,8 +351,11 @@
     const fallbackAlt = artist?.name || episode.artist || "Participante";
     const list = Array.isArray(episode.participantImages) ? episode.participantImages : [];
     if (!list.length) {
+      // Campo legado: mantido como está, apenas com chave estável de layout.
       return episode.participantImage
-        ? `<img class="episode-participant-photo" src="${escapeHtml(episode.participantImage)}" alt="${escapeHtml(fallbackAlt)}" loading="lazy">`
+        ? `<figure class="episode-participant-figure" data-layout-key="episode.${escapeHtml(episode.id)}.participantImage.legacy">
+          <span class="episode-participant-frame"><img class="episode-participant-photo" src="${escapeHtml(episode.participantImage)}" alt="${escapeHtml(fallbackAlt)}" loading="lazy"></span>
+        </figure>`
         : "";
     }
     const tiles = list
@@ -361,10 +364,14 @@
         const alt = img.alt || `${fallbackAlt} - foto ${index + 1}`;
         const caption = img.caption || "";
         const credit = img.credit || "";
+        // O botão de ampliar vive DENTRO do frame da imagem: nenhuma área
+        // invisível ao lado da foto permanece clicável.
         return `
-        <figure class="episode-participant-figure" data-participant-photo="${escapeHtml(img.id || String(index))}">
-          <img class="episode-participant-photo" src="${escapeHtml(img.url)}" alt="${escapeHtml(alt)}" loading="lazy" data-caption="${escapeHtml(caption)}" data-credit="${escapeHtml(credit)}">
-          <button class="participant-photo-zoom" type="button" data-open-participant-lightbox="${escapeHtml(img.id || String(index))}" aria-label="Ampliar ${escapeHtml(alt)}" title="Ampliar imagem"></button>
+        <figure class="episode-participant-figure" data-participant-photo="${escapeHtml(img.id || String(index))}" data-layout-key="episode.${escapeHtml(episode.id)}.participantImages.${index}">
+          <span class="episode-participant-frame">
+            <img class="episode-participant-photo" src="${escapeHtml(img.url)}" alt="${escapeHtml(alt)}" loading="lazy" data-caption="${escapeHtml(caption)}" data-credit="${escapeHtml(credit)}">
+            <button class="participant-photo-zoom" type="button" data-open-participant-lightbox="${escapeHtml(img.id || String(index))}" aria-label="Ampliar ${escapeHtml(alt)}" title="Ampliar imagem"></button>
+          </span>
           ${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ""}
         </figure>`;
       })
