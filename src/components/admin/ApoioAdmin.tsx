@@ -721,3 +721,58 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+/**
+ * BLOCO 38C — Controles de enquadramento. Prévia usa exatamente as mesmas
+ * regras de background aplicadas no site público (position em % + size com zoom).
+ */
+function FocalPointEditor({
+  image,
+  focal,
+  onChange,
+}: {
+  image: string;
+  focal: FocalPoint;
+  onChange: (focal: FocalPoint) => void;
+}) {
+  const zoom = Math.max(1, Math.min(3, Number(focal.zoom) || 1));
+  const x = Math.max(0, Math.min(100, Number(focal.x) ?? 50));
+  const y = Math.max(0, Math.min(100, Number(focal.y) ?? 50));
+
+  return (
+    <div className="space-y-3 rounded-md border border-border p-3">
+      <div className="flex items-center justify-between gap-2">
+        <Label className="text-sm">Enquadramento da imagem</Label>
+        <Button size="sm" variant="outline" onClick={() => onChange({ ...DEFAULT_FOCAL_POINT })}>
+          Redefinir
+        </Button>
+      </div>
+      <div
+        className="w-full max-w-sm rounded-md border border-border"
+        style={{
+          aspectRatio: "16 / 9",
+          backgroundImage: `url("${image}")`,
+          backgroundPosition: `${x}% ${y}%`,
+          backgroundSize: `${zoom * 100}% auto`,
+          backgroundRepeat: "no-repeat",
+        }}
+      />
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label={`Horizontal (${x}%)`}>
+          <input type="range" min={0} max={100} value={x}
+            onChange={(e) => onChange({ x: Number(e.target.value), y, zoom })} />
+        </Field>
+        <Field label={`Vertical (${y}%)`}>
+          <input type="range" min={0} max={100} value={y}
+            onChange={(e) => onChange({ x, y: Number(e.target.value), zoom })} />
+        </Field>
+        <Field label={`Zoom (${zoom.toFixed(2)}x)`}>
+          <input type="range" min={1} max={3} step={0.05} value={zoom}
+            onChange={(e) => onChange({ x, y, zoom: Number(e.target.value) })} />
+        </Field>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        A imagem original não é alterada; só o recorte exibido no card e no modal.
+      </p>
+    </div>
+  );
+}
