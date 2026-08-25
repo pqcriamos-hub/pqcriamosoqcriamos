@@ -79,6 +79,9 @@ function emptyItem(order: number): GalleryItem {
     credit: "",
     link: "",
     image: "",
+    mediaType: "image",
+    videoUrl: "",
+    posterImage: "",
     episode: "",
     date: "",
     location: "",
@@ -210,6 +213,26 @@ export function AcervoAdmin() {
     }
   };
 
+  // BLOCO 38B: upload de vídeo (MP4/WebM) para o item do acervo.
+  const onUploadItemVideo = async (itemId: string, file: File) => {
+    if (!editing) return;
+    setUploading(true);
+    setErrorMsg("");
+    try {
+      const { url } = await uploadAdminMedia(file, `gallery/${editing.id}/videos`);
+      setEditing({
+        ...editing,
+        items: (editing.items || []).map((it) =>
+          it.id === itemId ? { ...it, videoUrl: url, mediaType: "video" } : it,
+        ),
+      });
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Falha no upload.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const saveAll = async () => {
     setSaveState("saving");
     setErrorMsg("");
@@ -328,6 +351,7 @@ export function AcervoAdmin() {
           onChange={setEditing}
           onUploadCover={onUploadCover}
           onUploadItem={onUploadItem}
+          onUploadItemVideo={onUploadItemVideo}
           onCancel={() => setEditing(null)}
           onApply={applyEditor}
         />
@@ -357,6 +381,7 @@ function GalleryEditor({
   onChange,
   onUploadCover,
   onUploadItem,
+  onUploadItemVideo,
   onCancel,
   onApply,
 }: {
@@ -365,6 +390,7 @@ function GalleryEditor({
   onChange: (c: GalleryCard) => void;
   onUploadCover: (file: File) => void;
   onUploadItem: (itemId: string, file: File) => void;
+  onUploadItemVideo: (itemId: string, file: File) => void;
   onCancel: () => void;
   onApply: () => void;
 }) {
@@ -466,7 +492,33 @@ function GalleryEditor({
                       ) : null}
                     </div>
                   ) : null}
-                </Field>
+                 </Field>
+                 <Field label="Tipo de mídia">
+                   <Select
+                     value={it.mediaType === "video" ? "video" : "image"}
+                     onValueChange={(v) => setItem(it.id, { mediaType: v as "image" | "video" })}
+                   >
+                     <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="image">Imagem</SelectItem>
+                       <SelectItem value="video">Vídeo</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 </Field>
+                 <Field label="Link do vídeo (YouTube, Vimeo ou .mp4/.webm)">
+                   <Input value={it.videoUrl || ""} placeholder="https://youtu.be/..."
+                     onChange={(e) => setItem(it.id, {
+                       videoUrl: e.target.value,
+                       mediaType: e.target.value.trim() ? "video" : "image",
+                     })} />
+                 </Field>
+                 <Field label="Vídeo (upload MP4/WebM, máx. 100 MB)">
+                   <input type="file" accept="video/mp4,video/webm" disabled={uploading}
+                     onChange={(e) => e.target.files?.[0] && onUploadItemVideo(it.id, e.target.files[0])} />
+                   {it.videoUrl ? (
+                     <p className="mt-1 truncate text-xs text-muted-foreground">{it.videoUrl}</p>
+                   ) : null}
+                 </Field>
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={it.published !== false}
                     onChange={(e) => setItem(it.id, { published: e.target.checked })} />

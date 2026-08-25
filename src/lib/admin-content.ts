@@ -176,8 +176,11 @@ export async function saveContentValue(key: AdminContentKey, value: unknown): Pr
 const MEDIA_BUCKET = "site-media";
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const AUDIO_TYPES = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/ogg"];
+// BLOCO 38B: vídeo do acervo (MP4/WebM).
+const VIDEO_TYPES = ["video/mp4", "video/webm"];
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_AUDIO_BYTES = 50 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 const SIGNED_URL_TTL = 60 * 60 * 24 * 365 * 10;
 
 function sanitizeBase(name: string): string {
@@ -208,19 +211,22 @@ function fileExt(file: File): string {
     "audio/mpeg": "mp3",
     "audio/wav": "wav",
     "audio/ogg": "ogg",
+    "video/mp4": "mp4",
+    "video/webm": "webm",
   };
   return map[file.type] || "bin";
 }
 
-/** Uploads an image/audio file and returns a long-lived signed URL. */
+/** Uploads an image/audio/video file and returns a long-lived signed URL. */
 export async function uploadAdminMedia(
   file: File,
   prefix: string,
 ): Promise<{ url: string; path: string }> {
   const isImage = IMAGE_TYPES.includes(file.type);
   const isAudio = AUDIO_TYPES.includes(file.type);
-  if (!isImage && !isAudio) throw new Error("Tipo de arquivo não permitido.");
-  const limit = isAudio ? MAX_AUDIO_BYTES : MAX_IMAGE_BYTES;
+  const isVideo = VIDEO_TYPES.includes(file.type);
+  if (!isImage && !isAudio && !isVideo) throw new Error("Tipo de arquivo não permitido.");
+  const limit = isVideo ? MAX_VIDEO_BYTES : isAudio ? MAX_AUDIO_BYTES : MAX_IMAGE_BYTES;
   if (file.size > limit) {
     const mb = Math.round(limit / (1024 * 1024));
     throw new Error(`Arquivo grande demais (máx. ${mb} MB).`);
@@ -424,6 +430,11 @@ export interface GalleryItem {
   credit?: string;
   link?: string;
   image?: string;
+  /** BLOCO 38B: campos aditivos de vídeo. Ausente/"image" mantém o comportamento antigo. */
+  mediaType?: "image" | "video";
+  videoUrl?: string;
+  videoProvider?: string;
+  posterImage?: string;
   episode?: string;
   date?: string;
   location?: string;

@@ -2246,3 +2246,35 @@ body.layout-grid-mode .participant-photo-zoom { pointer-events: none; }
   .episode-participant-gallery,
   .episode-participant-gallery[data-count="1"] { grid-template-columns: 1fr; }
 }
+
+/* ===== BLOCO 38A/38B — Acervo limpo e midia de video ===== */
+/* Campos vazios desaparecem no site publico e continuam editaveis no modo admin. */
+body:not(.admin-mode) .gallery-card .is-empty,
+body:not(.admin-mode) .gallery-asset-copy .is-empty,
+body:not(.admin-mode) .gallery-modal-copy .is-empty { display: none !important; }
+body:not(.admin-mode) .gallery-asset-image.is-empty { display: none; }
+body:not(.admin-mode) .gallery-asset-placeholder { display: none; }
+body.admin-mode .gallery-card .is-empty,
+body.admin-mode .gallery-asset-copy .is-empty,
+body.admin-mode .gallery-modal-copy .is-empty {
+  min-height: 18px;
+  outline: 1px dashed rgba(0, 0, 0, 0.18);
+  outline-offset: 2px;
+}
+.gallery-asset-media {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #000;
+}
+.gallery-asset-video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+  background: #000;
+  object-fit: contain;
+}

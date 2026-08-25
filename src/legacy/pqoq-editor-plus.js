@@ -312,11 +312,17 @@
         : [];
     return {
       id: item.id || assetId(`gallery-item-${index + 1}`),
-      title: item.title || `Item ${index + 1}`,
-      caption: item.caption || "Legenda editavel do item da galeria.",
+      // BLOCO 38A: campos de texto aceitam vazio. Sem fallback automatico.
+      title: item.title || "",
+      caption: item.caption || "",
       description: item.description || "",
-      credit: item.credit || "Acervo",
+      credit: item.credit || "",
       link: item.link || "",
+      // BLOCO 38B: suporte aditivo a video (ausente = imagem).
+      mediaType: item.mediaType === "video" ? "video" : "image",
+      videoUrl: item.videoUrl || "",
+      videoProvider: item.videoProvider || "",
+      posterImage: item.posterImage || "",
       image: item.image || "",
       episode: item.episode || "",
       date: item.date || "",
@@ -348,10 +354,10 @@
         return {
           id: card.id || `gallery-card-${index + 1}`,
           slug: card.slug || slugify(card.title || card.id || `galeria-${index + 1}`),
-          meta: card.meta || "Nova categoria",
-          title: card.title || `Nova galeria ${index + 1}`,
-          description: card.description || "Descricao editavel da galeria.",
-          intro: card.intro || "Apresentacao editavel da galeria.",
+          meta: card.meta || "",
+          title: card.title || "",
+          description: card.description || "",
+          intro: card.intro || "",
           coverImage: card.coverImage || "",
           published: card.published !== false,
           sortOrder: typeof card.sortOrder === "number" ? card.sortOrder : index,
@@ -421,6 +427,30 @@
     }
     return "";
   }
+
+  // BLOCO 38B: resolve um video do acervo em embed seguro (id extraido, nunca URL crua em iframe).
+  function galleryVideoInfo(item) {
+    const raw = String(item && item.videoUrl ? item.videoUrl : "").trim();
+    if (!raw) return null;
+    const yt = youtubeId(raw);
+    if (yt) return { kind: "youtube", src: `https://www.youtube-nocookie.com/embed/${encodeURIComponent(yt)}` };
+    const vimeo = raw.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+    if (vimeo) return { kind: "vimeo", src: `https://player.vimeo.com/video/${encodeURIComponent(vimeo[1])}` };
+    if (/^https:\/\//i.test(raw) && /\.(mp4|webm)(\?|#|$)/i.test(raw)) return { kind: "file", src: raw };
+    return null;
+  }
+
+  function galleryVideoMarkup(item) {
+    const info = galleryVideoInfo(item);
+    if (!info) return "";
+    if (info.kind === "file") {
+      const poster = item.posterImage || item.image;
+      return `<video class="gallery-asset-video" controls preload="metadata"${poster ? ` poster="${escapeHtml(poster)}"` : ""} src="${escapeHtml(info.src)}"></video>`;
+    }
+    return `<iframe class="gallery-asset-video" src="${escapeHtml(info.src)}" title="Video do acervo" loading="lazy" frameborder="0" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+  }
+
+
 
   function gridUnitPx() {
     let probe = document.querySelector(GRID_UNIT_SELECTOR);
@@ -556,13 +586,15 @@
   function galleryCardTemplate(card) {
     const coverStyle = card.coverImage ? ` style="background-image:url('${escapeHtml(card.coverImage)}')"` : "";
     const unpub = card.published ? "" : " is-unpublished";
+    // BLOCO 38A: is-empty esconde no publico e mantem editavel no admin.
+    const empty = (value) => (String(value || "").trim() ? "" : " is-empty");
     return `
       <article class="card gallery-card gallery-card-plus${unpub}" data-gallery-id="${card.id}">
-        <button class="gallery-thumb gallery-card-open" type="button" data-open-gallery="${card.id}" data-layout-key="gallery.${card.id}.cover"${coverStyle}></button>
+        <button class="gallery-thumb gallery-card-open${card.coverImage ? "" : " is-empty"}" type="button" data-open-gallery="${card.id}" data-layout-key="gallery.${card.id}.cover"${coverStyle}></button>
         <span class="gallery-status admin-only">${card.published ? "Publicada" : "Rascunho"}</span>
-        <div class="meta" data-gallery-field="meta" data-layout-key="gallery.${card.id}.meta">${escapeHtml(card.meta)}</div>
-        <h2 data-gallery-field="title" data-layout-key="gallery.${card.id}.title">${escapeHtml(card.title)}</h2>
-        <p data-gallery-field="description" data-layout-key="gallery.${card.id}.description">${escapeHtml(card.description)}</p>
+        <div class="meta${empty(card.meta)}" data-gallery-field="meta" data-layout-key="gallery.${card.id}.meta">${escapeHtml(card.meta)}</div>
+        <h2 class="${empty(card.title).trim()}" data-gallery-field="title" data-layout-key="gallery.${card.id}.title">${escapeHtml(card.title)}</h2>
+        <p class="${empty(card.description).trim()}" data-gallery-field="description" data-layout-key="gallery.${card.id}.description">${escapeHtml(card.description)}</p>
         <div class="artist-actions gallery-card-actions">
           <button class="button primary small" type="button" data-open-gallery="${card.id}" data-layout-key="gallery.${card.id}.button">Abrir galeria</button>
         </div>
@@ -611,22 +643,33 @@
       ? `<div class="gallery-item-tags">${item.tags.map((t) => `<span class="gallery-tag">${escapeHtml(t)}</span>`).join("")}</div>`
       : "";
     const unpub = item.published ? "" : " is-unpublished";
+    const label = item.title || "item do acervo";
+    // BLOCO 38A: campos vazios ficam vazios; a classe is-empty esconde o no no publico
+    // mas mantem o alvo clicavel no modo admin.
+    const empty = (value) => (String(value || "").trim() ? "" : " is-empty");
     const moreBlock = hasMore
       ? `<div class="gallery-asset-more" data-gallery-more hidden>${escapeHtml(item.description)}</div>
          <button class="gallery-more-toggle" type="button" data-more-toggle aria-expanded="false">Ler mais</button>`
       : "";
+    const videoMarkup = item.mediaType === "video" ? galleryVideoMarkup(item) : "";
+    const mediaBlock = videoMarkup
+      ? `<div class="gallery-asset-image gallery-asset-media is-video">
+          ${videoMarkup}
+          <span class="gallery-status admin-only">${item.published ? "Publicado" : "Rascunho"}</span>
+        </div>`
+      : `<label class="gallery-asset-image${item.image ? "" : " is-empty"}"${imageStyle}>
+          <span class="gallery-asset-placeholder">Imagem</span>
+          <input class="admin-only" type="file" accept="image/*" data-gallery-item-image="${cardId}" data-gallery-item="${item.id}" aria-label="Enviar imagem do ${escapeHtml(label)}">
+          <button class="gallery-asset-zoom" type="button" data-open-lightbox="${item.id}" data-gallery-id="${cardId}" aria-label="Ampliar ${escapeHtml(label)}"></button>
+          <span class="gallery-status admin-only">${item.published ? "Publicado" : "Rascunho"}</span>
+        </label>`;
     return `
       <article class="gallery-asset${unpub}" data-gallery-id="${cardId}" data-gallery-item-id="${item.id}">
-        <label class="gallery-asset-image"${imageStyle}>
-          <span>${item.image ? "" : "Imagem"}</span>
-          <input class="admin-only" type="file" accept="image/*" data-gallery-item-image="${cardId}" data-gallery-item="${item.id}" aria-label="Enviar imagem do item ${escapeHtml(item.title)}">
-          <button class="gallery-asset-zoom" type="button" data-open-lightbox="${item.id}" data-gallery-id="${cardId}" aria-label="Ampliar ${escapeHtml(item.title)}"></button>
-          <span class="gallery-status admin-only">${item.published ? "Publicado" : "Rascunho"}</span>
-        </label>
+        ${mediaBlock}
         <div class="gallery-asset-copy">
-          <div class="meta" data-gallery-item-field="credit">${escapeHtml(item.credit)}</div>
-          <h3 data-gallery-item-field="title">${escapeHtml(item.title)}</h3>
-          <p data-gallery-item-field="caption">${escapeHtml(item.caption)}</p>
+          <div class="meta${empty(item.credit)}" data-gallery-item-field="credit">${escapeHtml(item.credit)}</div>
+          <h3 class="${empty(item.title).trim()}" data-gallery-item-field="title">${escapeHtml(item.title)}</h3>
+          <p class="${empty(item.caption).trim()}" data-gallery-item-field="caption">${escapeHtml(item.caption)}</p>
           ${moreBlock}
           ${metaLine ? `<div class="gallery-item-metaline">${metaLine}</div>` : ""}
           ${tagsHtml}
@@ -653,6 +696,9 @@
             <label>Link de referencia
               <input type="url" value="${escapeHtml(item.link)}" data-gallery-item-input="link" data-gallery-id="${cardId}" data-gallery-item="${item.id}" placeholder="https://...">
             </label>
+            <label>Video (YouTube, Vimeo ou .mp4/.webm)
+              <input type="url" value="${escapeHtml(item.videoUrl || "")}" data-gallery-item-input="videoUrl" data-gallery-id="${cardId}" data-gallery-item="${item.id}" placeholder="https://youtu.be/...">
+            </label>
             <div class="gallery-admin-controls">
               <button class="button small" type="button" data-gallery-item-move="up" data-gallery-id="${cardId}" data-gallery-item="${item.id}" aria-label="Subir item">&uarr;</button>
               <button class="button small" type="button" data-gallery-item-move="down" data-gallery-id="${cardId}" data-gallery-item="${item.id}" aria-label="Descer item">&darr;</button>
@@ -672,19 +718,21 @@
     const title = document.getElementById("gallery-modal-title");
     if (!card || !body || !title) return;
     activeGalleryId = cardId;
-    title.textContent = card.title;
+    title.textContent = card.title || "ACERVO";
     const items = visibleItems(card);
+    // BLOCO 38A: is-empty esconde no publico e mantem editavel no admin.
+    const empty = (value) => (String(value || "").trim() ? "" : " is-empty");
     body.innerHTML = `
       <section class="gallery-modal-hero">
         <label class="gallery-modal-cover gallery-cover-upload"${card.coverImage ? ` style="background-image:url('${escapeHtml(card.coverImage)}')"` : ""}>
           <span>${card.coverImage ? "" : "Capa da galeria"}</span>
-          <input class="admin-only" type="file" accept="image/*" data-gallery-cover="${card.id}" aria-label="Enviar capa da galeria ${escapeHtml(card.title)}">
+          <input class="admin-only" type="file" accept="image/*" data-gallery-cover="${card.id}" aria-label="Enviar capa da galeria ${escapeHtml(card.title || "acervo")}">
         </label>
         <div class="gallery-modal-copy">
-          <div class="meta" data-gallery-modal-field="meta" data-gallery-id="${card.id}">${escapeHtml(card.meta)}</div>
-          <h3 data-gallery-modal-field="title" data-gallery-id="${card.id}">${escapeHtml(card.title)}</h3>
-          <p data-gallery-modal-field="description" data-gallery-id="${card.id}">${escapeHtml(card.description)}</p>
-          <div class="gallery-modal-intro" data-gallery-modal-field="intro" data-gallery-id="${card.id}">${escapeHtml(card.intro)}</div>
+          <div class="meta${empty(card.meta)}" data-gallery-modal-field="meta" data-gallery-id="${card.id}">${escapeHtml(card.meta)}</div>
+          <h3 class="${empty(card.title).trim()}" data-gallery-modal-field="title" data-gallery-id="${card.id}">${escapeHtml(card.title)}</h3>
+          <p class="${empty(card.description).trim()}" data-gallery-modal-field="description" data-gallery-id="${card.id}">${escapeHtml(card.description)}</p>
+          <div class="gallery-modal-intro${empty(card.intro)}" data-gallery-modal-field="intro" data-gallery-id="${card.id}">${escapeHtml(card.intro)}</div>
           <div class="gallery-modal-actions">
             <button class="button small gallery-share" type="button" data-share-gallery="${card.id}">Compartilhar</button>
           </div>
@@ -755,6 +803,10 @@
     } else {
       item[field] = value;
     }
+    // BLOCO 38B: o tipo de midia acompanha o link de video informado.
+    if (field === "videoUrl") {
+      item.mediaType = String(value || "").trim() ? "video" : "image";
+    }
     saveGalleryCards(list);
   }
 
@@ -811,14 +863,14 @@
 
   function addGalleryCard() {
     const list = galleryCards();
-    const title = `Nova galeria ${list.length + 1}`;
     list.push({
       id: assetId("gallery"),
-      slug: slugify(title) + "-" + Math.random().toString(16).slice(2, 6),
-      meta: "Nova categoria",
-      title,
-      description: "Descricao editavel da galeria.",
-      intro: "Apresentacao editavel da galeria.",
+      // BLOCO 38A: novo acervo nasce limpo (sem titulo/descricao de exemplo).
+      slug: "acervo-" + Math.random().toString(16).slice(2, 6),
+      meta: "",
+      title: "",
+      description: "",
+      intro: "",
       coverImage: "",
       published: false,
       sortOrder: list.length,
@@ -844,12 +896,17 @@
     if (!card) return;
     card.items.unshift({
       id: assetId("gallery-item"),
-      title: "Novo item",
-      caption: "Legenda editavel do item da galeria.",
+      // BLOCO 38A: item novo nasce limpo.
+      title: "",
+      caption: "",
       description: "",
-      credit: "Acervo",
+      credit: "",
       link: "",
       image: "",
+      mediaType: "image",
+      videoUrl: "",
+      videoProvider: "",
+      posterImage: "",
       episode: "",
       date: "",
       location: "",
@@ -2159,15 +2216,21 @@
     });
 
     document.addEventListener("input", (event) => {
+      // BLOCO 38A: mantem o estado visual de campo vazio em sincronia com a digitacao.
+      const markEmpty = (element, value) => element.classList.toggle("is-empty", !String(value || "").trim());
+
       const galleryField = event.target.closest("[data-gallery-field]");
       if (galleryField && isAdmin()) {
-        updateGalleryCardField(galleryField.closest("[data-gallery-id]")?.dataset.galleryId, galleryField.dataset.galleryField, galleryField.textContent.trim());
+        const value = galleryField.textContent.trim();
+        markEmpty(galleryField, value);
+        updateGalleryCardField(galleryField.closest("[data-gallery-id]")?.dataset.galleryId, galleryField.dataset.galleryField, value);
       }
 
       const galleryModalField = event.target.closest("[data-gallery-modal-field]");
       if (galleryModalField && isAdmin()) {
         const field = galleryModalField.dataset.galleryModalField;
-        const value = field === "intro" ? galleryModalField.textContent.trim() : galleryModalField.textContent.trim();
+        const value = galleryModalField.textContent.trim();
+        markEmpty(galleryModalField, value);
         updateGalleryCardField(galleryModalField.dataset.galleryId, field, value);
       }
 
@@ -2175,7 +2238,9 @@
       if (galleryItemField && isAdmin()) {
         const cardId = galleryItemField.closest("[data-gallery-id]")?.dataset.galleryId;
         const itemId = galleryItemField.closest("[data-gallery-item-id]")?.dataset.galleryItemId;
-        updateGalleryItemField(cardId, itemId, galleryItemField.dataset.galleryItemField, galleryItemField.textContent.trim());
+        const value = galleryItemField.textContent.trim();
+        markEmpty(galleryItemField, value);
+        updateGalleryItemField(cardId, itemId, galleryItemField.dataset.galleryItemField, value);
       }
 
       const galleryItemInput = event.target.closest("[data-gallery-item-input]");
