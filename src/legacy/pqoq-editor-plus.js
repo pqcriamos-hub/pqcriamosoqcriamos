@@ -60,7 +60,7 @@
     "main .gallery-asset",
     "main .gallery-asset-image",
     "main .support-card-thumb",
-    "main .episode-participant-photo",
+    "main .episode-participant-figure",
     "main .lettered",
     "header .nav a"
   ].join(", ");
