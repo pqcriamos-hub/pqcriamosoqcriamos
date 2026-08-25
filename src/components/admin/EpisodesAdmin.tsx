@@ -514,10 +514,26 @@ export function EpisodesAdmin() {
           onChangeEmbed={setEditingEmbed}
           onUpload={onUpload}
           onUploadParticipantImages={onUploadParticipantImages}
-          onCancel={() => setEditing(null)}
+          onRequestClose={requestCloseEditor}
           onApply={applyEditor}
         />
       ) : null}
+
+      <AlertDialog open={confirmDiscard} onOpenChange={(o) => !o && setConfirmDiscard(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Descartar alterações?</AlertDialogTitle>
+            <AlertDialogDescription>
+              As alterações feitas neste episódio ainda não foram aplicadas. Se descartar, elas serão
+              perdidas. Nenhum dado salvo no Supabase é afetado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar editando</AlertDialogCancel>
+            <AlertDialogAction onClick={closeEditor}>Descartar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmId !== null} onOpenChange={(o) => !o && setConfirmId(null)}>
         <AlertDialogContent>
