@@ -100,6 +100,49 @@
 
   let selectedModular = null;
 
+  // BLOCO 37: variações da grade modular. A preferência é local (localStorage)
+  // e nunca entra no layout-state, que continua guardando apenas posições.
+  const GRID_KIND_STORAGE_KEY = "pqoq-site:grid-kind";
+  const GRID_KINDS = {
+    default: { label: "Padrão", size: "1cm", snap: "cm" },
+    fine: { label: "Fina", size: "8px", snap: 8 },
+    medium: { label: "Média", size: "16px", snap: 16 },
+    wide: { label: "Larga", size: "32px", snap: 32 },
+    columns: { label: "12 colunas", size: "1cm", snap: "columns" },
+    free: { label: "Livre (sem snap)", size: "1cm", snap: 0 }
+  };
+
+  function gridKind() {
+    try {
+      const stored = window.localStorage.getItem(GRID_KIND_STORAGE_KEY);
+      if (stored && GRID_KINDS[stored]) return stored;
+    } catch {
+      /* noop */
+    }
+    return "default";
+  }
+
+  function setGridKind(kind) {
+    const next = GRID_KINDS[kind] ? kind : "default";
+    try {
+      window.localStorage.setItem(GRID_KIND_STORAGE_KEY, next);
+    } catch {
+      /* noop */
+    }
+    applyGridKind();
+  }
+
+  function applyGridKind() {
+    const kind = gridKind();
+    const overlay = document.querySelector(GRID_UNIT_SELECTOR);
+    if (overlay) {
+      overlay.dataset.gridKind = kind;
+      overlay.style.setProperty("--layout-grid-size", GRID_KINDS[kind].size);
+    }
+    const select = document.getElementById("layout-grid-kind");
+    if (select && select.value !== kind) select.value = kind;
+  }
+
   function isModularCandidate(element) {
     if (!element || element.nodeType !== 1) return false;
     if (!element.matches(MODULAR_SELECTOR)) return false;
