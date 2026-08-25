@@ -859,14 +859,14 @@
 
   function addGalleryCard() {
     const list = galleryCards();
-    const title = `Nova galeria ${list.length + 1}`;
     list.push({
       id: assetId("gallery"),
-      slug: slugify(title) + "-" + Math.random().toString(16).slice(2, 6),
-      meta: "Nova categoria",
-      title,
-      description: "Descricao editavel da galeria.",
-      intro: "Apresentacao editavel da galeria.",
+      // BLOCO 38A: novo acervo nasce limpo (sem titulo/descricao de exemplo).
+      slug: "acervo-" + Math.random().toString(16).slice(2, 6),
+      meta: "",
+      title: "",
+      description: "",
+      intro: "",
       coverImage: "",
       published: false,
       sortOrder: list.length,
@@ -892,12 +892,17 @@
     if (!card) return;
     card.items.unshift({
       id: assetId("gallery-item"),
-      title: "Novo item",
-      caption: "Legenda editavel do item da galeria.",
+      // BLOCO 38A: item novo nasce limpo.
+      title: "",
+      caption: "",
       description: "",
-      credit: "Acervo",
+      credit: "",
       link: "",
       image: "",
+      mediaType: "image",
+      videoUrl: "",
+      videoProvider: "",
+      posterImage: "",
       episode: "",
       date: "",
       location: "",
