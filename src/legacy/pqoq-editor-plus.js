@@ -1292,7 +1292,7 @@
   }
 
   function supportCardTemplate(section, card) {
-    const imageStyle = card.image ? ` style="background-image:url('${escapeHtml(card.image)}')"` : "";
+    const imageStyle = backgroundStyleAttr(card.image, card.focalPoint);
     const unpub = card.published ? "" : " is-unpublished";
     const tagsHtml = card.tags.length
       ? `<div class="tag-list">${card.tags.map((t) => `<span>${escapeHtml(t)}</span>`).join("")}</div>`
@@ -1426,7 +1426,7 @@
 
     body.innerHTML = `
       <section class="support-modal-hero">
-        <label class="support-modal-image${card.image ? "" : " is-empty"}"${card.image ? ` style="background-image:url('${escapeHtml(card.image)}')"` : ""}>
+        <label class="support-modal-image${card.image ? "" : " is-empty"}"${backgroundStyleAttr(card.image, card.focalPoint)}>
           <span>${card.image ? "" : "Imagem / logo"}</span>
           <input class="admin-only" type="file" accept="image/*" data-support-image data-support-section="${section}" data-support-id="${card.id}" aria-label="Enviar imagem do card">
         </label>
