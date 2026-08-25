@@ -424,6 +424,11 @@ export interface GalleryItem {
   credit?: string;
   link?: string;
   image?: string;
+  /** BLOCO 38B: campos aditivos de vídeo. Ausente/"image" mantém o comportamento antigo. */
+  mediaType?: "image" | "video";
+  videoUrl?: string;
+  videoProvider?: string;
+  posterImage?: string;
   episode?: string;
   date?: string;
   location?: string;
