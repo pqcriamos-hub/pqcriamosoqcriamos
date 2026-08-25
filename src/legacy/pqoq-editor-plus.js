@@ -60,7 +60,7 @@
     "main .gallery-asset",
     "main .gallery-asset-image",
     "main .support-card-thumb",
-    "main .episode-participant-photo",
+    "main .episode-participant-figure",
     "main .lettered",
     "header .nav a"
   ].join(", ");
@@ -100,6 +100,49 @@
 
   let selectedModular = null;
 
+  // BLOCO 37: variações da grade modular. A preferência é local (localStorage)
+  // e nunca entra no layout-state, que continua guardando apenas posições.
+  const GRID_KIND_STORAGE_KEY = "pqoq-site:grid-kind";
+  const GRID_KINDS = {
+    default: { label: "Padrão", size: "1cm", snap: "cm" },
+    fine: { label: "Fina", size: "8px", snap: 8 },
+    medium: { label: "Média", size: "16px", snap: 16 },
+    wide: { label: "Larga", size: "32px", snap: 32 },
+    columns: { label: "12 colunas", size: "1cm", snap: "columns" },
+    free: { label: "Livre (sem snap)", size: "1cm", snap: 0 }
+  };
+
+  function gridKind() {
+    try {
+      const stored = window.localStorage.getItem(GRID_KIND_STORAGE_KEY);
+      if (stored && GRID_KINDS[stored]) return stored;
+    } catch {
+      /* noop */
+    }
+    return "default";
+  }
+
+  function setGridKind(kind) {
+    const next = GRID_KINDS[kind] ? kind : "default";
+    try {
+      window.localStorage.setItem(GRID_KIND_STORAGE_KEY, next);
+    } catch {
+      /* noop */
+    }
+    applyGridKind();
+  }
+
+  function applyGridKind() {
+    const kind = gridKind();
+    const overlay = document.querySelector(GRID_UNIT_SELECTOR);
+    if (overlay) {
+      overlay.dataset.gridKind = kind;
+      overlay.style.setProperty("--layout-grid-size", GRID_KINDS[kind].size);
+    }
+    const select = document.getElementById("layout-grid-kind");
+    if (select && select.value !== kind) select.value = kind;
+  }
+
   function isModularCandidate(element) {
     if (!element || element.nodeType !== 1) return false;
     if (!element.matches(MODULAR_SELECTOR)) return false;
@@ -120,6 +163,7 @@
 
   function modularLabel(element) {
     if (!element) return "";
+    if (element.matches(".episode-participant-figure")) return "foto do participante";
     const key = element.dataset.layoutKey;
     if (key) return key;
     if (element.matches(".bio-photo, .artist-avatar, .episode-thumb, .gallery-thumb, .support-card-thumb, .gallery-asset-image, img")) return "imagem";
@@ -394,6 +438,18 @@
     const px = meter.getBoundingClientRect().width || 37.795;
     meter.remove();
     return px;
+  }
+
+  // Passo de snap conforme a grade escolhida. 0 = movimento livre.
+  function snapStepPx() {
+    const snap = GRID_KINDS[gridKind()].snap;
+    if (snap === "cm") return gridUnitPx();
+    if (snap === "columns") {
+      const main = document.querySelector("main");
+      const width = main ? main.getBoundingClientRect().width : 0;
+      return width ? width / 12 : gridUnitPx();
+    }
+    return typeof snap === "number" ? snap : gridUnitPx();
   }
 
   function pxToCm(px) {
@@ -1707,16 +1763,34 @@
   }
 
   function ensureLayoutDock() {
-    if (document.getElementById("layout-dock")) return;
+    if (document.getElementById("layout-dock")) {
+      applyGridKind();
+      return;
+    }
+    const kindOptions = Object.entries(GRID_KINDS)
+      .map(([value, cfg]) => `<option value="${value}">${cfg.label}</option>`)
+      .join("");
     document.body.insertAdjacentHTML("beforeend", `
       <div class="layout-dock admin-only" id="layout-dock">
         <span class="layout-dock-label">Modo modular</span>
         <span class="layout-dock-target" id="layout-dock-target"></span>
+        <label class="layout-dock-label" for="layout-grid-kind">Grade</label>
+        <select class="layout-dock-select" id="layout-grid-kind" aria-label="Tipo de grade">${kindOptions}</select>
         <button class="button small" type="button" data-grid-toggle>Ativar grade</button>
         <button class="button small" type="button" data-grid-reset-item hidden>Resetar item</button>
       </div>
       <div class="layout-grid-overlay" aria-hidden="true"></div>
     `);
+    const kindSelect = document.getElementById("layout-grid-kind");
+    if (kindSelect && !kindSelect.dataset.gridBound) {
+      kindSelect.dataset.gridBound = "true";
+      kindSelect.value = gridKind();
+      kindSelect.addEventListener("change", (event) => {
+        // Mudar de grade não desloca nada: apenas o snap do próximo arraste muda.
+        setGridKind(event.target.value);
+      });
+    }
+    applyGridKind();
     const toggle = document.querySelector("[data-grid-toggle]");
     if (toggle && !toggle.dataset.gridBound) {
       toggle.dataset.gridBound = "true";
@@ -1928,7 +2002,8 @@
       if (openParticipant) {
         event.preventDefault();
         event.stopPropagation();
-        openParticipantLightbox(openParticipant);
+        // No modo modular o clique é para arrastar a foto, não para ampliar.
+        if (!(gridMode && isAdmin())) openParticipantLightbox(openParticipant);
         return;
       }
       const openPortfolio = event.target.closest("[data-open-portfolio-lightbox]");
@@ -2199,9 +2274,10 @@
       popoverDrag = null;
 
       if (!activeDrag) return;
-      const unit = gridUnitPx();
-      const nextX = Math.round((activeDrag.lastX || 0) / unit) * unit;
-      const nextY = Math.round((activeDrag.lastY || 0) / unit) * unit;
+      const unit = snapStepPx();
+      const snap = (value) => (unit > 0 ? Math.round((value || 0) / unit) * unit : Math.round(value || 0));
+      const nextX = snap(activeDrag.lastX);
+      const nextY = snap(activeDrag.lastY);
       activeDrag.element.style.translate = `${nextX}px ${nextY}px`;
       const state = layoutState();
       state[dragKey(activeDrag.element)] = { x: nextX, y: nextY };
