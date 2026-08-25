@@ -2216,15 +2216,21 @@
     });
 
     document.addEventListener("input", (event) => {
+      // BLOCO 38A: mantem o estado visual de campo vazio em sincronia com a digitacao.
+      const markEmpty = (element, value) => element.classList.toggle("is-empty", !String(value || "").trim());
+
       const galleryField = event.target.closest("[data-gallery-field]");
       if (galleryField && isAdmin()) {
-        updateGalleryCardField(galleryField.closest("[data-gallery-id]")?.dataset.galleryId, galleryField.dataset.galleryField, galleryField.textContent.trim());
+        const value = galleryField.textContent.trim();
+        markEmpty(galleryField, value);
+        updateGalleryCardField(galleryField.closest("[data-gallery-id]")?.dataset.galleryId, galleryField.dataset.galleryField, value);
       }
 
       const galleryModalField = event.target.closest("[data-gallery-modal-field]");
       if (galleryModalField && isAdmin()) {
         const field = galleryModalField.dataset.galleryModalField;
-        const value = field === "intro" ? galleryModalField.textContent.trim() : galleryModalField.textContent.trim();
+        const value = galleryModalField.textContent.trim();
+        markEmpty(galleryModalField, value);
         updateGalleryCardField(galleryModalField.dataset.galleryId, field, value);
       }
 
@@ -2232,7 +2238,9 @@
       if (galleryItemField && isAdmin()) {
         const cardId = galleryItemField.closest("[data-gallery-id]")?.dataset.galleryId;
         const itemId = galleryItemField.closest("[data-gallery-item-id]")?.dataset.galleryItemId;
-        updateGalleryItemField(cardId, itemId, galleryItemField.dataset.galleryItemField, galleryItemField.textContent.trim());
+        const value = galleryItemField.textContent.trim();
+        markEmpty(galleryItemField, value);
+        updateGalleryItemField(cardId, itemId, galleryItemField.dataset.galleryItemField, value);
       }
 
       const galleryItemInput = event.target.closest("[data-gallery-item-input]");
