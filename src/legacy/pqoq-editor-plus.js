@@ -694,6 +694,9 @@
             <label>Link de referencia
               <input type="url" value="${escapeHtml(item.link)}" data-gallery-item-input="link" data-gallery-id="${cardId}" data-gallery-item="${item.id}" placeholder="https://...">
             </label>
+            <label>Video (YouTube, Vimeo ou .mp4/.webm)
+              <input type="url" value="${escapeHtml(item.videoUrl || "")}" data-gallery-item-input="videoUrl" data-gallery-id="${cardId}" data-gallery-item="${item.id}" placeholder="https://youtu.be/...">
+            </label>
             <div class="gallery-admin-controls">
               <button class="button small" type="button" data-gallery-item-move="up" data-gallery-id="${cardId}" data-gallery-item="${item.id}" aria-label="Subir item">&uarr;</button>
               <button class="button small" type="button" data-gallery-item-move="down" data-gallery-id="${cardId}" data-gallery-item="${item.id}" aria-label="Descer item">&darr;</button>
