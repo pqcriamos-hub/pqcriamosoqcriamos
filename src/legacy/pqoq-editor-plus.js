@@ -718,19 +718,21 @@
     const title = document.getElementById("gallery-modal-title");
     if (!card || !body || !title) return;
     activeGalleryId = cardId;
-    title.textContent = card.title;
+    title.textContent = card.title || "ACERVO";
     const items = visibleItems(card);
+    // BLOCO 38A: is-empty esconde no publico e mantem editavel no admin.
+    const empty = (value) => (String(value || "").trim() ? "" : " is-empty");
     body.innerHTML = `
       <section class="gallery-modal-hero">
         <label class="gallery-modal-cover gallery-cover-upload"${card.coverImage ? ` style="background-image:url('${escapeHtml(card.coverImage)}')"` : ""}>
           <span>${card.coverImage ? "" : "Capa da galeria"}</span>
-          <input class="admin-only" type="file" accept="image/*" data-gallery-cover="${card.id}" aria-label="Enviar capa da galeria ${escapeHtml(card.title)}">
+          <input class="admin-only" type="file" accept="image/*" data-gallery-cover="${card.id}" aria-label="Enviar capa da galeria ${escapeHtml(card.title || "acervo")}">
         </label>
         <div class="gallery-modal-copy">
-          <div class="meta" data-gallery-modal-field="meta" data-gallery-id="${card.id}">${escapeHtml(card.meta)}</div>
-          <h3 data-gallery-modal-field="title" data-gallery-id="${card.id}">${escapeHtml(card.title)}</h3>
-          <p data-gallery-modal-field="description" data-gallery-id="${card.id}">${escapeHtml(card.description)}</p>
-          <div class="gallery-modal-intro" data-gallery-modal-field="intro" data-gallery-id="${card.id}">${escapeHtml(card.intro)}</div>
+          <div class="meta${empty(card.meta)}" data-gallery-modal-field="meta" data-gallery-id="${card.id}">${escapeHtml(card.meta)}</div>
+          <h3 class="${empty(card.title).trim()}" data-gallery-modal-field="title" data-gallery-id="${card.id}">${escapeHtml(card.title)}</h3>
+          <p class="${empty(card.description).trim()}" data-gallery-modal-field="description" data-gallery-id="${card.id}">${escapeHtml(card.description)}</p>
+          <div class="gallery-modal-intro${empty(card.intro)}" data-gallery-modal-field="intro" data-gallery-id="${card.id}">${escapeHtml(card.intro)}</div>
           <div class="gallery-modal-actions">
             <button class="button small gallery-share" type="button" data-share-gallery="${card.id}">Compartilhar</button>
           </div>
