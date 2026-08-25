@@ -1762,16 +1762,34 @@
   }
 
   function ensureLayoutDock() {
-    if (document.getElementById("layout-dock")) return;
+    if (document.getElementById("layout-dock")) {
+      applyGridKind();
+      return;
+    }
+    const kindOptions = Object.entries(GRID_KINDS)
+      .map(([value, cfg]) => `<option value="${value}">${cfg.label}</option>`)
+      .join("");
     document.body.insertAdjacentHTML("beforeend", `
       <div class="layout-dock admin-only" id="layout-dock">
         <span class="layout-dock-label">Modo modular</span>
         <span class="layout-dock-target" id="layout-dock-target"></span>
+        <label class="layout-dock-label" for="layout-grid-kind">Grade</label>
+        <select class="layout-dock-select" id="layout-grid-kind" aria-label="Tipo de grade">${kindOptions}</select>
         <button class="button small" type="button" data-grid-toggle>Ativar grade</button>
         <button class="button small" type="button" data-grid-reset-item hidden>Resetar item</button>
       </div>
       <div class="layout-grid-overlay" aria-hidden="true"></div>
     `);
+    const kindSelect = document.getElementById("layout-grid-kind");
+    if (kindSelect && !kindSelect.dataset.gridBound) {
+      kindSelect.dataset.gridBound = "true";
+      kindSelect.value = gridKind();
+      kindSelect.addEventListener("change", (event) => {
+        // Mudar de grade não desloca nada: apenas o snap do próximo arraste muda.
+        setGridKind(event.target.value);
+      });
+    }
+    applyGridKind();
     const toggle = document.querySelector("[data-grid-toggle]");
     if (toggle && !toggle.dataset.gridBound) {
       toggle.dataset.gridBound = "true";
