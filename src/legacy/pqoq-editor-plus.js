@@ -641,22 +641,33 @@
       ? `<div class="gallery-item-tags">${item.tags.map((t) => `<span class="gallery-tag">${escapeHtml(t)}</span>`).join("")}</div>`
       : "";
     const unpub = item.published ? "" : " is-unpublished";
+    const label = item.title || "item do acervo";
+    // BLOCO 38A: campos vazios ficam vazios; a classe is-empty esconde o no no publico
+    // mas mantem o alvo clicavel no modo admin.
+    const empty = (value) => (String(value || "").trim() ? "" : " is-empty");
     const moreBlock = hasMore
       ? `<div class="gallery-asset-more" data-gallery-more hidden>${escapeHtml(item.description)}</div>
          <button class="gallery-more-toggle" type="button" data-more-toggle aria-expanded="false">Ler mais</button>`
       : "";
+    const videoMarkup = item.mediaType === "video" ? galleryVideoMarkup(item) : "";
+    const mediaBlock = videoMarkup
+      ? `<div class="gallery-asset-image gallery-asset-media is-video">
+          ${videoMarkup}
+          <span class="gallery-status admin-only">${item.published ? "Publicado" : "Rascunho"}</span>
+        </div>`
+      : `<label class="gallery-asset-image${item.image ? "" : " is-empty"}"${imageStyle}>
+          <span class="gallery-asset-placeholder">Imagem</span>
+          <input class="admin-only" type="file" accept="image/*" data-gallery-item-image="${cardId}" data-gallery-item="${item.id}" aria-label="Enviar imagem do ${escapeHtml(label)}">
+          <button class="gallery-asset-zoom" type="button" data-open-lightbox="${item.id}" data-gallery-id="${cardId}" aria-label="Ampliar ${escapeHtml(label)}"></button>
+          <span class="gallery-status admin-only">${item.published ? "Publicado" : "Rascunho"}</span>
+        </label>`;
     return `
       <article class="gallery-asset${unpub}" data-gallery-id="${cardId}" data-gallery-item-id="${item.id}">
-        <label class="gallery-asset-image"${imageStyle}>
-          <span>${item.image ? "" : "Imagem"}</span>
-          <input class="admin-only" type="file" accept="image/*" data-gallery-item-image="${cardId}" data-gallery-item="${item.id}" aria-label="Enviar imagem do item ${escapeHtml(item.title)}">
-          <button class="gallery-asset-zoom" type="button" data-open-lightbox="${item.id}" data-gallery-id="${cardId}" aria-label="Ampliar ${escapeHtml(item.title)}"></button>
-          <span class="gallery-status admin-only">${item.published ? "Publicado" : "Rascunho"}</span>
-        </label>
+        ${mediaBlock}
         <div class="gallery-asset-copy">
-          <div class="meta" data-gallery-item-field="credit">${escapeHtml(item.credit)}</div>
-          <h3 data-gallery-item-field="title">${escapeHtml(item.title)}</h3>
-          <p data-gallery-item-field="caption">${escapeHtml(item.caption)}</p>
+          <div class="meta${empty(item.credit)}" data-gallery-item-field="credit">${escapeHtml(item.credit)}</div>
+          <h3 class="${empty(item.title).trim()}" data-gallery-item-field="title">${escapeHtml(item.title)}</h3>
+          <p class="${empty(item.caption).trim()}" data-gallery-item-field="caption">${escapeHtml(item.caption)}</p>
           ${moreBlock}
           ${metaLine ? `<div class="gallery-item-metaline">${metaLine}</div>` : ""}
           ${tagsHtml}
