@@ -2136,6 +2136,11 @@
       const label = button.querySelector(".donation-fab-label");
       if (label && label.textContent !== config.label) label.textContent = config.label;
       button.setAttribute("aria-label", config.label);
+      // Nunca sobrepor um modal/lightbox aberto.
+      const otherOpen = Array.from(
+        document.querySelectorAll(".modal.is-open, #gallery-lightbox.is-open"),
+      ).some((el) => el.id !== "donation-modal");
+      button.classList.toggle("is-hidden", otherOpen);
     }
 
     const title = document.getElementById("donation-modal-title");
