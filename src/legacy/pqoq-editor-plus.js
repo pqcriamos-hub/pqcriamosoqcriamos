@@ -2253,6 +2253,26 @@
       true,
     );
     document.addEventListener("click", (event) => {
+      // Widget de doação (independente do restante do editor)
+      if (event.target.closest("[data-open-donation]")) {
+        event.preventDefault();
+        openDonation();
+        return;
+      }
+      if (event.target.closest("[data-close-donation]") || event.target.id === "donation-modal") {
+        closeDonation();
+        return;
+      }
+      if (event.target.closest("[data-copy-pix]")) {
+        event.preventDefault();
+        void copyPixKey();
+        return;
+      }
+      if (event.target.closest("[data-share-donation]")) {
+        event.preventDefault();
+        shareDonation();
+        return;
+      }
       // Lightbox controls (highest priority, sits above the modal)
       const openLb = event.target.closest("[data-open-lightbox]");
       if (openLb) {
