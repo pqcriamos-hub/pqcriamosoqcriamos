@@ -213,6 +213,26 @@ export function AcervoAdmin() {
     }
   };
 
+  // BLOCO 38B: upload de vídeo (MP4/WebM) para o item do acervo.
+  const onUploadItemVideo = async (itemId: string, file: File) => {
+    if (!editing) return;
+    setUploading(true);
+    setErrorMsg("");
+    try {
+      const { url } = await uploadAdminMedia(file, `gallery/${editing.id}/videos`);
+      setEditing({
+        ...editing,
+        items: (editing.items || []).map((it) =>
+          it.id === itemId ? { ...it, videoUrl: url, mediaType: "video" } : it,
+        ),
+      });
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Falha no upload.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const saveAll = async () => {
     setSaveState("saving");
     setErrorMsg("");
