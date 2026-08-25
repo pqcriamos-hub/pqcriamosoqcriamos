@@ -16,6 +16,7 @@ export const ADMIN_CONTENT_KEYS = [
   "layout-state",
   "support-content",
   "card-tags",
+  "donation-widget",
 ] as const;
 
 export type AdminContentKey = (typeof ADMIN_CONTENT_KEYS)[number];
@@ -43,6 +44,7 @@ export const KEY_LABELS: Record<string, string> = {
   "layout-state": "Layout",
   "support-content": "Apoio",
   "card-tags": "Tags",
+  "donation-widget": "Doação (botão flutuante)",
 };
 
 /** Reads all whitelisted site_content rows with light-weight metadata. */
@@ -463,6 +465,19 @@ export interface LinkPair {
   href?: string;
 }
 
+/**
+ * Optional framing for a background image. `x`/`y` are percentages used as
+ * background-position; `zoom` (1 = cover) scales the image without touching the
+ * original file. Absent focalPoint === { x: 50, y: 50, zoom: 1 }.
+ */
+export interface FocalPoint {
+  x: number;
+  y: number;
+  zoom: number;
+}
+
+export const DEFAULT_FOCAL_POINT: FocalPoint = { x: 50, y: 50, zoom: 1 };
+
 export interface SupportCard {
   id: string;
   slug?: string;
@@ -472,6 +487,8 @@ export interface SupportCard {
   description?: string;
   fullText?: string;
   image?: string;
+  /** Enquadramento opcional da imagem do card (não altera o arquivo original). */
+  focalPoint?: FocalPoint;
   relation?: string;
   contact?: string;
   location?: string;
@@ -490,6 +507,43 @@ export interface SupportContent {
   fronts: SupportCard[];
   partners: SupportCard[];
 }
+
+/**
+ * Floating donation widget (key `donation-widget`). All content here is public
+ * by nature, so there is no "-admin" counterpart: only the published flag of
+ * the row plus `enabled` control visibility.
+ */
+export interface DonationWidget {
+  enabled: boolean;
+  label: string;
+  title: string;
+  subtitle: string;
+  text: string;
+  buttonLabel: string;
+  buttonHref: string;
+  pixKey: string;
+  showPix: boolean;
+  qrImage: string;
+  shareText: string;
+  position: "left" | "right";
+  animate: boolean;
+}
+
+export const DONATION_DEFAULTS: DonationWidget = {
+  enabled: false,
+  label: "Apoie o PQOQ",
+  title: "Apoie o PQOQ",
+  subtitle: "",
+  text: "",
+  buttonLabel: "",
+  buttonHref: "",
+  pixKey: "",
+  showPix: false,
+  qrImage: "",
+  shareText: "",
+  position: "left",
+  animate: true,
+};
 
 export function genId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
