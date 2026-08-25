@@ -2191,7 +2191,19 @@ body.public-preview [data-gallery-item-field] {
   margin: 8px 0 14px;
 }
 .episode-participant-gallery[data-count="1"] { grid-template-columns: minmax(0, 286px); }
-.episode-participant-figure { position: relative; margin: 0; }
+.episode-participant-figure {
+  margin: 0;
+  justify-self: start;
+  width: fit-content;
+  max-width: 100%;
+}
+/* O frame acompanha exatamente a imagem: nada clicável ao lado da foto. */
+.episode-participant-frame {
+  position: relative;
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+}
 .episode-participant-figure .episode-participant-photo { width: 100%; height: auto; display: block; }
 .episode-participant-figure figcaption {
   font-size: 12px;
@@ -2206,6 +2218,7 @@ body.public-preview [data-gallery-item-field] {
   background: transparent;
   cursor: zoom-in;
 }
+body.layout-grid-mode .participant-photo-zoom { pointer-events: none; }
 @media (max-width: 640px) {
   .episode-participant-gallery,
   .episode-participant-gallery[data-count="1"] { grid-template-columns: 1fr; }
