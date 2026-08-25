@@ -184,8 +184,27 @@ export function EpisodesAdmin() {
 
   const openEditor = (ep?: EpisodeItem) => {
     const item = ep ? { ...ep } : emptyEpisode();
+    const embed = { ...(embeds[item.id] || {}) };
     setEditing(item);
-    setEditingEmbed({ ...(embeds[item.id] || {}) });
+    setEditingEmbed(embed);
+    setEditorSnapshot(JSON.stringify({ item, embed }));
+  };
+
+  const closeEditor = () => {
+    setEditing(null);
+    setEditorSnapshot("");
+    setConfirmDiscard(false);
+  };
+
+  /** Fecha pedindo confirmação apenas quando há alterações pendentes no modal. */
+  const requestCloseEditor = () => {
+    if (!editing) return;
+    const current = JSON.stringify({ item: editing, embed: editingEmbed });
+    if (current !== editorSnapshot) {
+      setConfirmDiscard(true);
+      return;
+    }
+    closeEditor();
   };
 
   const applyEditor = () => {
@@ -198,7 +217,7 @@ export function EpisodesAdmin() {
     const next = exists ? episodes.map((e) => (e.id === item.id ? item : e)) : [item, ...episodes];
     const nextEmbeds = { ...embeds, [item.id]: editingEmbed };
     markDirty(next, nextEmbeds);
-    setEditing(null);
+    closeEditor();
   };
 
   const onUpload = async (file: File, field: "thumbnail" | "mp3") => {
