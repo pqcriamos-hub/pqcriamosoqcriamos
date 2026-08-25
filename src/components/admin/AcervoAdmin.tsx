@@ -381,6 +381,7 @@ function GalleryEditor({
   onChange,
   onUploadCover,
   onUploadItem,
+  onUploadItemVideo,
   onCancel,
   onApply,
 }: {
@@ -389,6 +390,7 @@ function GalleryEditor({
   onChange: (c: GalleryCard) => void;
   onUploadCover: (file: File) => void;
   onUploadItem: (itemId: string, file: File) => void;
+  onUploadItemVideo: (itemId: string, file: File) => void;
   onCancel: () => void;
   onApply: () => void;
 }) {
