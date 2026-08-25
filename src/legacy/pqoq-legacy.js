@@ -1434,9 +1434,9 @@
     container.innerHTML = `
       <div class="episode-page-hero">
         <div class="episode-page-cover-column">
-          <a class="button small episode-back-link" href="/episodios">← Voltar aos episódios</a>
-          <div class="episode-cover" data-episode-cover="${episode.id}"${episodeCoverStyle(episode)}></div>
-          <div class="meta episode-cover-meta" data-editable="episode.${episode.id}.meta">${episode.code} · ${episode.date} · ${episode.duration}</div>
+          <a class="button small episode-back-link" data-layout-key="episode.${episode.id}.backLink" href="/episodios">← Voltar aos episódios</a>
+          <div class="episode-cover" data-layout-key="episode.${episode.id}.cover" data-episode-cover="${episode.id}"${episodeCoverStyle(episode)}></div>
+          <div class="meta episode-cover-meta" data-layout-key="episode.${episode.id}.coverMeta" data-editable="episode.${episode.id}.meta">${episode.code} · ${episode.date} · ${episode.duration}</div>
           <div class="admin-only admin-row">
             <label>Capa / thumbnail do episódio
               <input type="file" accept="image/*" data-episode-file="${episode.id}" data-file-field="thumbnail">
@@ -1445,9 +1445,9 @@
         </div>
         <div class="episode-page-media-column">
           <div class="episode-title-pill">
-            <h1 class="page-title" data-editable="episode.${episode.id}.title">${episode.code} - ${episode.title}</h1>
+            <h1 class="page-title" data-layout-key="episode.${episode.id}.pageTitle" data-editable="episode.${episode.id}.title">${episode.code} - ${episode.title}</h1>
           </div>
-          <div class="embed-box episode-video-box" data-video-box="${episode.id}"></div>
+          <div class="embed-box episode-video-box" data-layout-key="episode.${episode.id}.videoPlayer" data-video-box="${episode.id}"></div>
           <div class="admin-only admin-row episode-video-admin">
             <label>Link do YouTube
               <input type="url" value="${escapeHtml(embeds.youtube || "")}" data-episode-embed="${episode.id}" data-embed-field="youtube" placeholder="https://www.youtube.com/watch?v=...">
@@ -1460,7 +1460,7 @@
       </div>
 
       <div class="episode-player-block">
-        <div class="audio-box episode-audio" data-audio-box="${episode.id}"></div>
+        <div class="audio-box episode-audio" data-layout-key="episode.${episode.id}.audioPlayer" data-audio-box="${episode.id}"></div>
         <div class="admin-only admin-row episode-admin-grid">
           <label>Link do Spotify
             <input type="url" value="${escapeHtml(embeds.spotify || "")}" data-episode-embed="${episode.id}" data-embed-field="spotify" placeholder="https://open.spotify.com/episode/...">
@@ -1472,12 +1472,12 @@
       </div>
 
       <div class="episode-artist-panel">
-        <h2 class="lettered">${escapeHtml(episode.participantTitle || `Sobre ${artist?.name || episode.artist || ""}`)}</h2>
+        <h2 class="lettered" data-layout-key="episode.${episode.id}.participantTitle">${escapeHtml(episode.participantTitle || `Sobre ${artist?.name || episode.artist || ""}`)}</h2>
         ${participantPhotosMarkup(episode, artist)}
-        <p data-rich data-episode-participant-about="${episode.id}">${episode.participantAbout || (artist ? artist.bio : "") || "Informação editável sobre o participante deste episódio."}</p>
-        ${episode.participantBio ? `<p class="episode-participant-bio">${episode.participantBio}</p>` : ""}
+        <p data-rich data-layout-key="episode.${episode.id}.participantAbout" data-episode-participant-about="${episode.id}">${episode.participantAbout || (artist ? artist.bio : "") || "Informação editável sobre o participante deste episódio."}</p>
+        ${episode.participantBio ? `<p class="episode-participant-bio" data-layout-key="episode.${episode.id}.participantBio">${episode.participantBio}</p>` : ""}
         ${tagChips(episode.participantTags)}
-        ${customLinkChips(episode.participantLinks) ? `<div class="platform-row episode-participant-links">${customLinkChips(episode.participantLinks)}</div>` : ""}
+        ${customLinkChips(episode.participantLinks) ? `<div class="platform-row episode-participant-links" data-layout-key="episode.${episode.id}.participantLinks">${customLinkChips(episode.participantLinks)}</div>` : ""}
         <div class="artist-actions">
           ${
             isEp00
@@ -1488,7 +1488,7 @@
           }
           <a class="button small" href="/artistas">Página Artistas</a>
         </div>
-        <div class="platform-row episode-platform-row">${platformLinks(episode)}${customLinkChips(episode.links)}</div>
+        <div class="platform-row episode-platform-row" data-layout-key="episode.${episode.id}.platformRow">${platformLinks(episode)}${customLinkChips(episode.links)}</div>
       </div>
     `;
     renderEpisodeCover(episode.id);
