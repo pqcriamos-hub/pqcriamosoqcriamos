@@ -590,6 +590,16 @@ function SupportEditor({
           ) : null}
         </Field>
 
+        {/* BLOCO 38C — enquadramento (focalPoint): não altera a imagem original,
+            apenas o background-position/size aplicado no card e no modal. */}
+        {value.image ? (
+          <FocalPointEditor
+            image={value.image}
+            focal={{ ...DEFAULT_FOCAL_POINT, ...(value.focalPoint || {}) }}
+            onChange={(focalPoint) => set({ focalPoint })}
+          />
+        ) : null}
+
         {/* Links */}
         <PairEditor kind="links" title="Links oficiais" pairs={links}
           onAdd={() => addPair("links")} onSet={(id, p) => setPair("links", id, p)} onRemove={(id) => removePair("links", id)} />
