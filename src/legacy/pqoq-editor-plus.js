@@ -312,11 +312,17 @@
         : [];
     return {
       id: item.id || assetId(`gallery-item-${index + 1}`),
-      title: item.title || `Item ${index + 1}`,
-      caption: item.caption || "Legenda editavel do item da galeria.",
+      // BLOCO 38A: campos de texto aceitam vazio. Sem fallback automatico.
+      title: item.title || "",
+      caption: item.caption || "",
       description: item.description || "",
-      credit: item.credit || "Acervo",
+      credit: item.credit || "",
       link: item.link || "",
+      // BLOCO 38B: suporte aditivo a video (ausente = imagem).
+      mediaType: item.mediaType === "video" ? "video" : "image",
+      videoUrl: item.videoUrl || "",
+      videoProvider: item.videoProvider || "",
+      posterImage: item.posterImage || "",
       image: item.image || "",
       episode: item.episode || "",
       date: item.date || "",
