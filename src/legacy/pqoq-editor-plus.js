@@ -428,6 +428,30 @@
     return "";
   }
 
+  // BLOCO 38B: resolve um video do acervo em embed seguro (id extraido, nunca URL crua em iframe).
+  function galleryVideoInfo(item) {
+    const raw = String(item && item.videoUrl ? item.videoUrl : "").trim();
+    if (!raw) return null;
+    const yt = youtubeId(raw);
+    if (yt) return { kind: "youtube", src: `https://www.youtube-nocookie.com/embed/${encodeURIComponent(yt)}` };
+    const vimeo = raw.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+    if (vimeo) return { kind: "vimeo", src: `https://player.vimeo.com/video/${encodeURIComponent(vimeo[1])}` };
+    if (/^https:\/\//i.test(raw) && /\.(mp4|webm)(\?|#|$)/i.test(raw)) return { kind: "file", src: raw };
+    return null;
+  }
+
+  function galleryVideoMarkup(item) {
+    const info = galleryVideoInfo(item);
+    if (!info) return "";
+    if (info.kind === "file") {
+      const poster = item.posterImage || item.image;
+      return `<video class="gallery-asset-video" controls preload="metadata"${poster ? ` poster="${escapeHtml(poster)}"` : ""} src="${escapeHtml(info.src)}"></video>`;
+    }
+    return `<iframe class="gallery-asset-video" src="${escapeHtml(info.src)}" title="Video do acervo" loading="lazy" frameborder="0" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+  }
+
+
+
   function gridUnitPx() {
     let probe = document.querySelector(GRID_UNIT_SELECTOR);
     if (!probe) {
