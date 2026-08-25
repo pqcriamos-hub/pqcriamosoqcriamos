@@ -607,6 +607,27 @@ export function EpisodesAdmin() {
   );
 }
 
+/** Seção do modal: título, subtítulo opcional e conteúdo. */
+function Section({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-4 rounded-md border p-4">
+      <div className="space-y-1">
+        <h4 className="text-sm font-semibold">{title}</h4>
+        {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
 function EpisodeEditor({
   value,
   embed,
@@ -617,7 +638,7 @@ function EpisodeEditor({
   onChangeEmbed,
   onUpload,
   onUploadParticipantImages,
-  onCancel,
+  onRequestClose,
   onApply,
 }: {
   value: EpisodeItem;
@@ -629,251 +650,414 @@ function EpisodeEditor({
   onChangeEmbed: (e: EpisodeEmbeds[string]) => void;
   onUpload: (file: File, field: "thumbnail" | "mp3") => void;
   onUploadParticipantImages: (files: File[]) => void;
-
-  onCancel: () => void;
+  onRequestClose: () => void;
   onApply: () => void;
 }) {
+  const [validationMsg, setValidationMsg] = useState("");
   const set = (patch: Partial<EpisodeItem>) => onChange({ ...value, ...patch });
   const setEmbed = (patch: Partial<EpisodeEmbeds[string]>) => onChangeEmbed({ ...embed, ...patch });
   const setLinks = (field: "links" | "participantLinks", next: LinkPair[]) =>
     set({ [field]: next } as Partial<EpisodeItem>);
   const link = episodeLinkInfo(value, artists, episodes);
+  const artistIdValue = String(value.artistId || "").trim();
+  const artistIdMissing =
+    !link.isEp00 && Boolean(artistIdValue) && !artists.some((a) => a.id === artistIdValue);
+
+  const parseList = (raw: string) =>
+    Array.from(
+      new Set(
+        raw
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
+      ),
+    );
+
+  const submit = () => {
+    if (!String(value.title || "").trim()) {
+      setValidationMsg("O título do episódio é obrigatório.");
+      return;
+    }
+    const slug = String(value.slug || "").trim();
+    if (slug && episodes.some((e) => e.id !== value.id && (e.slug || "").trim() === slug)) {
+      setValidationMsg("Já existe outro episódio com este slug. Use um slug único.");
+      return;
+    }
+    setValidationMsg("");
+    onApply();
+  };
 
   return (
-    <Card>
-      <CardContent className="space-y-4 p-6">
-        <h3 className="text-base font-semibold">
-          {value.title ? `Editar: ${value.title}` : "Novo episódio"}
-        </h3>
-        <div className="space-y-1 rounded-md border p-4 text-sm">
-          <h4 className="text-sm font-semibold">Artista vinculado</h4>
-          {link.isEp00 ? (
-            <p className="text-muted-foreground">
-              Este episódio é institucional/de apresentação e não controla publicação de artistas.
-            </p>
-          ) : link.artist ? (
-            <>
-              <p>
-                {link.artist.name || link.artist.id}{" "}
-                <span className="text-muted-foreground">({link.artistId})</span>{" "}
-                <Badge variant={link.artistPublished ? "default" : "secondary"}>
-                  {link.artistPublished ? "Artista publicado" : "Artista oculto"}
-                </Badge>
-              </p>
-              <p className="text-muted-foreground">
-                {link.publishedCount} episódio(s) publicado(s) · {link.draftCount}{" "}
-                oculto(s)/rascunho (EP00 não é contado).
-              </p>
-              {link.otherPublishedCount > 0 ? (
-                <p className="text-muted-foreground">
-                  Este artista possui outros episódios publicados. Ele continuará visível no
-                  catálogo.
-                </p>
-              ) : (
-                <p className="text-amber-600">
-                  Este é o único episódio publicado vinculado a este artista. Ao despublicar, o
-                  painel oferecerá ocultar o artista também.
-                </p>
-              )}
-            </>
-          ) : (
-            <p className="text-amber-600">Este episódio não possui artista vinculado.</p>
-          )}
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Código">
-            <Input value={value.code || ""} onChange={(e) => set({ code: e.target.value })} />
-          </Field>
-          <Field label="Título">
-            <Input value={value.title || ""} onChange={(e) => set({ title: e.target.value })} />
-          </Field>
-          <Field label="Artista (nome)">
-            <Input value={value.artist || ""} onChange={(e) => set({ artist: e.target.value })} />
-          </Field>
-          <Field label="Artista (id/slug)">
-            <Input
-              value={value.artistId || ""}
-              onChange={(e) => set({ artistId: e.target.value })}
-            />
-          </Field>
-          <Field label="Data">
-            <Input value={value.date || ""} onChange={(e) => set({ date: e.target.value })} />
-          </Field>
-          <Field label="Duração">
-            <Input
-              value={value.duration || ""}
-              onChange={(e) => set({ duration: e.target.value })}
-            />
-          </Field>
-          <Field label="Slug">
-            <Input value={value.slug || ""} onChange={(e) => set({ slug: e.target.value })} />
-          </Field>
-          <Field label="Tags (separadas por vírgula)">
-            <Input
-              value={(value.tags || []).join(", ")}
-              onChange={(e) =>
-                set({
-                  tags: e.target.value
-                    .split(",")
-                    .map((t) => t.trim())
-                    .filter(Boolean),
-                })
-              }
-            />
-          </Field>
-        </div>
-        <Field label="Descrição curta">
-          <Textarea
-            value={value.description || ""}
-            onChange={(e) => set({ description: e.target.value })}
-          />
-        </Field>
-        <Field label="Resumo expandido">
-          <Textarea
-            value={value.summary || ""}
-            onChange={(e) => set({ summary: e.target.value })}
-          />
-        </Field>
-        <div className="space-y-4 rounded-md border p-4">
-          <h4 className="text-sm font-semibold">
-            Participante deste episódio (campos individuais)
-          </h4>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Título do bloco">
-              <Input
-                value={value.participantTitle || ""}
-                onChange={(e) => set({ participantTitle: e.target.value })}
-                placeholder='Se vazio: "Sobre {nome do artista}"'
-              />
-            </Field>
-            <Field label="Tags do participante (vírgula)">
-              <Input
-                value={(value.participantTags || []).join(", ")}
-                onChange={(e) =>
-                  set({
-                    participantTags: e.target.value
-                      .split(",")
-                      .map((t) => t.trim())
-                      .filter(Boolean),
-                  })
-                }
-              />
-            </Field>
-          </div>
-          <Field label="Sobre o participante (individual deste episódio)">
-            <Textarea
-              value={value.participantAbout || ""}
-              onChange={(e) => set({ participantAbout: e.target.value })}
-              placeholder="Texto exclusivo deste episódio. Se vazio, o site usa a bio do artista como fallback."
-            />
-          </Field>
-          <Field label="Bio complementar do participante (opcional)">
-            <Textarea
-              value={value.participantBio || ""}
-              onChange={(e) => set({ participantBio: e.target.value })}
-              placeholder="Só aparece se preenchido. Fallback: bio do artista."
-            />
-          </Field>
-          <ParticipantImagesEditor
-            episodeId={value.id}
-            legacyImage={value.participantImage}
-            images={normalizeParticipantImages(value.participantImages)}
-            uploading={uploading}
-            onUploadFiles={onUploadParticipantImages}
-            onChange={(next) => set({ participantImages: next })}
-          />
+    <Dialog open onOpenChange={(open) => !open && onRequestClose()}>
+      <DialogContent
+        className="max-h-[92vh] gap-0 overflow-hidden p-0 sm:max-w-[940px]"
+        onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          onRequestClose();
+        }}
+      >
+        <DialogHeader className="border-b px-6 py-4 text-left">
+          <DialogTitle>Editar episódio</DialogTitle>
+          <DialogDescription>
+            Atualize as informações do episódio no acervo.{" "}
+            {value.title ? <span className="font-medium">{value.title}</span> : null}
+          </DialogDescription>
+        </DialogHeader>
 
-          <LinkPairEditor
-            title="Links do participante"
-            pairs={value.participantLinks || []}
-            onChange={(next) => setLinks("participantLinks", next)}
-          />
-        </div>
-        <LinkPairEditor
-          title="Links do episódio"
-          pairs={value.links || []}
-          onChange={(next) => setLinks("links", next)}
-        />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="YouTube URL">
-            <Input
-              value={embed.youtube || ""}
-              onChange={(e) => setEmbed({ youtube: e.target.value })}
-            />
-          </Field>
-          <Field label="Spotify URL">
-            <Input
-              value={embed.spotify || ""}
-              onChange={(e) => setEmbed({ spotify: e.target.value })}
-            />
-          </Field>
-          <Field label="RSS / URL original">
-            <Input
-              value={value.sourceUrl || ""}
-              onChange={(e) => set({ sourceUrl: e.target.value })}
-            />
-          </Field>
-          <Field label="MP3 URL">
-            <Input value={embed.mp3 || ""} onChange={(e) => setEmbed({ mp3: e.target.value })} />
-          </Field>
-        </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={embed.videoEnabled !== false}
-            onChange={(e) => setEmbed({ videoEnabled: e.target.checked })}
-          />
-          Exibir player de vídeo
-        </label>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Thumbnail (upload)">
-            <input
-              type="file"
-              accept="image/*"
-              disabled={uploading}
-              onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0], "thumbnail")}
-            />
-            {embed.thumbnail ? (
-              <div className="flex items-center gap-2">
-                <img
-                  src={embed.thumbnail}
-                  alt="Capa atual do episódio"
-                  className="h-16 w-16 rounded border object-cover"
-                  loading="lazy"
+        <div className="max-h-[calc(92vh-11rem)] space-y-4 overflow-y-auto px-6 py-4">
+          <Section title="1. Identificação do episódio">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Código (ex.: T01EP00)">
+                <Input value={value.code || ""} onChange={(e) => set({ code: e.target.value })} />
+              </Field>
+              <Field label="Título *">
+                <Input value={value.title || ""} onChange={(e) => set({ title: e.target.value })} />
+              </Field>
+              <Field label="Slug">
+                <div className="flex gap-2">
+                  <Input value={value.slug || ""} onChange={(e) => set({ slug: e.target.value })} />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => set({ slug: slugify(value.title || value.code || value.id) })}
+                  >
+                    Gerar slug
+                  </Button>
+                </div>
+              </Field>
+              <Field label="Data">
+                <Input value={value.date || ""} onChange={(e) => set({ date: e.target.value })} />
+              </Field>
+              <Field label="Duração">
+                <Input
+                  value={value.duration || ""}
+                  onChange={(e) => set({ duration: e.target.value })}
                 />
-                <span className="text-xs text-muted-foreground">
-                  {isBase64(embed.thumbnail) ? "base64 legado" : "imagem enviada"}
-                </span>
+              </Field>
+              <Field label="Tags (separadas por vírgula)">
+                <Input
+                  value={(value.tags || []).join(", ")}
+                  onChange={(e) => set({ tags: parseList(e.target.value) })}
+                />
+              </Field>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={value.published !== false}
+                onChange={(e) => set({ published: e.target.checked })}
+              />
+              Publicado
+            </label>
+          </Section>
+
+          <Section
+            title="2. Artista vinculado"
+            hint="O vínculo controla o catálogo de artistas e a cascata de publicação."
+          >
+            <div className="space-y-1 text-sm">
+              {link.isEp00 ? (
+                <p className="text-muted-foreground">
+                  Este episódio é institucional/de apresentação e não controla publicação de
+                  artistas.
+                </p>
+              ) : link.artist ? (
+                <>
+                  <p>
+                    {link.artist.name || link.artist.id}{" "}
+                    <span className="text-muted-foreground">({link.artistId})</span>{" "}
+                    <Badge variant={link.artistPublished ? "default" : "secondary"}>
+                      {link.artistPublished ? "Artista publicado" : "Artista oculto"}
+                    </Badge>
+                  </p>
+                  <p className="text-muted-foreground">
+                    {link.publishedCount} episódio(s) publicado(s) · {link.draftCount}{" "}
+                    oculto(s)/rascunho (EP00 não é contado).
+                  </p>
+                  {link.otherPublishedCount > 0 ? (
+                    <p className="text-muted-foreground">
+                      Este artista possui outros episódios publicados. Ele continuará visível no
+                      catálogo.
+                    </p>
+                  ) : (
+                    <p className="text-amber-600">
+                      Este é o único episódio publicado vinculado a este artista. Ao despublicar, o
+                      painel oferecerá ocultar o artista também.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-amber-600">Este episódio não possui artista vinculado.</p>
+              )}
+              {artistIdMissing ? (
+                <p className="text-destructive">
+                  O artistId atual não corresponde a nenhum artista cadastrado. Escolha o artista
+                  correto abaixo.
+                </p>
+              ) : null}
+            </div>
+
+            {link.isEp00 ? null : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Selecionar artista cadastrado">
+                  <Select
+                    value={artistIdValue || "none"}
+                    onValueChange={(v) => {
+                      if (v === "none") {
+                        set({ artistId: "", artist: "" });
+                        return;
+                      }
+                      const picked = artists.find((a) => a.id === v);
+                      set({ artistId: v, artist: picked?.name || value.artist || "" });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sem artista vinculado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sem artista vinculado</SelectItem>
+                      {artists.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.name || a.id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Ações do vínculo">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => set({ artistId: "", artist: "" })}
+                    >
+                      Remover vínculo
+                    </Button>
+                    {link.artist ? (
+                      <a
+                        href={`/artistas?artist=${encodeURIComponent(link.artist.slug || link.artist.id)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex h-9 items-center rounded-md border px-3 text-sm hover:bg-muted"
+                      >
+                        Abrir artista
+                      </a>
+                    ) : null}
+                  </div>
+                </Field>
+                <Field label="Artista (nome exibido)">
+                  <Input
+                    value={value.artist || ""}
+                    onChange={(e) => set({ artist: e.target.value })}
+                  />
+                </Field>
+                <Field label="Artista (id/slug)">
+                  <Input
+                    value={value.artistId || ""}
+                    onChange={(e) => set({ artistId: e.target.value })}
+                  />
+                </Field>
               </div>
-            ) : null}
-          </Field>
-          <Field label="Áudio MP3 (upload)">
-            <input
-              type="file"
-              accept="audio/*"
-              disabled={uploading}
-              onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0], "mp3")}
+            )}
+          </Section>
+
+          <Section title="3. Descrições do episódio">
+            <Field label="Descrição curta">
+              <Textarea
+                value={value.description || ""}
+                onChange={(e) => set({ description: e.target.value })}
+              />
+            </Field>
+            <Field label="Resumo expandido">
+              <Textarea
+                value={value.summary || ""}
+                onChange={(e) => set({ summary: e.target.value })}
+              />
+            </Field>
+          </Section>
+
+          <Section
+            title="4. Participante deste episódio"
+            hint="Campos individuais deste episódio. Editar aqui não altera nenhum outro episódio."
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Título do bloco">
+                <Input
+                  value={value.participantTitle || ""}
+                  onChange={(e) => set({ participantTitle: e.target.value })}
+                  placeholder='Ex.: "Sobre o participante", "Sobre os anfitriões"'
+                />
+              </Field>
+              <Field label="Tags do participante (vírgula)">
+                <Input
+                  value={(value.participantTags || []).join(", ")}
+                  onChange={(e) => set({ participantTags: parseList(e.target.value) })}
+                />
+              </Field>
+            </div>
+            <Field label="Sobre o participante (individual deste episódio)">
+              <Textarea
+                value={value.participantAbout || ""}
+                onChange={(e) => set({ participantAbout: e.target.value })}
+                placeholder="Texto exclusivo deste episódio. Se vazio, o site usa a bio do artista como fallback."
+              />
+            </Field>
+            <Field label="Bio complementar do participante (opcional)">
+              <Textarea
+                value={value.participantBio || ""}
+                onChange={(e) => set({ participantBio: e.target.value })}
+                placeholder="Só aparece se preenchido. Fallback: bio do artista."
+              />
+            </Field>
+            <LinkPairEditor
+              title="Links do participante"
+              pairs={value.participantLinks || []}
+              onChange={(next) => setLinks("participantLinks", next)}
             />
-          </Field>
+          </Section>
+
+          <Section title="5. Fotos do participante" hint="Adicione até 3 fotos para este episódio.">
+            <ParticipantImagesEditor
+              episodeId={value.id}
+              legacyImage={value.participantImage}
+              images={normalizeParticipantImages(value.participantImages)}
+              uploading={uploading}
+              onUploadFiles={onUploadParticipantImages}
+              onChange={(next) => set({ participantImages: next })}
+            />
+          </Section>
+
+          <Section title="6. Links e players do episódio">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="YouTube URL">
+                <Input
+                  value={embed.youtube || ""}
+                  onChange={(e) => setEmbed({ youtube: e.target.value })}
+                />
+              </Field>
+              <Field label="Spotify URL">
+                <Input
+                  value={embed.spotify || ""}
+                  onChange={(e) => setEmbed({ spotify: e.target.value })}
+                />
+              </Field>
+              <Field label="RSS / URL original">
+                <Input
+                  value={value.sourceUrl || ""}
+                  onChange={(e) => set({ sourceUrl: e.target.value })}
+                />
+              </Field>
+              <Field label="MP3 URL">
+                <Input
+                  value={embed.mp3 || ""}
+                  onChange={(e) => setEmbed({ mp3: e.target.value })}
+                />
+              </Field>
+              <Field label="Áudio MP3 (upload)">
+                <input
+                  type="file"
+                  accept="audio/*"
+                  disabled={uploading}
+                  onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0], "mp3")}
+                />
+              </Field>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={embed.videoEnabled !== false}
+                onChange={(e) => setEmbed({ videoEnabled: e.target.checked })}
+              />
+              Exibir player de vídeo
+            </label>
+            <LinkPairEditor
+              title="Links do episódio"
+              pairs={value.links || []}
+              onChange={(next) => setLinks("links", next)}
+            />
+          </Section>
+
+          <Section
+            title="7. Thumbnail / capa do episódio"
+            hint="Fonte oficial da capa exibida na Home, na lista e na página do episódio. Não confundir com as fotos do participante."
+          >
+            <div className="flex flex-wrap items-center gap-4">
+              {embed.thumbnail ? (
+                <div className="flex items-center gap-2">
+                  <img
+                    src={embed.thumbnail}
+                    alt="Capa atual do episódio"
+                    className="h-20 w-20 rounded border object-cover"
+                    loading="lazy"
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {isBase64(embed.thumbnail) ? "base64 legado" : "imagem enviada"}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-sm text-amber-600">Este episódio ainda não tem capa.</span>
+              )}
+              <Field label={embed.thumbnail ? "Alterar capa (upload)" : "Enviar capa"}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={uploading}
+                  onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0], "thumbnail")}
+                />
+              </Field>
+              {embed.thumbnail ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEmbed({ thumbnail: "" })}
+                >
+                  Remover capa
+                </Button>
+              ) : null}
+            </div>
+          </Section>
+
+          <Section
+            title="8. Publicação e cascata"
+            hint="Nada é apagado. A cascata com o artista vinculado é sempre confirmada no salvamento."
+          >
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={value.published !== false}
+                onChange={(e) => set({ published: e.target.checked })}
+              />
+              Publicado
+            </label>
+            {link.isEp00 ? (
+              <p className="text-xs text-muted-foreground">
+                Este episódio é institucional/de apresentação e não aciona cascata de artistas.
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Ao salvar, o painel perguntará se o artista vinculado também deve ser
+                ocultado/publicado. A opção vem desmarcada por padrão.
+              </p>
+            )}
+          </Section>
         </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={value.published !== false}
-            onChange={(e) => set({ published: e.target.checked })}
-          />
-          Publicado
-        </label>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onCancel}>
+
+        <DialogFooter className="border-t px-6 py-4">
+          {validationMsg ? (
+            <p className="mr-auto text-sm text-destructive">{validationMsg}</p>
+          ) : null}
+          <Button variant="outline" onClick={onRequestClose}>
             Cancelar
           </Button>
-          <Button onClick={onApply} disabled={uploading}>
-            Aplicar
+          <Button onClick={submit} disabled={uploading}>
+            Salvar alterações
           </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
