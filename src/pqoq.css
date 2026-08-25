@@ -2278,3 +2278,116 @@ body.admin-mode .gallery-modal-copy .is-empty {
   background: #000;
   object-fit: contain;
 }
+
+/* =========================================================================
+   BLOCO 38D — Botão flutuante de doação + modal
+   Canto inferior esquerdo por padrão (evita o badge à direita e o dock
+   central do modo edição). Oculto em admin/grade modular e quando outro
+   modal está aberto (classe .is-hidden aplicada pelo script).
+   ========================================================================= */
+.donation-fab {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 90;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 999px;
+  background: var(--accent, #6b7f4a);
+  color: #fdf9ef;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(28, 26, 20, 0.24);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.donation-fab[data-position="right"] {
+  left: auto;
+  right: 20px;
+  bottom: 84px; /* acima do badge do Lovable */
+}
+
+.donation-fab:hover,
+.donation-fab:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(28, 26, 20, 0.3);
+}
+
+.donation-fab:focus-visible {
+  outline: 3px solid rgba(253, 249, 239, 0.85);
+  outline-offset: 2px;
+}
+
+.donation-fab.is-hidden { display: none; }
+
+.donation-fab-icon { font-size: 1.05rem; line-height: 1; }
+
+.donation-fab.is-animated { animation: donation-pulse 2.6s ease-in-out infinite; }
+
+@keyframes donation-pulse {
+  0%, 100% { box-shadow: 0 10px 24px rgba(28, 26, 20, 0.24); }
+  50% { box-shadow: 0 10px 24px rgba(28, 26, 20, 0.24), 0 0 0 10px rgba(107, 127, 74, 0.16); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .donation-fab,
+  .donation-fab.is-animated {
+    animation: none;
+    transition: none;
+  }
+}
+
+.donation-modal-panel { max-width: 520px; }
+.donation-subtitle { margin: 0 0 10px; font-weight: 600; }
+.donation-text { line-height: 1.6; white-space: normal; }
+.donation-actions { margin: 16px 0 0; }
+
+.donation-pix {
+  margin-top: 18px;
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.donation-pix-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+}
+
+.donation-pix-key {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92rem;
+  word-break: break-all;
+}
+
+.donation-qr { margin-top: 14px; }
+.donation-qr img {
+  width: 180px;
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  display: block;
+}
+
+.donation-share { margin: 18px 0 0; }
+
+@media (max-width: 640px) {
+  .donation-fab {
+    bottom: 16px;
+    left: 16px;
+    padding: 10px 14px;
+    font-size: 0.86rem;
+  }
+  .donation-fab[data-position="right"] { right: 16px; left: auto; }
+}

@@ -1204,6 +1204,35 @@
       .filter((entry) => entry.href || entry.label);
   }
 
+  // BLOCO 38C — enquadramento opcional da imagem (focalPoint). Nunca altera o
+  // arquivo original: só escreve background-position/background-size.
+  function normalizeFocalPoint(raw) {
+    const src = raw && typeof raw === "object" ? raw : {};
+    const num = (value, fallback) => {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : fallback;
+    };
+    const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
+    return {
+      x: clamp(num(src.x, 50), 0, 100),
+      y: clamp(num(src.y, 50), 0, 100),
+      zoom: clamp(num(src.zoom, 1), 1, 3)
+    };
+  }
+
+  function focalStyleCss(focal) {
+    const f = normalizeFocalPoint(focal);
+    // zoom 1 = comportamento atual (cover). Acima de 1 usamos largura em % com
+    // altura automática, o que amplia sem distorcer a proporção.
+    const size = f.zoom > 1 ? `${Math.round(f.zoom * 100)}%` : "cover";
+    return `background-position:${f.x}% ${f.y}%;background-size:${size};background-repeat:no-repeat;`;
+  }
+
+  function backgroundStyleAttr(url, focal) {
+    if (!url) return "";
+    return ` style="background-image:url('${escapeHtml(url)}');${focalStyleCss(focal)}"`;
+  }
+
   function normalizeSupportCard(card, index) {
     const tags = Array.isArray(card.tags)
       ? card.tags.map((t) => String(t).trim()).filter(Boolean)
@@ -1220,6 +1249,7 @@
       description: card.description || "Descricao editavel do card de apoio.",
       fullText: card.fullText || "",
       image: card.image || "",
+      focalPoint: normalizeFocalPoint(card.focalPoint),
       relation: card.relation || "",
       contact: card.contact || "",
       location: card.location || "",
@@ -1262,7 +1292,7 @@
   }
 
   function supportCardTemplate(section, card) {
-    const imageStyle = card.image ? ` style="background-image:url('${escapeHtml(card.image)}')"` : "";
+    const imageStyle = backgroundStyleAttr(card.image, card.focalPoint);
     const unpub = card.published ? "" : " is-unpublished";
     const tagsHtml = card.tags.length
       ? `<div class="tag-list">${card.tags.map((t) => `<span>${escapeHtml(t)}</span>`).join("")}</div>`
@@ -1396,7 +1426,7 @@
 
     body.innerHTML = `
       <section class="support-modal-hero">
-        <label class="support-modal-image${card.image ? "" : " is-empty"}"${card.image ? ` style="background-image:url('${escapeHtml(card.image)}')"` : ""}>
+        <label class="support-modal-image${card.image ? "" : " is-empty"}"${backgroundStyleAttr(card.image, card.focalPoint)}>
           <span>${card.image ? "" : "Imagem / logo"}</span>
           <input class="admin-only" type="file" accept="image/*" data-support-image data-support-section="${section}" data-support-id="${card.id}" aria-label="Enviar imagem do card">
         </label>
@@ -2003,6 +2033,180 @@
     popover.style.top = `${stored.top}px`;
   }
 
+  // =========================================================================
+  // BLOCO 38D — WIDGET FLUTUANTE DE DOAÇÃO ("donation-widget")
+  // Conteúdo 100% público (sem chave "-admin"): a visibilidade é controlada por
+  // `enabled` + published da linha. Oculto no modo edição, na grade modular, em
+  // /pqoqadmin e enquanto qualquer modal/lightbox estiver aberto.
+  // =========================================================================
+  const DONATION_KEY = "donation-widget";
+  const donationDefaults = {
+    enabled: false,
+    label: "Apoie o PQOQ",
+    title: "Apoie o PQOQ",
+    subtitle: "",
+    text: "",
+    buttonLabel: "",
+    buttonHref: "",
+    pixKey: "",
+    showPix: false,
+    qrImage: "",
+    shareText: "",
+    position: "left",
+    animate: true
+  };
+
+  function safeHttpUrl(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    return /^https?:\/\//i.test(raw) ? raw : "";
+  }
+
+  function donationConfig() {
+    const raw = getState(DONATION_KEY, donationDefaults) || {};
+    const str = (v) => String(v ?? "").trim();
+    return {
+      enabled: raw.enabled === true,
+      label: str(raw.label) || "Apoie o PQOQ",
+      title: str(raw.title) || "Apoie o PQOQ",
+      subtitle: str(raw.subtitle),
+      text: str(raw.text),
+      buttonLabel: str(raw.buttonLabel),
+      buttonHref: safeHttpUrl(raw.buttonHref),
+      pixKey: str(raw.pixKey),
+      showPix: raw.showPix === true,
+      qrImage: str(raw.qrImage),
+      shareText: str(raw.shareText),
+      position: raw.position === "right" ? "right" : "left",
+      animate: raw.animate !== false
+    };
+  }
+
+  function donationHidden() {
+    if (isAdmin()) return true;
+    if (document.body.classList.contains("admin-mode")) return true;
+    if (document.body.classList.contains("layout-grid-mode")) return true;
+    if (gridMode) return true;
+    try {
+      if (window.location.pathname.startsWith("/pqoqadmin")) return true;
+    } catch {
+      /* ignore */
+    }
+    return false;
+  }
+
+  function ensureDonationWidget() {
+    const config = donationConfig();
+    let button = document.getElementById("donation-fab");
+    let modal = document.getElementById("donation-modal");
+
+    if (!config.enabled || donationHidden()) {
+      if (button) button.remove();
+      if (modal) modal.remove();
+      return;
+    }
+
+    if (!button) {
+      document.body.insertAdjacentHTML("beforeend", `
+        <button class="donation-fab" id="donation-fab" type="button" data-open-donation aria-label="Apoie o PQOQ">
+          <span class="donation-fab-icon" aria-hidden="true">&#9829;</span>
+          <span class="donation-fab-label"></span>
+        </button>
+      `);
+      button = document.getElementById("donation-fab");
+    }
+    if (!modal) {
+      document.body.insertAdjacentHTML("beforeend", `
+        <div class="modal donation-modal" id="donation-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="donation-modal-title">
+          <div class="modal-panel donation-modal-panel">
+            <div class="modal-head">
+              <h2 id="donation-modal-title">Apoie o PQOQ</h2>
+              <button class="close-modal" type="button" data-close-donation aria-label="Fechar modal" title="Fechar modal">&times;</button>
+            </div>
+            <div class="modal-body" id="donation-modal-body"></div>
+          </div>
+        </div>
+      `);
+      modal = document.getElementById("donation-modal");
+    }
+
+    if (button) {
+      button.dataset.position = config.position;
+      button.classList.toggle("is-animated", config.animate);
+      const label = button.querySelector(".donation-fab-label");
+      if (label && label.textContent !== config.label) label.textContent = config.label;
+      button.setAttribute("aria-label", config.label);
+      // Nunca sobrepor um modal/lightbox aberto.
+      const otherOpen = Array.from(
+        document.querySelectorAll(".modal.is-open, #gallery-lightbox.is-open"),
+      ).some((el) => el.id !== "donation-modal");
+      button.classList.toggle("is-hidden", otherOpen);
+    }
+
+    const title = document.getElementById("donation-modal-title");
+    if (title && title.textContent !== config.title) title.textContent = config.title;
+
+    const body = document.getElementById("donation-modal-body");
+    if (!body) return;
+    const html = `
+      ${config.subtitle ? `<p class="donation-subtitle">${escapeHtml(config.subtitle)}</p>` : ""}
+      ${config.text ? `<div class="donation-text">${escapeHtml(config.text).replace(/\n/g, "<br>")}</div>` : ""}
+      ${config.buttonHref && config.buttonLabel
+        ? `<p class="donation-actions"><a class="button primary" href="${escapeHtml(config.buttonHref)}" target="_blank" rel="noopener noreferrer">${escapeHtml(config.buttonLabel)}</a></p>`
+        : ""}
+      ${config.showPix && config.pixKey
+        ? `<div class="donation-pix">
+             <span class="donation-pix-label">Chave Pix</span>
+             <code class="donation-pix-key">${escapeHtml(config.pixKey)}</code>
+             <button class="button small" type="button" data-copy-pix>Copiar chave</button>
+           </div>`
+        : ""}
+      ${config.showPix && config.qrImage
+        ? `<div class="donation-qr"><img src="${escapeHtml(config.qrImage)}" alt="QR Code para doação via Pix" loading="lazy"></div>`
+        : ""}
+      <p class="donation-share">
+        <button class="button small" type="button" data-share-donation>Compartilhar</button>
+      </p>
+    `;
+    if (body.dataset.renderedHtml !== html) {
+      body.dataset.renderedHtml = html;
+      body.innerHTML = html;
+    }
+  }
+
+  function openDonation() {
+    ensureDonationWidget();
+    const modal = document.getElementById("donation-modal");
+    if (!modal) return;
+    modal.classList.add("is-open");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("donation-open");
+  }
+
+  function closeDonation() {
+    const modal = document.getElementById("donation-modal");
+    if (!modal) return;
+    modal.classList.remove("is-open");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("donation-open");
+  }
+
+  async function copyPixKey() {
+    const config = donationConfig();
+    if (!config.showPix || !config.pixKey) return;
+    try {
+      await navigator.clipboard.writeText(config.pixKey);
+      galleryToast("Chave Pix copiada");
+    } catch {
+      galleryToast("Nao foi possivel copiar a chave");
+    }
+  }
+
+  function shareDonation() {
+    const config = donationConfig();
+    shareContent(`${config.title} - PQOQ`, config.shareText || config.subtitle || "", "");
+  }
+
   function enhancePage() {
     ensureStylePopoverLinkField();
     syncStylePopoverLinkField();
@@ -2022,6 +2226,7 @@
     restorePopoverPosition();
     applyLayoutState();
     syncLayoutDock();
+    ensureDonationWidget();
   }
 
   function bindGlobalEvents() {
@@ -2048,6 +2253,26 @@
       true,
     );
     document.addEventListener("click", (event) => {
+      // Widget de doação (independente do restante do editor)
+      if (event.target.closest("[data-open-donation]")) {
+        event.preventDefault();
+        openDonation();
+        return;
+      }
+      if (event.target.closest("[data-close-donation]") || event.target.id === "donation-modal") {
+        closeDonation();
+        return;
+      }
+      if (event.target.closest("[data-copy-pix]")) {
+        event.preventDefault();
+        void copyPixKey();
+        return;
+      }
+      if (event.target.closest("[data-share-donation]")) {
+        event.preventDefault();
+        shareDonation();
+        return;
+      }
       // Lightbox controls (highest priority, sits above the modal)
       const openLb = event.target.closest("[data-open-lightbox]");
       if (openLb) {
@@ -2310,6 +2535,10 @@
       const supModal = document.getElementById("support-modal");
       if (event.key === "Escape" && supModal && supModal.classList.contains("is-open")) {
         closeSupport();
+      }
+      const donationModal = document.getElementById("donation-modal");
+      if (event.key === "Escape" && donationModal && donationModal.classList.contains("is-open")) {
+        closeDonation();
       }
     });
 
