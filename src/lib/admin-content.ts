@@ -176,8 +176,11 @@ export async function saveContentValue(key: AdminContentKey, value: unknown): Pr
 const MEDIA_BUCKET = "site-media";
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const AUDIO_TYPES = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/ogg"];
+// BLOCO 38B: vídeo do acervo (MP4/WebM).
+const VIDEO_TYPES = ["video/mp4", "video/webm"];
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_AUDIO_BYTES = 50 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 const SIGNED_URL_TTL = 60 * 60 * 24 * 365 * 10;
 
 function sanitizeBase(name: string): string {
