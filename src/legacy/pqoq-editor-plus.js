@@ -796,6 +796,10 @@
     } else {
       item[field] = value;
     }
+    // BLOCO 38B: o tipo de midia acompanha o link de video informado.
+    if (field === "videoUrl") {
+      item.mediaType = String(value || "").trim() ? "video" : "image";
+    }
     saveGalleryCards(list);
   }
 
