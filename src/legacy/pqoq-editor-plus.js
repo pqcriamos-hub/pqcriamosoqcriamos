@@ -1204,6 +1204,35 @@
       .filter((entry) => entry.href || entry.label);
   }
 
+  // BLOCO 38C — enquadramento opcional da imagem (focalPoint). Nunca altera o
+  // arquivo original: só escreve background-position/background-size.
+  function normalizeFocalPoint(raw) {
+    const src = raw && typeof raw === "object" ? raw : {};
+    const num = (value, fallback) => {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : fallback;
+    };
+    const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
+    return {
+      x: clamp(num(src.x, 50), 0, 100),
+      y: clamp(num(src.y, 50), 0, 100),
+      zoom: clamp(num(src.zoom, 1), 1, 3)
+    };
+  }
+
+  function focalStyleCss(focal) {
+    const f = normalizeFocalPoint(focal);
+    // zoom 1 = comportamento atual (cover). Acima de 1 usamos largura em % com
+    // altura automática, o que amplia sem distorcer a proporção.
+    const size = f.zoom > 1 ? `${Math.round(f.zoom * 100)}%` : "cover";
+    return `background-position:${f.x}% ${f.y}%;background-size:${size};background-repeat:no-repeat;`;
+  }
+
+  function backgroundStyleAttr(url, focal) {
+    if (!url) return "";
+    return ` style="background-image:url('${escapeHtml(url)}');${focalStyleCss(focal)}"`;
+  }
+
   function normalizeSupportCard(card, index) {
     const tags = Array.isArray(card.tags)
       ? card.tags.map((t) => String(t).trim()).filter(Boolean)
@@ -1220,6 +1249,7 @@
       description: card.description || "Descricao editavel do card de apoio.",
       fullText: card.fullText || "",
       image: card.image || "",
+      focalPoint: normalizeFocalPoint(card.focalPoint),
       relation: card.relation || "",
       contact: card.contact || "",
       location: card.location || "",
