@@ -2536,6 +2536,10 @@
       if (event.key === "Escape" && supModal && supModal.classList.contains("is-open")) {
         closeSupport();
       }
+      const donationModal = document.getElementById("donation-modal");
+      if (event.key === "Escape" && donationModal && donationModal.classList.contains("is-open")) {
+        closeDonation();
+      }
     });
 
     document.addEventListener("pointermove", (event) => {
