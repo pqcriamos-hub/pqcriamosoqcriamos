@@ -2001,7 +2001,8 @@
       if (openParticipant) {
         event.preventDefault();
         event.stopPropagation();
-        openParticipantLightbox(openParticipant);
+        // No modo modular o clique é para arrastar a foto, não para ampliar.
+        if (!(gridMode && isAdmin())) openParticipantLightbox(openParticipant);
         return;
       }
       const openPortfolio = event.target.closest("[data-open-portfolio-lightbox]");
