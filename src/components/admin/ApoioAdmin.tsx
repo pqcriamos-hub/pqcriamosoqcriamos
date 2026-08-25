@@ -752,7 +752,7 @@ function FocalPointEditor({
           aspectRatio: "16 / 9",
           backgroundImage: `url("${image}")`,
           backgroundPosition: `${x}% ${y}%`,
-          backgroundSize: `${zoom * 100}% auto`,
+          backgroundSize: zoom > 1 ? `${Math.round(zoom * 100)}%` : "cover",
           backgroundRepeat: "no-repeat",
         }}
       />
