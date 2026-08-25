@@ -586,13 +586,15 @@
   function galleryCardTemplate(card) {
     const coverStyle = card.coverImage ? ` style="background-image:url('${escapeHtml(card.coverImage)}')"` : "";
     const unpub = card.published ? "" : " is-unpublished";
+    // BLOCO 38A: is-empty esconde no publico e mantem editavel no admin.
+    const empty = (value) => (String(value || "").trim() ? "" : " is-empty");
     return `
       <article class="card gallery-card gallery-card-plus${unpub}" data-gallery-id="${card.id}">
-        <button class="gallery-thumb gallery-card-open" type="button" data-open-gallery="${card.id}" data-layout-key="gallery.${card.id}.cover"${coverStyle}></button>
+        <button class="gallery-thumb gallery-card-open${card.coverImage ? "" : " is-empty"}" type="button" data-open-gallery="${card.id}" data-layout-key="gallery.${card.id}.cover"${coverStyle}></button>
         <span class="gallery-status admin-only">${card.published ? "Publicada" : "Rascunho"}</span>
-        <div class="meta" data-gallery-field="meta" data-layout-key="gallery.${card.id}.meta">${escapeHtml(card.meta)}</div>
-        <h2 data-gallery-field="title" data-layout-key="gallery.${card.id}.title">${escapeHtml(card.title)}</h2>
-        <p data-gallery-field="description" data-layout-key="gallery.${card.id}.description">${escapeHtml(card.description)}</p>
+        <div class="meta${empty(card.meta)}" data-gallery-field="meta" data-layout-key="gallery.${card.id}.meta">${escapeHtml(card.meta)}</div>
+        <h2 class="${empty(card.title).trim()}" data-gallery-field="title" data-layout-key="gallery.${card.id}.title">${escapeHtml(card.title)}</h2>
+        <p class="${empty(card.description).trim()}" data-gallery-field="description" data-layout-key="gallery.${card.id}.description">${escapeHtml(card.description)}</p>
         <div class="artist-actions gallery-card-actions">
           <button class="button primary small" type="button" data-open-gallery="${card.id}" data-layout-key="gallery.${card.id}.button">Abrir galeria</button>
         </div>
