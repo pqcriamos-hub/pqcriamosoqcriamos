@@ -351,6 +351,7 @@ export function AcervoAdmin() {
           onChange={setEditing}
           onUploadCover={onUploadCover}
           onUploadItem={onUploadItem}
+          onUploadItemVideo={onUploadItemVideo}
           onCancel={() => setEditing(null)}
           onApply={applyEditor}
         />
