@@ -439,6 +439,18 @@
     return px;
   }
 
+  // Passo de snap conforme a grade escolhida. 0 = movimento livre.
+  function snapStepPx() {
+    const snap = GRID_KINDS[gridKind()].snap;
+    if (snap === "cm") return gridUnitPx();
+    if (snap === "columns") {
+      const main = document.querySelector("main");
+      const width = main ? main.getBoundingClientRect().width : 0;
+      return width ? width / 12 : gridUnitPx();
+    }
+    return typeof snap === "number" ? snap : gridUnitPx();
+  }
+
   function pxToCm(px) {
     return (px / 37.795).toFixed(1);
   }
