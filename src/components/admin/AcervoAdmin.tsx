@@ -492,7 +492,33 @@ function GalleryEditor({
                       ) : null}
                     </div>
                   ) : null}
-                </Field>
+                 </Field>
+                 <Field label="Tipo de mídia">
+                   <Select
+                     value={it.mediaType === "video" ? "video" : "image"}
+                     onValueChange={(v) => setItem(it.id, { mediaType: v as "image" | "video" })}
+                   >
+                     <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="image">Imagem</SelectItem>
+                       <SelectItem value="video">Vídeo</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 </Field>
+                 <Field label="Link do vídeo (YouTube, Vimeo ou .mp4/.webm)">
+                   <Input value={it.videoUrl || ""} placeholder="https://youtu.be/..."
+                     onChange={(e) => setItem(it.id, {
+                       videoUrl: e.target.value,
+                       mediaType: e.target.value.trim() ? "video" : "image",
+                     })} />
+                 </Field>
+                 <Field label="Vídeo (upload MP4/WebM, máx. 100 MB)">
+                   <input type="file" accept="video/mp4,video/webm" disabled={uploading}
+                     onChange={(e) => e.target.files?.[0] && onUploadItemVideo(it.id, e.target.files[0])} />
+                   {it.videoUrl ? (
+                     <p className="mt-1 truncate text-xs text-muted-foreground">{it.videoUrl}</p>
+                   ) : null}
+                 </Field>
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={it.published !== false}
                     onChange={(e) => setItem(it.id, { published: e.target.checked })} />
