@@ -2221,6 +2221,7 @@
     restorePopoverPosition();
     applyLayoutState();
     syncLayoutDock();
+    ensureDonationWidget();
   }
 
   function bindGlobalEvents() {
