@@ -2272,9 +2272,10 @@
       popoverDrag = null;
 
       if (!activeDrag) return;
-      const unit = gridUnitPx();
-      const nextX = Math.round((activeDrag.lastX || 0) / unit) * unit;
-      const nextY = Math.round((activeDrag.lastY || 0) / unit) * unit;
+      const unit = snapStepPx();
+      const snap = (value) => (unit > 0 ? Math.round((value || 0) / unit) * unit : Math.round(value || 0));
+      const nextX = snap(activeDrag.lastX);
+      const nextY = snap(activeDrag.lastY);
       activeDrag.element.style.translate = `${nextX}px ${nextY}px`;
       const state = layoutState();
       state[dragKey(activeDrag.element)] = { x: nextX, y: nextY };
