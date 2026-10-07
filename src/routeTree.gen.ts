@@ -9,55 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AcervoRouteImport } from './routes/acervo'
-import { Route as ApoioRouteImport } from './routes/apoio'
-import { Route as ArtistasRouteImport } from './routes/artistas'
-import { Route as EpisodioRouteImport } from './routes/episodio'
-import { Route as EpisodiosRouteImport } from './routes/episodios'
-import { Route as GaleriaRouteImport } from './routes/galeria'
-import { Route as PqoqadminRouteImport } from './routes/pqoqadmin'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SobreRouteImport } from './routes/sobre'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as PqoqadminRouteImport } from './routes/pqoqadmin'
+import { Route as GaleriaRouteImport } from './routes/galeria'
+import { Route as EpisodiosRouteImport } from './routes/episodios'
+import { Route as EpisodioRouteImport } from './routes/episodio'
+import { Route as ArtistasRouteImport } from './routes/artistas'
+import { Route as ApoioRouteImport } from './routes/apoio'
+import { Route as AcervoRouteImport } from './routes/acervo'
+import { Route as IndexRouteImport } from './routes/index'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AcervoRoute = AcervoRouteImport.update({
-  id: '/acervo',
-  path: '/acervo',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApoioRoute = ApoioRouteImport.update({
-  id: '/apoio',
-  path: '/apoio',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ArtistasRoute = ArtistasRouteImport.update({
-  id: '/artistas',
-  path: '/artistas',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EpisodioRoute = EpisodioRouteImport.update({
-  id: '/episodio',
-  path: '/episodio',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EpisodiosRoute = EpisodiosRouteImport.update({
-  id: '/episodios',
-  path: '/episodios',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GaleriaRoute = GaleriaRouteImport.update({
-  id: '/galeria',
-  path: '/galeria',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PqoqadminRoute = PqoqadminRouteImport.update({
-  id: '/pqoqadmin',
-  path: '/pqoqadmin',
+const SobreRoute = SobreRouteImport.update({
+  id: '/sobre',
+  path: '/sobre',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -65,9 +30,44 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SobreRoute = SobreRouteImport.update({
-  id: '/sobre',
-  path: '/sobre',
+const PqoqadminRoute = PqoqadminRouteImport.update({
+  id: '/pqoqadmin',
+  path: '/pqoqadmin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GaleriaRoute = GaleriaRouteImport.update({
+  id: '/galeria',
+  path: '/galeria',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EpisodiosRoute = EpisodiosRouteImport.update({
+  id: '/episodios',
+  path: '/episodios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EpisodioRoute = EpisodioRouteImport.update({
+  id: '/episodio',
+  path: '/episodio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArtistasRoute = ArtistasRouteImport.update({
+  id: '/artistas',
+  path: '/artistas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApoioRoute = ApoioRouteImport.update({
+  id: '/apoio',
+  path: '/apoio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AcervoRoute = AcervoRouteImport.update({
+  id: '/acervo',
+  path: '/acervo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -162,60 +162,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/acervo': {
-      id: '/acervo'
-      path: '/acervo'
-      fullPath: '/acervo'
-      preLoaderRoute: typeof AcervoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/apoio': {
-      id: '/apoio'
-      path: '/apoio'
-      fullPath: '/apoio'
-      preLoaderRoute: typeof ApoioRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/artistas': {
-      id: '/artistas'
-      path: '/artistas'
-      fullPath: '/artistas'
-      preLoaderRoute: typeof ArtistasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/episodio': {
-      id: '/episodio'
-      path: '/episodio'
-      fullPath: '/episodio'
-      preLoaderRoute: typeof EpisodioRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/episodios': {
-      id: '/episodios'
-      path: '/episodios'
-      fullPath: '/episodios'
-      preLoaderRoute: typeof EpisodiosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/galeria': {
-      id: '/galeria'
-      path: '/galeria'
-      fullPath: '/galeria'
-      preLoaderRoute: typeof GaleriaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pqoqadmin': {
-      id: '/pqoqadmin'
-      path: '/pqoqadmin'
-      fullPath: '/pqoqadmin'
-      preLoaderRoute: typeof PqoqadminRouteImport
+    '/sobre': {
+      id: '/sobre'
+      path: '/sobre'
+      fullPath: '/sobre'
+      preLoaderRoute: typeof SobreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -225,11 +176,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sobre': {
-      id: '/sobre'
-      path: '/sobre'
-      fullPath: '/sobre'
-      preLoaderRoute: typeof SobreRouteImport
+    '/pqoqadmin': {
+      id: '/pqoqadmin'
+      path: '/pqoqadmin'
+      fullPath: '/pqoqadmin'
+      preLoaderRoute: typeof PqoqadminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/galeria': {
+      id: '/galeria'
+      path: '/galeria'
+      fullPath: '/galeria'
+      preLoaderRoute: typeof GaleriaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/episodios': {
+      id: '/episodios'
+      path: '/episodios'
+      fullPath: '/episodios'
+      preLoaderRoute: typeof EpisodiosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/episodio': {
+      id: '/episodio'
+      path: '/episodio'
+      fullPath: '/episodio'
+      preLoaderRoute: typeof EpisodioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/artistas': {
+      id: '/artistas'
+      path: '/artistas'
+      fullPath: '/artistas'
+      preLoaderRoute: typeof ArtistasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apoio': {
+      id: '/apoio'
+      path: '/apoio'
+      fullPath: '/apoio'
+      preLoaderRoute: typeof ApoioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/acervo': {
+      id: '/acervo'
+      path: '/acervo'
+      fullPath: '/acervo'
+      preLoaderRoute: typeof AcervoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
