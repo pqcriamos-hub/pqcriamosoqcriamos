@@ -11,6 +11,7 @@ import {
   ExternalLink,
   LogOut,
   FileText,
+  FolderOpen,
 } from "lucide-react";
 import { AdminDashboard } from "./AdminDashboard";
 import { EpisodesAdmin } from "./EpisodesAdmin";
@@ -19,8 +20,9 @@ import { AcervoAdmin } from "./AcervoAdmin";
 import { ApoioAdmin } from "./ApoioAdmin";
 import { AccessAdmin } from "./AccessAdmin";
 import { PagesAdmin } from "./PagesAdmin";
+import { MediaLibrary } from "./MediaLibrary";
 
-type SectionId = "dashboard" | "pages" | "episodes" | "artists" | "acervo" | "apoio" | "access";
+type SectionId = "dashboard" | "pages" | "episodes" | "artists" | "acervo" | "apoio" | "media" | "access";
 
 interface NavItem {
   label: string;
@@ -38,6 +40,7 @@ const BASE_NAV: NavItem[] = [
   { label: "Artistas", icon: Users, section: "artists" },
   { label: "Acervo", icon: Images, section: "acervo" },
   { label: "Apoio", icon: HeartHandshake, section: "apoio" },
+  { label: "Mídias & Arquivos", icon: FolderOpen, section: "media" },
 ];
 
 const ACCESS_NAV: NavItem = { label: "Acessos", icon: ShieldCheck, section: "access" };
@@ -113,6 +116,7 @@ export function AdminShell({
               <option value="artists">Artistas</option>
               <option value="acervo">Acervo</option>
               <option value="apoio">Apoio</option>
+              <option value="media">Mídias &amp; Arquivos</option>
               {isAdmin ? <option value="access">Acessos</option> : null}
             </select>
             <Link
@@ -141,6 +145,7 @@ export function AdminShell({
           {active === "artists" ? <ArtistsAdmin /> : null}
           {active === "acervo" ? <AcervoAdmin /> : null}
           {active === "apoio" ? <ApoioAdmin /> : null}
+          {active === "media" ? <MediaLibrary /> : null}
           {active === "access" && isAdmin ? (
             <AccessAdmin
               currentUserId={userId}
