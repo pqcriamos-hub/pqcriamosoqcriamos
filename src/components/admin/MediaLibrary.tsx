@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Copy, FileAudio, FileVideo, File as FileIcon, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { formatBytes } from "@/lib/admin-content";
+import { Toaster } from "@/components/ui/sonner";
 
 const BUCKET = "site-media";
 const URL_TTL = 60 * 60 * 24 * 365 * 10;
@@ -114,6 +115,7 @@ export function MediaLibrary() {
 
   return (
     <section className="space-y-4">
+      <Toaster position="bottom-right" />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold">Mídias &amp; Arquivos</h2>
