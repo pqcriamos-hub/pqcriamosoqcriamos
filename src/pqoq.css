@@ -2384,10 +2384,18 @@ body.admin-mode .gallery-modal-copy .is-empty {
 
 @media (max-width: 640px) {
   .donation-fab {
-    bottom: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     left: 16px;
     padding: 10px 14px;
     font-size: 0.86rem;
   }
-  .donation-fab[data-position="right"] { right: 16px; left: auto; }
+  .donation-fab[data-position="right"] {
+    right: 16px;
+    left: auto;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+  /* Menu mobile aberto: não sobrepor a navegação. */
+  body.menu-open .donation-fab,
+  body.nav-open .donation-fab { display: none; }
+  .donation-modal-panel { max-height: 88vh; overflow-y: auto; }
 }
