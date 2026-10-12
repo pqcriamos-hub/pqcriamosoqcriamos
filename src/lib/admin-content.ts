@@ -527,6 +527,11 @@ export interface DonationWidget {
   shareText: string;
   position: "left" | "right";
   animate: boolean;
+  /** Financiamento contínuo (Catarse, Apoia.se, Benfeitoria…). */
+  recurringLabel: string;
+  recurringHref: string;
+  /** Onde o botão aparece: todas as páginas ou só Home/Apoio/Episódios. */
+  showOn: "all" | "key";
 }
 
 export const DONATION_DEFAULTS: DonationWidget = {
@@ -543,6 +548,9 @@ export const DONATION_DEFAULTS: DonationWidget = {
   shareText: "",
   position: "left",
   animate: true,
+  recurringLabel: "",
+  recurringHref: "",
+  showOn: "all",
 };
 
 export function genId(prefix: string): string {
