@@ -2053,7 +2053,10 @@
     qrImage: "",
     shareText: "",
     position: "left",
-    animate: true
+    animate: true,
+    recurringLabel: "",
+    recurringHref: "",
+    showOn: "all"
   };
 
   function safeHttpUrl(value) {
@@ -2078,17 +2081,25 @@
       qrImage: str(raw.qrImage),
       shareText: str(raw.shareText),
       position: raw.position === "right" ? "right" : "left",
-      animate: raw.animate !== false
+      animate: raw.animate !== false,
+      recurringLabel: str(raw.recurringLabel),
+      recurringHref: safeHttpUrl(raw.recurringHref),
+      showOn: raw.showOn === "key" ? "key" : "all"
     };
   }
 
-  function donationHidden() {
+  function donationHidden(config) {
     if (isAdmin()) return true;
     if (document.body.classList.contains("admin-mode")) return true;
     if (document.body.classList.contains("layout-grid-mode")) return true;
     if (gridMode) return true;
     try {
-      if (window.location.pathname.startsWith("/pqoqadmin")) return true;
+      const path = window.location.pathname;
+      if (path.startsWith("/pqoqadmin")) return true;
+      if (config && config.showOn === "key") {
+        const ok = path === "/" || path.startsWith("/apoio") || path.startsWith("/episodio");
+        if (!ok) return true;
+      }
     } catch {
       /* ignore */
     }
