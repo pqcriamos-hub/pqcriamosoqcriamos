@@ -473,6 +473,35 @@ function DonationAdmin() {
           )}
         </Field>
 
+        <div className="grid gap-4 border-t border-border pt-4 sm:grid-cols-2">
+          <Field label="Financiamento contínuo — rótulo (ex.: Apoie todo mês)">
+            <Input value={value.recurringLabel}
+              onChange={(e) => set({ recurringLabel: e.target.value })} />
+          </Field>
+          <Field label="Link (Catarse, Apoia.se, Benfeitoria…)">
+            <Input value={value.recurringHref}
+              onChange={(e) => set({ recurringHref: e.target.value })}
+              className={isValidUrl(value.recurringHref) ? "" : "border-destructive"} />
+            {isValidUrl(value.recurringHref) ? null : (
+              <span className="text-xs text-destructive">URL inválida (use http/https).</span>
+            )}
+          </Field>
+          <Field label="Onde exibir o botão">
+            <Select value={value.showOn} onValueChange={(v) => set({ showOn: v as "all" | "key" })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as páginas</SelectItem>
+                <SelectItem value="key">Só Home, Apoio e Episódios</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+        </div>
+        {value.enabled && !value.text && !value.buttonHref && !value.pixKey && !value.recurringHref ? (
+          <p className="text-xs text-amber-600">
+            O botão está ligado, mas o modal ainda não tem texto, link nem Pix.
+          </p>
+        ) : null}
+
         <div className="space-y-3 border-t border-border pt-4">
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={value.showPix}

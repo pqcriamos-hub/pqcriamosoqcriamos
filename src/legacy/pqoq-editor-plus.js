@@ -2053,7 +2053,10 @@
     qrImage: "",
     shareText: "",
     position: "left",
-    animate: true
+    animate: true,
+    recurringLabel: "",
+    recurringHref: "",
+    showOn: "all"
   };
 
   function safeHttpUrl(value) {
@@ -2078,17 +2081,25 @@
       qrImage: str(raw.qrImage),
       shareText: str(raw.shareText),
       position: raw.position === "right" ? "right" : "left",
-      animate: raw.animate !== false
+      animate: raw.animate !== false,
+      recurringLabel: str(raw.recurringLabel),
+      recurringHref: safeHttpUrl(raw.recurringHref),
+      showOn: raw.showOn === "key" ? "key" : "all"
     };
   }
 
-  function donationHidden() {
+  function donationHidden(config) {
     if (isAdmin()) return true;
     if (document.body.classList.contains("admin-mode")) return true;
     if (document.body.classList.contains("layout-grid-mode")) return true;
     if (gridMode) return true;
     try {
-      if (window.location.pathname.startsWith("/pqoqadmin")) return true;
+      const path = window.location.pathname;
+      if (path.startsWith("/pqoqadmin")) return true;
+      if (config && config.showOn === "key") {
+        const ok = path === "/" || path.startsWith("/apoio") || path.startsWith("/episodio");
+        if (!ok) return true;
+      }
     } catch {
       /* ignore */
     }
@@ -2100,7 +2111,7 @@
     let button = document.getElementById("donation-fab");
     let modal = document.getElementById("donation-modal");
 
-    if (!config.enabled || donationHidden()) {
+    if (!config.enabled || donationHidden(config)) {
       if (button) button.remove();
       if (modal) modal.remove();
       return;
@@ -2153,6 +2164,9 @@
       ${config.text ? `<div class="donation-text">${escapeHtml(config.text).replace(/\n/g, "<br>")}</div>` : ""}
       ${config.buttonHref && config.buttonLabel
         ? `<p class="donation-actions"><a class="button primary" href="${escapeHtml(config.buttonHref)}" target="_blank" rel="noopener noreferrer">${escapeHtml(config.buttonLabel)}</a></p>`
+        : ""}
+      ${config.recurringHref && config.recurringLabel
+        ? `<p class="donation-actions"><a class="button" href="${escapeHtml(config.recurringHref)}" target="_blank" rel="noopener noreferrer">${escapeHtml(config.recurringLabel)}</a></p>`
         : ""}
       ${config.showPix && config.pixKey
         ? `<div class="donation-pix">
