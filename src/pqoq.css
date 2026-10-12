@@ -2399,3 +2399,24 @@ body.admin-mode .gallery-modal-copy .is-empty {
   body.nav-open .donation-fab { display: none; }
   .donation-modal-panel { max-height: 88vh; overflow-y: auto; }
 }
+
+/* =========================================================================
+   BLOCO 39 — Foto inteira nas áreas internas (acervo, portfólio, modais).
+   Miniaturas pequenas (cards de lista, avatares, capas) continuam preenchidas.
+   Enquadramento manual (style inline do focalPoint) continua tendo prioridade.
+   ========================================================================= */
+.portfolio-image,
+.gallery-asset-image,
+.gallery-modal-cover,
+.support-modal-image {
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: var(--cream);
+}
+.gallery-asset-media img,
+.gallery-asset-media video,
+.episode-participant-photo {
+  object-fit: contain;
+  background-color: var(--cream);
+}
