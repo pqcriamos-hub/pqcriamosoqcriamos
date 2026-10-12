@@ -2111,7 +2111,7 @@
     let button = document.getElementById("donation-fab");
     let modal = document.getElementById("donation-modal");
 
-    if (!config.enabled || donationHidden()) {
+    if (!config.enabled || donationHidden(config)) {
       if (button) button.remove();
       if (modal) modal.remove();
       return;
@@ -2164,6 +2164,9 @@
       ${config.text ? `<div class="donation-text">${escapeHtml(config.text).replace(/\n/g, "<br>")}</div>` : ""}
       ${config.buttonHref && config.buttonLabel
         ? `<p class="donation-actions"><a class="button primary" href="${escapeHtml(config.buttonHref)}" target="_blank" rel="noopener noreferrer">${escapeHtml(config.buttonLabel)}</a></p>`
+        : ""}
+      ${config.recurringHref && config.recurringLabel
+        ? `<p class="donation-actions"><a class="button" href="${escapeHtml(config.recurringHref)}" target="_blank" rel="noopener noreferrer">${escapeHtml(config.recurringLabel)}</a></p>`
         : ""}
       ${config.showPix && config.pixKey
         ? `<div class="donation-pix">
