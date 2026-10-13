@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Copy, FileAudio, FileVideo, File as FileIcon, RefreshCw } from "lucide-react";
+import { Copy, FileAudio, FileVideo, File as FileIcon, RefreshCw, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { formatBytes } from "@/lib/admin-content";
 import { Toaster } from "@/components/ui/sonner";
@@ -10,6 +10,15 @@ import { Toaster } from "@/components/ui/sonner";
 const BUCKET = "site-media";
 const URL_TTL = 60 * 60 * 24 * 365 * 10;
 const MAX_DEPTH = 4;
+const MAX_UPLOAD = 100 * 1024 * 1024;
+const ACCEPT = "image/*,audio/*,video/mp4,video/webm,application/pdf";
+
+function safeName(n: string) {
+  const dot = n.lastIndexOf(".");
+  const base = (dot > 0 ? n.slice(0, dot) : n).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9-_]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase() || "arquivo";
+  const ext = dot > 0 ? n.slice(dot + 1).toLowerCase().replace(/[^a-z0-9]/g, "") : "";
+  return `${Date.now()}-${base}${ext ? "." + ext : ""}`;
+}
 
 interface MediaFile {
   path: string;
@@ -67,6 +76,8 @@ export function MediaLibrary() {
   const [query, setQuery] = useState("");
   const [date, setDate] = useState("");
   const [kind, setKind] = useState<Kind>("all");
+  const [uploading, setUploading] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -103,6 +114,28 @@ export function MediaLibrary() {
     });
   }, [files, query, date, kind]);
 
+  async function upload(list: FileList | File[] | null) {
+    const arr = Array.from(list || []);
+    if (!arr.length) return;
+    let ok = 0;
+    for (let i = 0; i < arr.length; i++) {
+      const f = arr[i];
+      if (f.size > MAX_UPLOAD) { toast.error(`${f.name}: maior que 100 MB.`); continue; }
+      setUploading(`Enviando ${i + 1} de ${arr.length}…`);
+      const folder = `biblioteca/${kindOf(f.type, f.name)}`;
+      const { error: err } = await supabase.storage.from(BUCKET).upload(`${folder}/${safeName(f.name)}`, f, { contentType: f.type || undefined, upsert: false });
+      if (err) toast.error(`${f.name}: ${err.message}`); else ok++;
+    }
+    setUploading(null);
+    if (ok) { toast.success(`${ok} arquivo(s) enviado(s).`); await load(); }
+  }
+
+  const counts = useMemo(() => {
+    const c = { all: files.length, image: 0, audio: 0, video: 0, other: 0 };
+    files.forEach((f) => { c[kindOf(f.mime, f.name)]++; });
+    return c;
+  }, [files]);
+
   async function copy(url?: string) {
     if (!url) return toast.error("URL indisponível para este arquivo.");
     try {
@@ -128,6 +161,28 @@ export function MediaLibrary() {
         </Button>
       </div>
 
+      <label
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => { e.preventDefault(); setDragOver(false); void upload(e.dataTransfer.files); }}
+        className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed p-6 text-center text-sm ${dragOver ? "border-primary bg-primary/5" : "border-border bg-muted/40"}`}
+      >
+        <Upload className="h-6 w-6 text-muted-foreground" />
+        <span className="font-medium">{uploading || "Arraste arquivos aqui ou clique para escolher"}</span>
+        <span className="text-xs text-muted-foreground">Imagens, áudios, vídeos MP4/WebM e PDF · até 100 MB cada · vários de uma vez</span>
+        <input type="file" multiple accept={ACCEPT} className="hidden" disabled={!!uploading}
+          onChange={(e) => { void upload(e.target.files); e.target.value = ""; }} />
+      </label>
+
+      <div className="flex flex-wrap gap-1 border-b border-border" role="tablist">
+        {([["all","Todos"],["image","Imagens"],["audio","Áudios"],["video","Vídeos"],["other","Documentos/Outros"]] as const).map(([k,l]) => (
+          <button key={k} role="tab" aria-selected={kind === k} onClick={() => setKind(k)}
+            className={`-mb-px border-b-2 px-3 py-2 text-sm ${kind === k ? "border-primary font-medium text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+            {l} <span className="text-xs text-muted-foreground">({counts[k]})</span>
+          </button>
+        ))}
+      </div>
+
       <div className="flex flex-wrap gap-2">
         <Input
           className="max-w-xs"
@@ -142,18 +197,6 @@ export function MediaLibrary() {
           onChange={(e) => setDate(e.target.value)}
           aria-label="Filtrar por data"
         />
-        <select
-          className="rounded-md border border-input bg-background px-2 text-sm"
-          value={kind}
-          onChange={(e) => setKind(e.target.value as Kind)}
-          aria-label="Tipo"
-        >
-          <option value="all">Todos os tipos</option>
-          <option value="image">Imagens</option>
-          <option value="audio">Áudios</option>
-          <option value="video">Vídeos</option>
-          <option value="other">Outros</option>
-        </select>
         {query || date || kind !== "all" ? (
           <Button variant="ghost" size="sm" onClick={() => { setQuery(""); setDate(""); setKind("all"); }}>
             Limpar
