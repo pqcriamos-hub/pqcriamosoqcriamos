@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Copy, FileAudio, FileVideo, File as FileIcon, RefreshCw, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { formatBytes } from "@/lib/admin-content";
+import { formatBytes, KEY_LABELS } from "@/lib/admin-content";
 import { Toaster } from "@/components/ui/sonner";
 
 const BUCKET = "site-media";
@@ -78,6 +78,7 @@ export function MediaLibrary() {
   const [kind, setKind] = useState<Kind>("all");
   const [uploading, setUploading] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [contentRows, setContentRows] = useState<{ key: string; text: string }[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -93,6 +94,12 @@ export function MediaLibrary() {
         list.forEach((f) => (f.url = map.get(f.path) || undefined));
       }
       setFiles(list);
+      const { data: rows } = await supabase.from("site_content").select("key, value");
+      setContentRows((rows || []).map((r) => {
+        let text = "";
+        try { text = JSON.stringify(r.value) || ""; } catch { /* ignore */ }
+        return { key: String(r.key), text };
+      }));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao listar arquivos.");
     } finally {
@@ -135,6 +142,18 @@ export function MediaLibrary() {
     files.forEach((f) => { c[kindOf(f.mime, f.name)]++; });
     return c;
   }, [files]);
+
+  function usedBy(path: string): string[] {
+    const enc = encodeURI(path);
+    const labels = new Set<string>();
+    for (const r of contentRows) {
+      if (r.text.includes(path) || r.text.includes(enc)) {
+        const base = r.key.replace(/-admin$/, "");
+        labels.add(KEY_LABELS[base] || base);
+      }
+    }
+    return [...labels];
+  }
 
   async function copy(url?: string) {
     if (!url) return toast.error("URL indisponível para este arquivo.");
@@ -243,6 +262,14 @@ export function MediaLibrary() {
                 <p className="text-[11px] text-muted-foreground">
                   {f.createdAt ? new Date(f.createdAt).toLocaleDateString("pt-BR") : "—"} · {formatBytes(f.size)}
                 </p>
+                {(() => {
+                  const u = usedBy(f.path);
+                  return (
+                    <p className={`truncate text-[11px] ${u.length ? "text-foreground" : "text-muted-foreground"}`} title={u.join(", ")}>
+                      {u.length ? `Em uso: ${u.join(", ")}` : "Sem uso detectado"}
+                    </p>
+                  );
+                })()}
                 <Button size="sm" variant="secondary" className="h-7 w-full text-xs" onClick={() => void copy(f.url)}>
                   <Copy className="mr-1 h-3 w-3" /> Copiar URL
                 </Button>
