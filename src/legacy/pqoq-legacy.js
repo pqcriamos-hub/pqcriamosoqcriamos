@@ -848,6 +848,21 @@
     if (alignButton) alignActiveStyle(alignButton.dataset.styleAlign);
   }
 
+  /** Lançamento programado: item só fica público quando publishAt <= agora. */
+  function isScheduledFuture(item) {
+    if (!item || !item.publishAt) return false;
+    const t = Date.parse(item.publishAt);
+    return Number.isFinite(t) && t > Date.now();
+  }
+  function isPublicLive(item) {
+    return !!item && item.published !== false && !isScheduledFuture(item);
+  }
+  function scheduleLabel(item) {
+    try {
+      return new Date(item.publishAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" });
+    } catch { return String(item.publishAt); }
+  }
+
   function artists() {
     return normalizeArtists(getState("artists", artistsDefault));
   }
@@ -1033,7 +1048,7 @@
     if (!container) return;
     const items = episodes()
       .filter((episode) => episode.id !== "t01ep00")
-      .filter((episode) => isOwnerEditing() || episode.published !== false)
+      .filter((episode) => isOwnerEditing() || isPublicLive(episode))
       .slice(0, 2);
     container.innerHTML = items.map((episode) => `
       <article class="home-episode" data-episode-id="${episode.id}" data-episode-link="${episodeHref(episode.id)}">
@@ -1056,7 +1071,7 @@
     const container = document.querySelector("[data-render-episode-list]");
     if (!container) return;
     container.innerHTML = episodes()
-      .filter((episode) => isOwnerEditing() || episode.published !== false)
+      .filter((episode) => isOwnerEditing() || isPublicLive(episode))
       .map((episode) => `
       <article class="card episode-card" data-episode-id="${episode.id}" data-editable="episode.${episode.id}" data-episode-link="${episodeHref(episode.id)}">
         ${episodeThumbMarkup(episode)}
@@ -1097,7 +1112,7 @@
     const container = document.querySelector("[data-render-artists]");
     if (!container) return;
     container.innerHTML = artists()
-      .filter((artist) => isOwnerEditing() || artist.published !== false)
+      .filter((artist) => isOwnerEditing() || isPublicLive(artist))
       .map(artistCard)
       .join("");
     applySavedStyles(container);
@@ -1421,7 +1436,11 @@
       container.innerHTML = '<div class="empty-state">Episódio indisponível. <a href="/episodios">Ver todos os episódios</a>.</div>';
       return;
     }
-    const visible = episodes().filter((item) => isOwnerEditing() || item.published !== false);
+    if (found && isScheduledFuture(found) && !isOwnerEditing()) {
+      container.innerHTML = `<div class="empty-state">Este episódio estreia em ${escapeHtml(scheduleLabel(found))}. <a href="/episodios">Ver todos os episódios</a>.</div>`;
+      return;
+    }
+    const visible = episodes().filter((item) => isOwnerEditing() || isPublicLive(item));
     const episode = found || visible[0];
     if (!episode) {
       container.innerHTML = '<div class="empty-state">Nenhum episódio cadastrado ainda.</div>';

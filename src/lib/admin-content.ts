@@ -284,6 +284,8 @@ export const MAX_PARTICIPANT_IMAGES = 3;
 
 export interface EpisodeItem {
   id: string;
+  /** ISO; quando futuro, o item só aparece ao público a partir dessa data. */
+  publishAt?: string;
   slug?: string;
   code?: string;
   title?: string;
@@ -382,6 +384,8 @@ export interface ArtistContactInfo {
 
 export interface ArtistItem {
   id: string;
+  /** ISO; quando futuro, o artista só aparece ao público a partir dessa data. */
+  publishAt?: string;
   slug?: string;
   name?: string;
   meta?: string;
@@ -629,4 +633,23 @@ export async function migrateBase64Media(): Promise<MediaMigrationResult> {
 
   if (!result.migrated.length && !result.errors.length) result.skipped = 1;
   return result;
+}
+
+/** Converte ISO -> valor de <input type="datetime-local"> (hora local). */
+export function isoToLocalInput(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+export function localInputToIso(value: string): string | undefined {
+  if (!value) return undefined;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+}
+export function isScheduledFuture(item: { publishAt?: string }): boolean {
+  if (!item.publishAt) return false;
+  const t = Date.parse(item.publishAt);
+  return Number.isFinite(t) && t > Date.now();
 }
