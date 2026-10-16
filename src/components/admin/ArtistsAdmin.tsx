@@ -13,6 +13,9 @@ import {
   type ArtistLinkItem,
   genId,
   isValidUrl,
+  isoToLocalInput,
+  localInputToIso,
+  isScheduledFuture,
 } from "@/lib/admin-content";
 import {
   artistEpisodeStats,
@@ -929,6 +932,20 @@ function ArtistEditor({
               onCheckedChange={(v) => set({ published: v === true })}
             />
             Publicado
+          </label>
+          <label className="flex flex-wrap items-center gap-2 text-sm">
+            Estreia em
+            <Input
+              type="datetime-local"
+              className="w-auto"
+              value={isoToLocalInput(value.publishAt)}
+              onChange={(e) => set({ publishAt: localInputToIso(e.target.value) })}
+            />
+            {value.publishAt ? (
+              <Button type="button" size="sm" variant="ghost" onClick={() => set({ publishAt: undefined })}>
+                Limpar
+              </Button>
+            ) : null}
           </label>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={onCancel} disabled={saving}>
