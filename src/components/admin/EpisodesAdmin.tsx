@@ -16,6 +16,9 @@ import {
   type ArtistItem,
   type LinkPair,
   genId,
+  isoToLocalInput,
+  localInputToIso,
+  isScheduledFuture,
 } from "@/lib/admin-content";
 
 import {
@@ -445,8 +448,12 @@ export function EpisodesAdmin() {
                     </TableCell>
                     <TableCell>
                       <button type="button" onClick={() => togglePublish(ep.id)}>
-                        <Badge variant={isPublished(ep) ? "default" : "secondary"}>
-                          {isPublished(ep) ? "Publicado" : "Rascunho"}
+                        <Badge variant={isPublished(ep) && !isScheduledFuture(ep) ? "default" : "secondary"}>
+                          {!isPublished(ep)
+                            ? "Rascunho"
+                            : isScheduledFuture(ep)
+                              ? `Programado: ${new Date(ep.publishAt as string).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}`
+                              : "Publicado"}
                         </Badge>
                       </button>
                     </TableCell>
@@ -1040,6 +1047,27 @@ function EpisodeEditor({
               />
               Publicado
             </label>
+            <div className="space-y-1">
+              <Label htmlFor="ep-publish-at">Programar lançamento (opcional)</Label>
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  id="ep-publish-at"
+                  type="datetime-local"
+                  className="w-auto"
+                  value={isoToLocalInput(value.publishAt)}
+                  onChange={(e) => set({ publishAt: localInputToIso(e.target.value) })}
+                />
+                {value.publishAt ? (
+                  <Button type="button" size="sm" variant="outline" onClick={() => set({ publishAt: undefined })}>
+                    Publicar agora (limpar data)
+                  </Button>
+                ) : null}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Com “Publicado” marcado e uma data futura, o episódio aparece sozinho no site nesse dia e hora.
+                Para o artista estrear junto, coloque a mesma data na ficha dele em Artistas.
+              </p>
+            </div>
             {link.isEp00 ? (
               <p className="text-xs text-muted-foreground">
                 Este episódio é institucional/de apresentação e não aciona cascata de artistas.
