@@ -117,6 +117,8 @@ export function EpisodesAdmin() {
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  /** Quando ligado, a data programada do episódio é copiada para o artista vinculado. */
+  const [scheduleArtistWithEpisode, setScheduleArtistWithEpisode] = useState(true);
 
   useEffect(() => {
     if (data) {
@@ -199,6 +201,7 @@ export function EpisodesAdmin() {
     setEditing(item);
     setEditingEmbed(embed);
     setEditorSnapshot(JSON.stringify({ item, embed }));
+    setScheduleArtistWithEpisode(true);
   };
 
   const closeEditor = () => {
