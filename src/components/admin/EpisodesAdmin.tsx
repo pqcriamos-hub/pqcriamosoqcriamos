@@ -676,6 +676,8 @@ function EpisodeEditor({
   onUploadParticipantImages,
   onRequestClose,
   onApply,
+  scheduleArtist,
+  onToggleScheduleArtist,
 }: {
   value: EpisodeItem;
   embed: EpisodeEmbeds[string];
@@ -688,6 +690,8 @@ function EpisodeEditor({
   onUploadParticipantImages: (files: File[]) => void;
   onRequestClose: () => void;
   onApply: () => void;
+  scheduleArtist: boolean;
+  onToggleScheduleArtist: (v: boolean) => void;
 }) {
   const [validationMsg, setValidationMsg] = useState("");
   const set = (patch: Partial<EpisodeItem>) => onChange({ ...value, ...patch });
