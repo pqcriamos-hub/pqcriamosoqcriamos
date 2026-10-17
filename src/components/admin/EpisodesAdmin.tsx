@@ -550,6 +550,8 @@ export function EpisodesAdmin() {
           onUploadParticipantImages={onUploadParticipantImages}
           onRequestClose={requestCloseEditor}
           onApply={applyEditor}
+          scheduleArtist={scheduleArtistWithEpisode}
+          onToggleScheduleArtist={setScheduleArtistWithEpisode}
         />
       ) : null}
 
