@@ -231,6 +231,22 @@ export function EpisodesAdmin() {
     const next = exists ? episodes.map((e) => (e.id === item.id ? item : e)) : [item, ...episodes];
     const nextEmbeds = { ...embeds, [item.id]: editingEmbed };
     markDirty(next, nextEmbeds);
+    // Lançamento programado: o artista vinculado estreia junto do episódio.
+    if (scheduleArtistWithEpisode && item.publishAt && !isEpisodeZero(item)) {
+      const artistId = getEpisodeArtistId(item, artists);
+      if (artistId) {
+        const nextArtists = artists.map((a) =>
+          a.id === artistId && a.publishAt !== item.publishAt
+            ? { ...a, publishAt: item.publishAt }
+            : a,
+        );
+        if (nextArtists.some((a, i) => a !== artists[i])) {
+          setArtists(nextArtists);
+          setDirty(true);
+          setSaveState("idle");
+        }
+      }
+    }
     closeEditor();
   };
 
