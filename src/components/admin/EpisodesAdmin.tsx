@@ -1090,9 +1090,19 @@ function EpisodeEditor({
               </div>
               <p className="text-xs text-muted-foreground">
                 Com “Publicado” marcado e uma data futura, o episódio aparece sozinho no site nesse dia e hora.
-                Para o artista estrear junto, coloque a mesma data na ficha dele em Artistas.
               </p>
             </div>
+            {!link.isEp00 && link.artist && value.publishAt ? (
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={scheduleArtist}
+                  onChange={(e) => onToggleScheduleArtist(e.target.checked)}
+                />
+                Programar o artista vinculado ({link.artist.name || link.artist.id}) para a mesma
+                data
+              </label>
+            ) : null}
             {link.isEp00 ? (
               <p className="text-xs text-muted-foreground">
                 Este episódio é institucional/de apresentação e não aciona cascata de artistas.
