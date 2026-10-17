@@ -117,6 +117,8 @@ export function EpisodesAdmin() {
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  /** Quando ligado, a data programada do episódio é copiada para o artista vinculado. */
+  const [scheduleArtistWithEpisode, setScheduleArtistWithEpisode] = useState(true);
 
   useEffect(() => {
     if (data) {
@@ -199,6 +201,7 @@ export function EpisodesAdmin() {
     setEditing(item);
     setEditingEmbed(embed);
     setEditorSnapshot(JSON.stringify({ item, embed }));
+    setScheduleArtistWithEpisode(true);
   };
 
   const closeEditor = () => {
@@ -228,6 +231,22 @@ export function EpisodesAdmin() {
     const next = exists ? episodes.map((e) => (e.id === item.id ? item : e)) : [item, ...episodes];
     const nextEmbeds = { ...embeds, [item.id]: editingEmbed };
     markDirty(next, nextEmbeds);
+    // Lançamento programado: o artista vinculado estreia junto do episódio.
+    if (scheduleArtistWithEpisode && item.publishAt && !isEpisodeZero(item)) {
+      const artistId = getEpisodeArtistId(item, artists);
+      if (artistId) {
+        const nextArtists = artists.map((a) =>
+          a.id === artistId && a.publishAt !== item.publishAt
+            ? { ...a, publishAt: item.publishAt }
+            : a,
+        );
+        if (nextArtists.some((a, i) => a !== artists[i])) {
+          setArtists(nextArtists);
+          setDirty(true);
+          setSaveState("idle");
+        }
+      }
+    }
     closeEditor();
   };
 
@@ -531,6 +550,8 @@ export function EpisodesAdmin() {
           onUploadParticipantImages={onUploadParticipantImages}
           onRequestClose={requestCloseEditor}
           onApply={applyEditor}
+          scheduleArtist={scheduleArtistWithEpisode}
+          onToggleScheduleArtist={setScheduleArtistWithEpisode}
         />
       ) : null}
 
@@ -655,6 +676,8 @@ function EpisodeEditor({
   onUploadParticipantImages,
   onRequestClose,
   onApply,
+  scheduleArtist,
+  onToggleScheduleArtist,
 }: {
   value: EpisodeItem;
   embed: EpisodeEmbeds[string];
@@ -667,6 +690,8 @@ function EpisodeEditor({
   onUploadParticipantImages: (files: File[]) => void;
   onRequestClose: () => void;
   onApply: () => void;
+  scheduleArtist: boolean;
+  onToggleScheduleArtist: (v: boolean) => void;
 }) {
   const [validationMsg, setValidationMsg] = useState("");
   const set = (patch: Partial<EpisodeItem>) => onChange({ ...value, ...patch });
@@ -1065,9 +1090,19 @@ function EpisodeEditor({
               </div>
               <p className="text-xs text-muted-foreground">
                 Com “Publicado” marcado e uma data futura, o episódio aparece sozinho no site nesse dia e hora.
-                Para o artista estrear junto, coloque a mesma data na ficha dele em Artistas.
               </p>
             </div>
+            {!link.isEp00 && link.artist && value.publishAt ? (
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={scheduleArtist}
+                  onChange={(e) => onToggleScheduleArtist(e.target.checked)}
+                />
+                Programar o artista vinculado ({link.artist.name || link.artist.id}) para a mesma
+                data
+              </label>
+            ) : null}
             {link.isEp00 ? (
               <p className="text-xs text-muted-foreground">
                 Este episódio é institucional/de apresentação e não aciona cascata de artistas.
