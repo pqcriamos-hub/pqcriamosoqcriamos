@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { scheduleReleaseBundle, isReleaseRelated } from "@/lib/release-schedule";
 import {
   fetchContentValue,
   saveContentValue,
@@ -14,6 +15,7 @@ import {
   type EpisodeItem,
   type EpisodeEmbeds,
   type ArtistItem,
+  type GalleryCard,
   type LinkPair,
   genId,
   isoToLocalInput,
@@ -91,18 +93,23 @@ function emptyEpisode(): EpisodeItem {
 }
 
 export function EpisodesAdmin() {
+  const queryClient = useQueryClient();
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin", "episodes"],
     queryFn: async () => ({
       episodes: await fetchContentValue<EpisodeItem[]>("episodes", []),
       embeds: await fetchContentValue<EpisodeEmbeds>("episode-embeds", {}),
       artists: await fetchContentValue<ArtistItem[]>("artists", []),
+      cards: await fetchContentValue<GalleryCard[]>("gallery-cards", []),
     }),
   });
 
   const [episodes, setEpisodes] = useState<EpisodeItem[]>([]);
   const [embeds, setEmbeds] = useState<EpisodeEmbeds>({});
   const [artists, setArtists] = useState<ArtistItem[]>([]);
+  const [cards, setCards] = useState<GalleryCard[]>([]);
+  const [artistsDirty, setArtistsDirty] = useState(false);
+  const [cardsDirty, setCardsDirty] = useState(false);
   const [initialPublished, setInitialPublished] = useState<Record<string, boolean>>({});
   const [pendingCascade, setPendingCascade] = useState<CascadeSuggestion[] | null>(null);
   const [cascadeChoice, setCascadeChoice] = useState<Record<string, boolean>>({});
@@ -119,12 +126,16 @@ export function EpisodesAdmin() {
   const [uploading, setUploading] = useState(false);
   /** Quando ligado, a data programada do episódio é copiada para o artista vinculado. */
   const [scheduleArtistWithEpisode, setScheduleArtistWithEpisode] = useState(true);
+  const [scheduleAcervoWithEpisode, setScheduleAcervoWithEpisode] = useState(true);
 
   useEffect(() => {
     if (data) {
       setEpisodes(data.episodes);
       setEmbeds(data.embeds);
       setArtists(data.artists);
+      setCards(data.cards);
+      setArtistsDirty(false);
+      setCardsDirty(false);
       setInitialPublished(
         Object.fromEntries(data.episodes.map((ep) => [ep.id, ep.published !== false])),
       );
@@ -202,6 +213,7 @@ export function EpisodesAdmin() {
     setEditingEmbed(embed);
     setEditorSnapshot(JSON.stringify({ item, embed }));
     setScheduleArtistWithEpisode(true);
+    setScheduleAcervoWithEpisode(true);
   };
 
   const closeEditor = () => {
@@ -231,21 +243,15 @@ export function EpisodesAdmin() {
     const next = exists ? episodes.map((e) => (e.id === item.id ? item : e)) : [item, ...episodes];
     const nextEmbeds = { ...embeds, [item.id]: editingEmbed };
     markDirty(next, nextEmbeds);
-    // Lançamento programado: o artista vinculado estreia junto do episódio.
-    if (scheduleArtistWithEpisode && item.publishAt && !isEpisodeZero(item)) {
-      const artistId = getEpisodeArtistId(item, artists);
-      if (artistId) {
-        const nextArtists = artists.map((a) =>
-          a.id === artistId && a.publishAt !== item.publishAt
-            ? { ...a, publishAt: item.publishAt }
-            : a,
-        );
-        if (nextArtists.some((a, i) => a !== artists[i])) {
-          setArtists(nextArtists);
-          setDirty(true);
-          setSaveState("idle");
-        }
-      }
+    const bundle = scheduleReleaseBundle(item, episodes.find((ep) => ep.id === item.id), artists, cards,
+      { artist: scheduleArtistWithEpisode, acervo: scheduleAcervoWithEpisode });
+    if (JSON.stringify(bundle.artists) !== JSON.stringify(artists)) {
+      setArtists(bundle.artists);
+      setArtistsDirty(true);
+    }
+    if (JSON.stringify(bundle.cards) !== JSON.stringify(cards)) {
+      setCards(bundle.cards);
+      setCardsDirty(true);
     }
     closeEditor();
   };
@@ -334,10 +340,13 @@ export function EpisodesAdmin() {
         const resolved = getEpisodeArtistId(ep, nextArtists);
         return resolved ? { ...ep, artistId: resolved } : ep;
       });
+      // Persiste os relacionados antes do episódio; não anuncia sucesso parcial.
+      if (artistsDirty || nextArtists !== artists) await saveContentValue("artists", nextArtists);
+      if (cardsDirty) await saveContentValue("gallery-cards", cards);
       await saveContentValue("episodes", normalized);
       await saveContentValue("episode-embeds", embeds);
-      // Só grava artistas quando a cascata alterou algum published.
-      if (nextArtists !== artists) await saveContentValue("artists", nextArtists);
+      if (artistsDirty || nextArtists !== artists) void queryClient.invalidateQueries({ queryKey: ["admin", "artists"] });
+      if (cardsDirty) void queryClient.invalidateQueries({ queryKey: ["admin", "gallery-cards"] });
       setSaveState("saved");
       setDirty(false);
       setPendingCascade(null);
@@ -552,6 +561,10 @@ export function EpisodesAdmin() {
           onApply={applyEditor}
           scheduleArtist={scheduleArtistWithEpisode}
           onToggleScheduleArtist={setScheduleArtistWithEpisode}
+          scheduleAcervo={scheduleAcervoWithEpisode}
+          onToggleScheduleAcervo={setScheduleAcervoWithEpisode}
+          cards={cards}
+          originalPublishAt={episodes.find((ep) => ep.id === editing.id)?.publishAt}
         />
       ) : null}
 
@@ -678,6 +691,10 @@ function EpisodeEditor({
   onApply,
   scheduleArtist,
   onToggleScheduleArtist,
+  scheduleAcervo,
+  onToggleScheduleAcervo,
+  cards,
+  originalPublishAt,
 }: {
   value: EpisodeItem;
   embed: EpisodeEmbeds[string];
@@ -692,6 +709,10 @@ function EpisodeEditor({
   onApply: () => void;
   scheduleArtist: boolean;
   onToggleScheduleArtist: (v: boolean) => void;
+  scheduleAcervo: boolean;
+  onToggleScheduleAcervo: (v: boolean) => void;
+  cards: GalleryCard[];
+  originalPublishAt?: string;
 }) {
   const [validationMsg, setValidationMsg] = useState("");
   const set = (patch: Partial<EpisodeItem>) => onChange({ ...value, ...patch });
@@ -1092,16 +1113,28 @@ function EpisodeEditor({
                 Com “Publicado” marcado e uma data futura, o episódio aparece sozinho no site nesse dia e hora.
               </p>
             </div>
-            {!link.isEp00 && link.artist && value.publishAt ? (
+            {!link.isEp00 && link.artist && (value.publishAt || originalPublishAt) ? (
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
                   checked={scheduleArtist}
                   onChange={(e) => onToggleScheduleArtist(e.target.checked)}
                 />
-                Programar o artista vinculado ({link.artist.name || link.artist.id}) para a mesma
-                data
+                Sincronizar a estreia do artista ({link.artist.name || link.artist.id}); artistas já no ar permanecem publicados
               </label>
+            ) : null}
+            {!link.isEp00 && (value.publishAt || originalPublishAt) ? (
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={scheduleAcervo} onChange={(e) => onToggleScheduleAcervo(e.target.checked)} />
+                  Sincronizar acervo e obras vinculados com esta data
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  {cards.filter((card) => isReleaseRelated(card, value, link.artistId) || card.items?.some((item) => isReleaseRelated(item, value, link.artistId))).length} acervo(s) relacionado(s).
+                  {" "}Vincule pelo ID/slug/código completo do episódio ou ID do artista no Acervo. Rascunhos permanecem ocultos; obras já públicas do artista não são retiradas do ar.
+                </p>
+                {link.artist?.published === false ? <p className="text-xs text-muted-foreground">O artista está em rascunho. Confirme também sua publicação ao salvar para ele estrear junto.</p> : null}
+              </div>
             ) : null}
             {link.isEp00 ? (
               <p className="text-xs text-muted-foreground">

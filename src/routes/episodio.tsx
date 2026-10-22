@@ -18,6 +18,7 @@ export const Route = createFileRoute("/episodio")({
         content: "Episódio completo do PQOQ com vídeo, áudio e acervo da conversa.",
       },
       { property: "og:type", content: "article" },
+      { name: "twitter:card", content: "summary_large_image" },
       { property: "og:url", content: "https://pqoqcriamos.lovable.app/episodio" },
     ],
     links: [{ rel: "canonical", href: "https://pqoqcriamos.lovable.app/episodio" }],
