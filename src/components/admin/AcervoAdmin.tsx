@@ -8,6 +8,9 @@ import {
   isBase64,
   isPublished,
   genId,
+  isoToLocalInput,
+  localInputToIso,
+  isScheduledFuture,
   type GalleryCard,
   type GalleryItem,
 } from "@/lib/admin-content";
@@ -319,7 +322,7 @@ export function AcervoAdmin() {
                     <TableCell>
                       <button type="button" onClick={() => togglePublish(c.id)}>
                         <Badge variant={isPublished(c) ? "default" : "secondary"}>
-                          {isPublished(c) ? "Publicado" : "Rascunho"}
+                          {!isPublished(c) ? "Rascunho" : isScheduledFuture(c) ? `Programado: ${isoToLocalInput(c.publishAt).replace("T", " ")}` : "Publicado"}
                         </Badge>
                       </button>
                     </TableCell>
@@ -424,6 +427,9 @@ function GalleryEditor({
           <Field label="Título"><Input value={value.title || ""} onChange={(e) => set({ title: e.target.value })} /></Field>
           <Field label="Slug"><Input value={value.slug || ""} onChange={(e) => set({ slug: e.target.value })} /></Field>
           <Field label="Categoria / meta"><Input value={value.meta || ""} onChange={(e) => set({ meta: e.target.value })} /></Field>
+          <Field label="Episódio vinculado (ID, slug ou código completo)"><Input value={value.episode || ""} onChange={(e) => set({ episode: e.target.value })} /></Field>
+          <Field label="Artista vinculado (ID)"><Input value={value.artistId || ""} onChange={(e) => set({ artistId: e.target.value })} /></Field>
+          <Field label="Estreia do acervo"><Input type="datetime-local" value={isoToLocalInput(value.publishAt)} onChange={(e) => set({ publishAt: localInputToIso(e.target.value) })} /></Field>
         </div>
         <Field label="Descrição curta"><Textarea value={value.description || ""} onChange={(e) => set({ description: e.target.value })} /></Field>
         <Field label="Descrição curatorial / intro"><Textarea value={value.intro || ""} onChange={(e) => set({ intro: e.target.value })} /></Field>
@@ -471,6 +477,8 @@ function GalleryEditor({
                   <Field label="Título"><Input value={it.title || ""} onChange={(e) => setItem(it.id, { title: e.target.value })} /></Field>
                   <Field label="Crédito"><Input value={it.credit || ""} onChange={(e) => setItem(it.id, { credit: e.target.value })} /></Field>
                   <Field label="Episódio"><Input value={it.episode || ""} onChange={(e) => setItem(it.id, { episode: e.target.value })} /></Field>
+                  <Field label="Artista vinculado (ID)"><Input value={it.artistId || ""} onChange={(e) => setItem(it.id, { artistId: e.target.value })} /></Field>
+                  <Field label="Estreia do item"><Input type="datetime-local" value={isoToLocalInput(it.publishAt)} onChange={(e) => setItem(it.id, { publishAt: localInputToIso(e.target.value) })} /></Field>
                   <Field label="Data"><Input value={it.date || ""} onChange={(e) => setItem(it.id, { date: e.target.value })} /></Field>
                   <Field label="Local"><Input value={it.location || ""} onChange={(e) => setItem(it.id, { location: e.target.value })} /></Field>
                   <Field label="Link"><Input value={it.link || ""} onChange={(e) => setItem(it.id, { link: e.target.value })} /></Field>

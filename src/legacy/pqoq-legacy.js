@@ -1,3 +1,5 @@
+import { isPublicLive, isScheduledFuture, isReleaseRelated } from "../lib/release-schedule";
+
 (() => {
   const STORAGE_PREFIX = "pqoq-site:";
   const localConfig = typeof window !== "undefined" ? window.PQOQ_CONFIG || {} : {};
@@ -849,14 +851,6 @@
   }
 
   /** Lançamento programado: item só fica público quando publishAt <= agora. */
-  function isScheduledFuture(item) {
-    if (!item || !item.publishAt) return false;
-    const t = Date.parse(item.publishAt);
-    return Number.isFinite(t) && t > Date.now();
-  }
-  function isPublicLive(item) {
-    return !!item && item.published !== false && !isScheduledFuture(item);
-  }
   function scheduleLabel(item) {
     try {
       return new Date(item.publishAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" });
@@ -967,7 +961,8 @@
   /** Artista vinculado ao episódio, sem fallback para o primeiro da lista. */
   function resolveEpisodeArtist(episode) {
     if (!episode || isEpisodeZeroLegacy(episode)) return undefined;
-    return findArtist(episode.artistId);
+    if (episode.artistId) return findArtist(episode.artistId);
+    return artists().find((artist) => String(artist.name || "").trim().toLowerCase() === String(episode.artist || "").trim().toLowerCase());
   }
 
   function normalizeId(text) {
@@ -1270,7 +1265,7 @@
     portfolioPanel.innerHTML = `
       ${renderArtistRichBlock(artist, "portfolio", "introdução do portfólio")}
       <div class="portfolio-masonry">
-        ${artist.portfolioItems.map((item, index) => portfolioItemCard(artist, item, index)).join("") || '<div class="empty-state">Portfólio em construção.</div>'}
+        ${artist.portfolioItems.filter((item) => isOwnerEditing() || isPublicLive(item)).map((item, index) => portfolioItemCard(artist, item, index)).join("") || '<div class="empty-state">Portfólio em construção.</div>'}
       </div>
       <div class="admin-only admin-row">
         <button class="button primary" type="button" data-add-portfolio-item="${artist.id}">Adicionar obra ao portfólio</button>
@@ -1321,7 +1316,7 @@
     if (!found) return; // sem fallback: id inválido não abre artista algum
     const artist = normalizeArtistAssets(found);
     // Artista oculto não abre para visitante anônimo (falha segura).
-    if (artist.published === false && !isOwnerEditing()) return;
+    if (!isPublicLive(artist) && !isOwnerEditing()) return;
     document.getElementById("artist-modal-title").textContent = artist.name;
     renderArtistModalPanels(artist);
     setAdminEditing(document.body.classList.contains("admin-mode"));
@@ -1426,6 +1421,29 @@
       .join("")}</div>`;
   }
 
+  function episodeAcervoMarkup(episode, artist) {
+    if (isEpisodeZeroLegacy(episode)) return "";
+    const works = artist && (isOwnerEditing() || isPublicLive(artist))
+      ? artist.portfolioItems.filter((item) => isOwnerEditing() || isPublicLive(item)) : [];
+    const cards = getState("gallery-cards", []);
+    const related = Array.isArray(cards) ? cards.filter((card) => isOwnerEditing() || isPublicLive(card)).map((card) => ({
+      card,
+      items: (card.items || []).filter((item) => (isOwnerEditing() || isPublicLive(item)) &&
+        (isReleaseRelated(card, episode, artist?.id) || isReleaseRelated(item, episode, artist?.id))),
+    })).filter((entry) => entry.items.length) : [];
+    if (!works.length && !related.length) return "";
+    return `<section class="episode-acervo" data-layout-key="episode.${escapeHtml(episode.id)}.acervo">
+      <h2 class="lettered">Acervo e obras do artista</h2>
+      ${works.length ? `<div class="portfolio-masonry">${works.map((item, index) => portfolioItemCard(artist, item, index)).join("")}</div>` : ""}
+      <div class="gallery-asset-grid">${related.map(({ card, items }) => items.map((item) => `
+        <article class="gallery-asset">
+          ${item.image || item.posterImage ? `<button class="episode-acervo-image" type="button" data-open-lightbox="${escapeHtml(item.id)}" data-gallery-id="${escapeHtml(card.id)}" aria-label="Ampliar ${escapeHtml(item.title || "obra")}"><img src="${escapeHtml(item.image || item.posterImage)}" alt="${escapeHtml(item.title || "")}" loading="lazy"></button>` : ""}
+          <div class="gallery-asset-copy"><h3>${escapeHtml(item.title || "")}</h3><p>${escapeHtml(item.caption || item.description || "")}</p>
+          <button class="button small" type="button" data-open-gallery="${escapeHtml(card.id)}">${item.mediaType === "video" ? "Assistir no acervo" : "Abrir acervo completo"}</button></div>
+        </article>`).join("")).join("")}</div>
+    </section>`;
+  }
+
   function renderEpisodePage() {
     const container = document.querySelector("[data-render-episode-page]");
     if (!container) return;
@@ -1446,7 +1464,8 @@
       container.innerHTML = '<div class="empty-state">Nenhum episódio cadastrado ainda.</div>';
       return;
     }
-    const artist = resolveEpisodeArtist(episode);
+    const linkedArtist = resolveEpisodeArtist(episode);
+    const artist = linkedArtist && (isOwnerEditing() || isPublicLive(linkedArtist)) ? linkedArtist : undefined;
     const isEp00 = isEpisodeZeroLegacy(episode);
     const embeds = episodeEmbeds()[episode.id] || {};
     document.title = `PQOQ Criamos - ${episode.code} - ${episode.title}`;
@@ -1509,6 +1528,7 @@
         </div>
         <div class="platform-row episode-platform-row" data-layout-key="episode.${episode.id}.platformRow">${platformLinks(episode)}${customLinkChips(episode.links)}</div>
       </div>
+      ${episodeAcervoMarkup(episode, artist)}
     `;
     renderEpisodeCover(episode.id);
     renderAudio(episode.id);
@@ -1522,6 +1542,7 @@
     ensureEpisodeModal();
     const episode = episodes().find((item) => item.id === id);
     if (!episode) return;
+    if (!isOwnerEditing() && !isPublicLive(episode)) return;
     const artist = resolveEpisodeArtist(episode);
     const embeds = episodeEmbeds()[id] || {};
     document.getElementById("episode-modal-title").textContent = `${episode.code} - ${episode.title}`;

@@ -360,6 +360,8 @@ export type EpisodeEmbeds = Record<string, EpisodeEmbed>;
 /** Obra do portfólio do artista (mesma forma do modal público). */
 export interface ArtistPortfolioItem {
   id: string;
+  publishAt?: string;
+  published?: boolean;
   title?: string;
   caption?: string;
   link?: string;
@@ -430,6 +432,8 @@ export function isBase64(value?: string): boolean {
 
 export interface GalleryItem {
   id: string;
+  publishAt?: string;
+  artistId?: string;
   title?: string;
   caption?: string;
   description?: string;
@@ -451,6 +455,9 @@ export interface GalleryItem {
 
 export interface GalleryCard {
   id: string;
+  publishAt?: string;
+  artistId?: string;
+  episode?: string;
   slug?: string;
   meta?: string;
   title?: string;
@@ -648,8 +655,4 @@ export function localInputToIso(value: string): string | undefined {
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
 }
-export function isScheduledFuture(item: { publishAt?: string }): boolean {
-  if (!item.publishAt) return false;
-  const t = Date.parse(item.publishAt);
-  return Number.isFinite(t) && t > Date.now();
-}
+export { isScheduledFuture } from "./release-schedule";
