@@ -1,3 +1,5 @@
+import { isPublicLive, isScheduledFuture } from "../lib/release-schedule";
+
 (() => {
   const STORAGE_PREFIX = "pqoq-site:";
   const GALLERY_KEY = "gallery-cards";
@@ -325,6 +327,8 @@
       posterImage: item.posterImage || "",
       image: item.image || "",
       episode: item.episode || "",
+      artistId: item.artistId || "",
+      publishAt: item.publishAt || undefined,
       date: item.date || "",
       location: item.location || "",
       tags,
@@ -359,6 +363,9 @@
           description: card.description || "",
           intro: card.intro || "",
           coverImage: card.coverImage || "",
+          episode: card.episode || "",
+          artistId: card.artistId || "",
+          publishAt: card.publishAt || undefined,
           published: card.published !== false,
           sortOrder: typeof card.sortOrder === "number" ? card.sortOrder : index,
           items
@@ -374,11 +381,11 @@
   // Public visitors only see published galleries/items; editors see everything.
   function visibleCards() {
     const cards = galleryCards();
-    return isAdmin() ? cards : cards.filter((card) => card.published);
+    return isAdmin() ? cards : cards.filter(isPublicLive);
   }
 
   function visibleItems(card) {
-    return isAdmin() ? card.items : card.items.filter((item) => item.published);
+    return isAdmin() ? card.items : card.items.filter(isPublicLive);
   }
 
   function pagePhotos() {
@@ -655,13 +662,13 @@
     const mediaBlock = videoMarkup
       ? `<div class="gallery-asset-image gallery-asset-media is-video">
           ${videoMarkup}
-          <span class="gallery-status admin-only">${item.published ? "Publicado" : "Rascunho"}</span>
+          <span class="gallery-status admin-only">${!item.published ? "Rascunho" : isScheduledFuture(item) ? "Programado" : "Publicado"}</span>
         </div>`
       : `<label class="gallery-asset-image${item.image ? "" : " is-empty"}"${imageStyle}>
           <span class="gallery-asset-placeholder">Imagem</span>
           <input class="admin-only" type="file" accept="image/*" data-gallery-item-image="${cardId}" data-gallery-item="${item.id}" aria-label="Enviar imagem do ${escapeHtml(label)}">
           <button class="gallery-asset-zoom" type="button" data-open-lightbox="${item.id}" data-gallery-id="${cardId}" aria-label="Ampliar ${escapeHtml(label)}"></button>
-          <span class="gallery-status admin-only">${item.published ? "Publicado" : "Rascunho"}</span>
+          <span class="gallery-status admin-only">${!item.published ? "Rascunho" : isScheduledFuture(item) ? "Programado" : "Publicado"}</span>
         </label>`;
     return `
       <article class="gallery-asset${unpub}" data-gallery-id="${cardId}" data-gallery-item-id="${item.id}">
@@ -717,6 +724,7 @@
     const body = document.getElementById("gallery-modal-body");
     const title = document.getElementById("gallery-modal-title");
     if (!card || !body || !title) return;
+    if (!isAdmin() && !isPublicLive(card)) return;
     activeGalleryId = cardId;
     title.textContent = card.title || "ACERVO";
     const items = visibleItems(card);
@@ -755,6 +763,8 @@
   }
 
   function openGallery(cardId) {
+    const card = visibleCards().find((entry) => entry.id === cardId);
+    if (!card) return;
     renderGalleryModal(cardId);
     const modal = document.getElementById("gallery-modal");
     modal?.classList.add("is-open");
