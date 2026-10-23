@@ -85,7 +85,12 @@ export function sanitizeEmbedsForPublic(
 
 export function sanitizeArtistsForPublic(artists: unknown): unknown {
   if (!Array.isArray(artists)) return artists;
-  return artists.filter(isItemPublished);
+  return artists.filter(isItemPublished).map((artist) => {
+    if (!artist || typeof artist !== "object") return artist;
+    const value = { ...(artist as Record<string, unknown>) };
+    if (Array.isArray(value.portfolioItems)) value.portfolioItems = value.portfolioItems.filter(isItemPublished);
+    return value;
+  });
 }
 
 export function sanitizeGalleryCardsForPublic(cards: unknown): unknown {

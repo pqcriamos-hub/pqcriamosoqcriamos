@@ -360,6 +360,16 @@ export function EpisodesAdmin() {
 
   const saveAll = async () => {
     const suggestions = cascadeSuggestions(episodes, artists, initialPublished);
+    for (const ep of episodes) {
+      if (!ep.publishAt || ep.published === false || isEpisodeZero(ep)) continue;
+      const info = episodeLinkInfo(ep, artists, episodes);
+      if (!info.artist || info.artistPublished || suggestions.some((item) => item.kind === "publish-artist" && item.artistId === info.artistId)) continue;
+      suggestions.push({
+        kind: "publish-artist", episodeId: ep.id, episodeLabel: ep.code || ep.id,
+        artistId: info.artistId, artistName: info.artist.name || info.artistId,
+        message: `O artista ${info.artist.name || info.artistId} está em rascunho. Confirme a publicação para respeitar a data de estreia definida na ficha dele.`,
+      });
+    }
     if (suggestions.length) {
       setCascadeChoice({});
       setPendingCascade(suggestions);
