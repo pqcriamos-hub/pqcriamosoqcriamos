@@ -7,6 +7,11 @@ export const Route = createFileRoute("/pqoqadmin")({
   head: () => ({
     meta: [
       { title: "Admin — PQOQ Criamos" },
+      { name: "description", content: "Painel editorial do PQOQ para episódios, artistas, acervo e lançamentos programados." },
+      { property: "og:title", content: "Admin — PQOQ Criamos" },
+      { property: "og:description", content: "Gestão editorial e programação de lançamentos do PQOQ." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),

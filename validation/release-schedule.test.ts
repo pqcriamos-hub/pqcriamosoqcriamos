@@ -1,12 +1,17 @@
 import { describe, it } from "node:test";
 import { strict as assert } from "node:assert";
 import { isPublicLive, isReleaseRelated, scheduleReleaseBundle } from "../src/lib/release-schedule";
+import { sanitizeArtistsForPublic } from "../src/lib/content-sanitize";
 
 const now = Date.parse("2026-10-22T10:18:00Z");
 const publishAt = "2026-10-22T22:00:00Z";
 const episode = { id: "t01ep12", code: "T01EP12", artistId: "artista", publishAt };
 
 describe("Estreia conjunta", () => {
+  it("não envia obras em rascunho na linha pública", () => {
+    assert.deepEqual(sanitizeArtistsForPublic([{ id: "artista", portfolioItems: [{ id: "publica" }, { id: "rascunho", published: false }] }]),
+      [{ id: "artista", portfolioItems: [{ id: "publica" }] }]);
+  });
   it("libera no horário exato e mantém conteúdo legado visível", () => {
     assert.equal(isPublicLive({ publishAt }, now), false);
     assert.equal(isPublicLive({ publishAt }, Date.parse(publishAt)), true);

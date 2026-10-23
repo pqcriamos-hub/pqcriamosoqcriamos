@@ -381,11 +381,11 @@ import { isPublicLive, isScheduledFuture } from "../lib/release-schedule";
   // Public visitors only see published galleries/items; editors see everything.
   function visibleCards() {
     const cards = galleryCards();
-    return isAdmin() ? cards : cards.filter(isPublicLive);
+    return isAdmin() ? cards : cards.filter((card) => isPublicLive(card));
   }
 
   function visibleItems(card) {
-    return isAdmin() ? card.items : card.items.filter(isPublicLive);
+    return isAdmin() ? card.items : card.items.filter((item) => isPublicLive(item));
   }
 
   function pagePhotos() {
@@ -598,7 +598,7 @@ import { isPublicLive, isScheduledFuture } from "../lib/release-schedule";
     return `
       <article class="card gallery-card gallery-card-plus${unpub}" data-gallery-id="${card.id}">
         <button class="gallery-thumb gallery-card-open${card.coverImage ? "" : " is-empty"}" type="button" data-open-gallery="${card.id}" data-layout-key="gallery.${card.id}.cover"${coverStyle}></button>
-        <span class="gallery-status admin-only">${card.published ? "Publicada" : "Rascunho"}</span>
+        <span class="gallery-status admin-only">${!card.published ? "Rascunho" : isScheduledFuture(card) ? "Programada" : "Publicada"}</span>
         <div class="meta${empty(card.meta)}" data-gallery-field="meta" data-layout-key="gallery.${card.id}.meta">${escapeHtml(card.meta)}</div>
         <h2 class="${empty(card.title).trim()}" data-gallery-field="title" data-layout-key="gallery.${card.id}.title">${escapeHtml(card.title)}</h2>
         <p class="${empty(card.description).trim()}" data-gallery-field="description" data-layout-key="gallery.${card.id}.description">${escapeHtml(card.description)}</p>
@@ -1042,7 +1042,7 @@ import { isPublicLive, isScheduledFuture } from "../lib/release-schedule";
   function openLightbox(cardId, itemId) {
     ensureLightbox();
     const card = galleryCards().find((c) => c.id === cardId);
-    if (!card) return;
+    if (!card || (!isAdmin() && !isPublicLive(card))) return;
     const items = visibleItems(card);
     const index = items.findIndex((i) => i.id === itemId);
     if (index < 0) return;
@@ -1170,14 +1170,14 @@ import { isPublicLive, isScheduledFuture } from "../lib/release-schedule";
 
   function shareGallery(cardId) {
     const card = galleryCards().find((c) => c.id === cardId);
-    if (!card) return;
+    if (!card || (!isAdmin() && !isPublicLive(card))) return;
     shareContent(`${card.title} - PQOQ`, card.description || card.meta || "", `galeria-${card.slug}`);
   }
 
   function shareItem(cardId, itemId) {
     const card = galleryCards().find((c) => c.id === cardId);
     const item = card?.items.find((i) => i.id === itemId);
-    if (!item) return;
+    if (!item || (!isAdmin() && (!isPublicLive(card) || !isPublicLive(item)))) return;
     shareContent(`${item.title} - PQOQ`, item.caption || "", `galeria-${card.slug}-${item.id}`);
   }
 

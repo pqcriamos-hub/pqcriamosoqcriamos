@@ -2420,3 +2420,11 @@ body.admin-mode .gallery-modal-copy .is-empty {
   object-fit: contain;
   background-color: var(--cream);
 }
+
+.episode-acervo { margin-top: 32px; min-width: 0; }
+.episode-acervo-image { display: block; width: 100%; height: 240px; border: 0; padding: 0; background: var(--cream); cursor: pointer; }
+.episode-acervo-image img { width: 100%; height: 100%; object-fit: contain; }
+.episode-acervo .gallery-asset-copy { overflow-wrap: anywhere; }
+@media (max-width: 780px) {
+  .episode-acervo .portfolio-masonry { column-count: 1; }
+}
